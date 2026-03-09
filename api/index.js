@@ -208,6 +208,10 @@ const sendSMS = async (to, message) => {
         Body: message,
       }).toString(),
     });
+    if (!res.ok) {
+      const errBody = await res.text();
+      console.error('[WhatsApp ERROR]', res.status, errBody);
+    }
     return res.ok;
   } catch (e) { console.error('[WhatsApp]', e); return false; }
 };
