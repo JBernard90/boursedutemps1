@@ -21,7 +21,7 @@ const ADMIN_EMAIL = 'jeanbernardpierrelouis@gmail.com';
 
 const PRIVACY_TEXT = `POLITIQUE DE CONFIDENTIALITÉ – Bourse du Temps
 1. Introduction
-Le site Bourse du Temps (https://boursedutemps.netlify.app/) accorde une grande importance à la protection de vos données personnelles.
+Le site Bourse du Temps (https://boursedutemps.vercel.app/) accorde une grande importance à la protection de vos données personnelles.
 La présente Politique de Confidentialité explique quelles informations nous collectons, comment nous les utilisons et quels sont vos droits.
 En utilisant notre site, vous acceptez les pratiques décrites ci-dessous.
 
@@ -51,7 +51,7 @@ Aucune donnée n’est utilisée à des fins commerciales.
 Vos données ne sont jamais vendues.
 Elles peuvent être partagées uniquement avec :
 • 	Notre hébergeur
-• 	Nos outils techniques (ex : Netlify, services d’analyse)
+• 	Nos outils techniques (ex : Vercel, services d’analyse)
 • 	Les autorités légales en cas d’obligation
 
 5. Cookies
@@ -85,10 +85,10 @@ PIERRE LOUIS Jean Bernard
 
 3. Hébergeur
 Le site est hébergé par :
-Netlify, Inc.
-2325 3rd Street, Suite 296
-San Francisco, CA 94107
-Site : https://www.netlify.com/
+Vercel Inc.
+340 S Lemon Ave #4133
+Walnut, CA 91789
+États‑Unis
 
 4. Propriété intellectuelle
 Tous les contenus présents sur le site (textes, images, logos, design) sont protégés par le droit d’auteur.
@@ -143,7 +143,7 @@ Les présentes CGU sont soumises au droit égyptien et aux règlements de l'Univ
 
 const TERMS_TEXT = `LOI DE CONDITIONS D’ÉCHANGE – BOURSE DU TEMPS
 1. Objet de la Loi
-La présente Loi de Conditions d’Échange a pour objectif d’encadrer les échanges de services, de compétences et de temps entre les utilisateurs du site Bourse du Temps (https://boursedutemps.netlify.app).
+La présente Loi de Conditions d’Échange a pour objectif d’encadrer les échanges de services, de compétences et de temps entre les utilisateurs du site Bourse du Temps (https://boursedutemps.vercel.app).
 Elle définit les droits, obligations et responsabilités de chaque participant afin de garantir un environnement sûr, équitable et respectueux.
 
 2. Définitions
@@ -238,38 +238,38 @@ Chaque membre s’engage à :
 traiter les autres avec courtoisie et respect
 adopter une attitude positive et non discriminatoire
 écouter, comprendre et communiquer de manière constructive
-Aucun comportement agressif, humiliant ou irrespectueux n’est toléré.
+*Aucun comportement agressif, humiliant ou irrespectueux n’est toléré.
 2. Confiance et Transparence
 La confiance est la base de tout échange.
  Les utilisateurs doivent :
 fournir des informations sincères sur leurs compétences et disponibilités
 respecter les engagements pris
 prévenir en cas d’imprévu ou d’annulation
-La transparence renforce la qualité des échanges.
+*La transparence renforce la qualité des échanges.
 3. Équité et Réciprocité
 Les échanges doivent être :
 équitables
 équilibrés
 basés sur la réciprocité
-Chaque service rendu doit être compensé par un autre service ou un temps équivalent, selon les modalités convenues librement entre les utilisateurs.
+*Chaque service rendu doit être compensé par un autre service ou un temps équivalent, selon les modalités convenues librement entre les utilisateurs.
 4. Gratuité des Échanges
 La Bourse du Temps repose sur un principe fondamental :
 aucune transaction financière n’est autorisée
 aucun utilisateur ne peut exiger ou proposer une rémunération en argent
-Les échanges sont basés uniquement sur le temps, l’entraide et la solidarité.
+*Les échanges sont basés uniquement sur le temps, l’entraide et la solidarité.
 5. Sécurité et Responsabilité
 Chaque utilisateur doit :
 veiller à sa propre sécurité
 ne proposer que des services qu’il maîtrise réellement
 ne pas s’engager dans des activités dangereuses ou illégales
-Les services nécessitant une qualification professionnelle réglementée (médecine, droit, travaux électriques complexes, etc.) sont interdits.
+*Les services nécessitant une qualification professionnelle réglementée (médecine, droit, travaux électriques complexes, etc.) sont interdits.
 6. Confidentialité et Respect de la Vie Privée
 Les informations échangées entre utilisateurs doivent rester confidentielles.
  Il est strictement interdit de :
 divulguer des données personnelles
 enregistrer ou publier des échanges sans consentement
 utiliser les informations obtenues à des fins commerciales ou malveillantes
-La confiance passe par la discrétion.
+*La confiance passe par la discrétion.
 7. Inclusion et Non‑Discrimination
 La communauté est ouverte à tous, sans distinction de :
 sexe
@@ -278,26 +278,26 @@ origine
 religion
 situation sociale
 handicap
-Toute forme de discrimination est strictement interdite.
+*Toute forme de discrimination est strictement interdite.
 8. Engagement envers la Qualité
 Chaque utilisateur s’engage à :
 fournir un service de qualité
 respecter les délais convenus
 faire preuve de sérieux et de professionnalisme
-Un échange réussi renforce la communauté.
+*Un échange réussi renforce la communauté.
 9. Résolution des Conflits
 En cas de désaccord, les utilisateurs doivent :
 privilégier le dialogue
 rechercher une solution amiable
 faire preuve de compréhension
-Le site n’intervient pas dans les litiges, mais encourage la communication respectueuse.
+*Le site n’intervient pas dans les litiges, mais encourage la communication respectueuse.
 10. Contribution à la Communauté
 Chaque membre contribue à faire de Bourse du Temps un espace :
 utile
 solidaire
 respectueux
 enrichissant pour tous
-L’esprit d’entraide est au cœur du projet.
+*L’esprit d’entraide est au cœur du projet.
 11. Acceptation de la Charte
 L’utilisation du site implique l’acceptation pleine et entière de la présente Charte Éthique.
  Tout manquement peut entraîner une suspension ou une exclusion de la plateforme.`;
