@@ -27,7 +27,8 @@
     "react-markdown": "^10.1.0",
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.2.1",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0",
+    "twilio": "^5.12.2"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

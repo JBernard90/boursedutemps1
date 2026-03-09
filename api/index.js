@@ -190,30 +190,25 @@ const transporter = nodemailer.createTransport({
 });
 
 // ─── WHATSAPP OTP (TWILIO) ────────────────────────────────────────────────
+const twilio = require('twilio');
 const sendSMS = async (to, message) => {
-  if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) return false;
+  if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
+    console.error('[WhatsApp] Variables Twilio manquantes');
+    return false;
+  }
   try {
-    const accountSid = process.env.TWILIO_ACCOUNT_SID;
-    const authToken = process.env.TWILIO_AUTH_TOKEN;
-    const credentials = Buffer.from(accountSid + ':' + authToken).toString('base64');
-    const res = await fetch('https://api.twilio.com/2010-04-01/Accounts/' + accountSid + '/Messages.json', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Basic ' + credentials,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        From: 'whatsapp:' + process.env.TWILIO_WHATSAPP_FROM,
-        To: 'whatsapp:' + to,
-        Body: message,
-      }).toString(),
+    const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+    const result = await client.messages.create({
+      from: 'whatsapp:' + process.env.TWILIO_WHATSAPP_FROM,
+      to: 'whatsapp:' + to,
+      body: message,
     });
-    if (!res.ok) {
-      const errBody = await res.text();
-      console.error('[WhatsApp ERROR]', res.status, errBody);
-    }
-    return res.ok;
-  } catch (e) { console.error('[WhatsApp]', e); return false; }
+    console.log('[WhatsApp] Envoye:', result.sid, result.status);
+    return true;
+  } catch (e) {
+    console.error('[WhatsApp ERROR]', e.message, e.code);
+    return false;
+  }
 };
 
 // ─── EXPRESS ─────────────────────────────────────────────────────────────
