@@ -3,39 +3,24 @@ const nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { Pool } = require('pg');
+const { neon } = require('@neondatabase/serverless');
 
 dotenv.config();
 
 const startTime = Date.now();
 
 // ─── DATABASE ─────────────────────────────────────────────────────────────
-let pool = null;
-const getPool = () => {
-  if (!process.env.DATABASE_URL) return null;
-  if (!pool) {
-    pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false },
-      max: 1,
-      idleTimeoutMillis: 5000,
-      connectionTimeoutMillis: 15000,
-    });
-  }
-  return pool;
-};
-
 const query = async (text, params) => {
-  const p = getPool();
-  if (!p) throw new Error('DATABASE_URL manquant dans les variables Vercel.');
-  return p.query(text, params);
+  if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL manquant.');
+  const sql = neon(process.env.DATABASE_URL);
+  const rows = await sql.query(text, params || []);
+  return { rows: rows.rows || rows };
 };
 
 const initDB = async () => {
-  const p = getPool();
-  if (!p) return;
+  if (!process.env.DATABASE_URL) return;
   try {
-    await p.query(`
+    await query(`
       CREATE TABLE IF NOT EXISTS otps (
         id SERIAL PRIMARY KEY,
         identifier VARCHAR(255) NOT NULL,
