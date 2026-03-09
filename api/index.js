@@ -189,17 +189,27 @@ const transporter = nodemailer.createTransport({
   auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
 });
 
-// ─── SMS ──────────────────────────────────────────────────────────────────
+// ─── WHATSAPP OTP (TWILIO) ────────────────────────────────────────────────
 const sendSMS = async (to, message) => {
-  if (!process.env.TEXTBEE_API_KEY || !process.env.TEXTBEE_SENDER_ID) return false;
+  if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) return false;
   try {
-    const res = await fetch('https://api.textbee.dev/api/v1/gateway/devices/send-sms', {
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const credentials = Buffer.from(accountSid + ':' + authToken).toString('base64');
+    const res = await fetch('https://api.twilio.com/2010-04-01/Accounts/' + accountSid + '/Messages.json', {
       method: 'POST',
-      headers: { 'x-api-key': process.env.TEXTBEE_API_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ receiver: to, message, deviceId: process.env.TEXTBEE_SENDER_ID }),
+      headers: {
+        'Authorization': 'Basic ' + credentials,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        From: 'whatsapp:' + process.env.TWILIO_WHATSAPP_FROM,
+        To: 'whatsapp:' + to,
+        Body: message,
+      }).toString(),
     });
     return res.ok;
-  } catch (e) { return false; }
+  } catch (e) { console.error('[WhatsApp]', e); return false; }
 };
 
 // ─── EXPRESS ─────────────────────────────────────────────────────────────
