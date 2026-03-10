@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
 const bcrypt = require('bcryptjs');
@@ -9,7 +9,7 @@ dotenv.config();
 
 const startTime = Date.now();
 
-// ─── DATABASE ─────────────────────────────────────────────────────────────
+// --- DATABASE -------------------------------------------------------------
 const pool = process.env.DATABASE_URL
   ? new Pool({
       connectionString: process.env.DATABASE_URL,
@@ -161,7 +161,7 @@ const initDB = async () => {
     for (const sql of tables) {
       await client.query(sql);
     }
-    console.log('[DB] Tables initialisées');
+    console.log('[DB] Tables initialisees');
   } catch (err) {
     console.error('[DB] Erreur init:', err && err.message);
   } finally {
@@ -170,7 +170,7 @@ const initDB = async () => {
 };
 initDB().catch(err => console.error('[DB] Init failed:', err && err.message));
 
-// ─── AUTH MIDDLEWARE ──────────────────────────────────────────────────────
+// --- AUTH MIDDLEWARE ------------------------------------------------------
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -182,18 +182,18 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// ─── OTP ─────────────────────────────────────────────────────────────────
+// --- OTP -----------------------------------------------------------------
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
-// ─── NODEMAILER ───────────────────────────────────────────────────────────
+// --- NODEMAILER -----------------------------------------------------------
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
 });
 
-// ─── WhatsApp OTP supprimé - email uniquement ───────────────────────────
+// --- WhatsApp OTP supprime - email uniquement ---------------------------
 
-// ─── EXPRESS ─────────────────────────────────────────────────────────────
+// --- EXPRESS -------------------------------------------------------------
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 
@@ -202,7 +202,7 @@ const sendError = (res, message, status, code) => {
   return res.status(status).json({ error: message, success: false, code: code || 'ERROR' });
 };
 
-// ─── HEALTH ───────────────────────────────────────────────────────────────
+// --- HEALTH ---------------------------------------------------------------
 app.get('/api/health', async (req, res) => {
   try {
     await query('SELECT 1');
@@ -212,7 +212,7 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// ─── VERIFY INIT ──────────────────────────────────────────────────────────
+// --- VERIFY INIT ----------------------------------------------------------
 app.post('/api/verify/init', async (req, res) => {
   const { email, phone } = req.body;
   if (!email) return sendError(res, 'Email requis.', 400);
@@ -225,18 +225,18 @@ app.post('/api/verify/init', async (req, res) => {
     transporter.sendMail({
       from: '"Bourse du Temps" <' + process.env.EMAIL_USER + '>',
       to: email,
-      subject: 'Code de vérification – Bourse du Temps',
-      html: '<div style="font-family:sans-serif;padding:20px;max-width:500px;margin:0 auto;border:1px solid #eee;border-radius:10px;"><h2 style="color:#1e40af;">Vérification de votre email</h2><p>Votre code de vérification (valable <strong>5 minutes</strong>) :</p><div style="background:#f3f4f6;padding:15px;text-align:center;border-radius:8px;margin:20px 0;"><strong style="font-size:32px;letter-spacing:4px;color:#1f2937;">' + otp + '</strong></div><p style="font-size:12px;color:#6b7280;">Si vous n\'etes pas a l\'origine de cette demande, ignorez cet email.</p></div>',
+      subject: 'Code de verification - Bourse du Temps',
+      html: '<div style="font-family:sans-serif;padding:20px;max-width:500px;margin:0 auto;border:1px solid #eee;border-radius:10px;"><h2 style="color:#1e40af;">Verification de votre email</h2><p>Votre code de verification (valable <strong>5 minutes</strong>) :</p><div style="background:#f3f4f6;padding:15px;text-align:center;border-radius:8px;margin:20px 0;"><strong style="font-size:32px;letter-spacing:4px;color:#1f2937;">' + otp + '</strong></div><p style="font-size:12px;color:#6b7280;">Si vous n\'etes pas a l\'origine de cette demande, ignorez cet email.</p></div>',
     }).catch(function(e) { console.error('[Email OTP error]', e.message); });
 
-    res.json({ success: true, message: 'Code envoyé par email.' });
+    res.json({ success: true, message: 'Code envoye par email.' });
   } catch (err) {
     console.error('[verify/init]', err);
-    sendError(res, 'Erreur génération du code.');
+    sendError(res, 'Erreur generation du code.');
   }
 });
 
-// ─── VERIFY CHECK ─────────────────────────────────────────────────────────
+// --- VERIFY CHECK ---------------------------------------------------------
 app.post('/api/verify/check', async (req, res) => {
   const { email, emailCode } = req.body;
   if (!email || !emailCode) return sendError(res, 'Email et code requis.', 400);
@@ -244,15 +244,15 @@ app.post('/api/verify/check', async (req, res) => {
     const r = await query('SELECT * FROM otps WHERE identifier = $1 ORDER BY created_at DESC LIMIT 1', ['email:' + email]);
     const otp = r.rows[0];
     if (!otp || otp.code !== emailCode || new Date() > new Date(otp.expires_at))
-      return sendError(res, 'Code invalide ou expiré.', 400);
+      return sendError(res, 'Code invalide ou expire.', 400);
     res.json({ success: true });
   } catch (err) {
     console.error('[verify/check]', err);
-    sendError(res, 'Erreur vérification code.');
+    sendError(res, 'Erreur verification code.');
   }
 });
 
-// ─── REGISTER ─────────────────────────────────────────────────────────────
+// --- REGISTER -------------------------------------------------------------
 app.post('/api/register', async (req, res) => {
   const { email, phone, emailCode, password, firstName, lastName, campus, department, gender, country, offeredSkills, requestedSkills, availability, languages, avatar } = req.body;
   if (!email || !emailCode || !password || !firstName || !lastName)
@@ -261,10 +261,10 @@ app.post('/api/register', async (req, res) => {
     const r = await query('SELECT * FROM otps WHERE identifier = $1 ORDER BY created_at DESC LIMIT 1', ['email:' + email]);
     const otp = r.rows[0];
     if (!otp || otp.code !== emailCode || new Date() > new Date(otp.expires_at))
-      return sendError(res, 'Code email invalide ou expiré.', 403);
+      return sendError(res, 'Code email invalide ou expire.', 403);
 
     const existing = await query('SELECT uid FROM users WHERE email = $1', [email]);
-    if (existing.rows.length > 0) return sendError(res, 'Cet email est déjà utilisé.', 409);
+    if (existing.rows.length > 0) return sendError(res, 'Cet email est deja utilise.', 409);
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const uid = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -280,12 +280,12 @@ app.post('/api/register', async (req, res) => {
     res.status(201).json({ success: true, uid, token });
   } catch (err) {
     console.error('[register]', err);
-    if (err.code === '23505') return sendError(res, 'Cet email est déjà utilisé.', 409);
-    sendError(res, 'Erreur inscription. Veuillez réessayer.');
+    if (err.code === '23505') return sendError(res, 'Cet email est deja utilise.', 409);
+    sendError(res, 'Erreur inscription. Veuillez reessayer.');
   }
 });
 
-// ─── LOGIN ────────────────────────────────────────────────────────────────
+// --- LOGIN ----------------------------------------------------------------
 app.post('/api/login/init', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return sendError(res, 'Email et mot de passe requis.', 400);
@@ -304,14 +304,14 @@ app.post('/api/login/init', async (req, res) => {
     transporter.sendMail({
       from: '"Bourse du Temps" <' + process.env.EMAIL_USER + '>',
       to: email,
-      subject: 'Code de connexion – Bourse du Temps',
+      subject: 'Code de connexion - Bourse du Temps',
       html: '<div style="font-family:sans-serif;padding:20px;max-width:500px;margin:0 auto;border:1px solid #eee;border-radius:10px;"><h2 style="color:#1e40af;">Connexion a Bourse du Temps</h2><p>Votre code de connexion (valable <strong>5 minutes</strong>) :</p><div style="background:#f3f4f6;padding:15px;text-align:center;border-radius:8px;margin:20px 0;"><strong style="font-size:32px;letter-spacing:4px;color:#1f2937;">' + otp + '</strong></div><p style="font-size:12px;color:#6b7280;">Si vous n\'etes pas a l\'origine de cette demande, changez votre mot de passe.</p></div>',
     }).catch(function(e) { console.error('[Login OTP error]', e.message); });
 
-    res.json({ success: true, message: 'Code de connexion envoyé par email.' });
+    res.json({ success: true, message: 'Code de connexion envoye par email.' });
   } catch (err) {
     console.error('[login/init]', err);
-    sendError(res, 'Erreur de connexion. Veuillez réessayer.');
+    sendError(res, 'Erreur de connexion. Veuillez reessayer.');
   }
 });
 
@@ -328,7 +328,7 @@ app.post('/api/login', async (req, res) => {
     const r = await query('SELECT * FROM otps WHERE identifier = $1 ORDER BY created_at DESC LIMIT 1', ['login:' + email]);
     const otpRow = r.rows[0];
     if (!otpRow || otpRow.code !== otp || new Date() > new Date(otpRow.expires_at))
-      return sendError(res, 'Code OTP invalide ou expiré.', 403);
+      return sendError(res, 'Code OTP invalide ou expire.', 403);
 
     await query('DELETE FROM otps WHERE identifier = $1', ['login:' + email]);
     const token = jwt.sign({ uid: user.uid, email: user.email }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '7d' });
@@ -336,21 +336,21 @@ app.post('/api/login', async (req, res) => {
     res.json({ success: true, token, user: u });
   } catch (err) {
     console.error('[login]', err);
-    sendError(res, 'Erreur de connexion. Veuillez réessayer.');
+    sendError(res, 'Erreur de connexion. Veuillez reessayer.');
   }
 });
 
-// ─── AUTH/ME ──────────────────────────────────────────────────────────────
+// --- AUTH/ME --------------------------------------------------------------
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
   try {
     const result = await query('SELECT * FROM users WHERE uid = $1', [req.user.uid]);
-    if (!result.rows.length) return sendError(res, 'Utilisateur non trouvé.', 404);
+    if (!result.rows.length) return sendError(res, 'Utilisateur non trouve.', 404);
     const { password, ...u } = result.rows[0];
     res.json(Object.assign({}, u, { success: true }));
   } catch (err) { sendError(res, err.message); }
 });
 
-// ─── CRUD GÉNÉRIQUE ───────────────────────────────────────────────────────
+// --- CRUD GENERIQUE -------------------------------------------------------
 const tables = ['users','services','requests','blogs','testimonials','forumTopics','connections','transactions'];
 
 const toCamel = function(obj) {
@@ -437,14 +437,14 @@ tables.forEach(function(table) {
   });
 });
 
-// ─── 404 + ERROR ──────────────────────────────────────────────────────────
+// --- 404 + ERROR ----------------------------------------------------------
 app.use('/api/*', function(req, res) {
   res.status(404).json({ error: 'Route ' + req.originalUrl + ' introuvable', success: false });
 });
 
 app.use(function(err, req, res, next) {
   console.error('[Error]', err);
-  if (err.code === '23505') return res.status(409).json({ error: 'Valeur déjà existante', success: false });
+  if (err.code === '23505') return res.status(409).json({ error: 'Valeur deja existante', success: false });
   res.status(err.status || 500).json({ error: err.message || 'Erreur interne', success: false });
 });
 
