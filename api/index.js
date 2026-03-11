@@ -258,16 +258,21 @@ app.post('/api/verify/init', async (req, res) => {
 // ─── VERIFY CHECK ─────────────────────────────────────────────────────────
 app.post('/api/verify/check', async (req, res) => {
   const { email, phone, emailCode, phoneCode } = req.body;
-  if (!email || !phone || !emailCode || !phoneCode)
-    return sendError(res, 'Tous les champs sont requis.', 400);
+  if (!email || !emailCode) return sendError(res, 'Email et code email requis.', 400);
   try {
     const er = await query('SELECT * FROM otps WHERE identifier = $1 ORDER BY created_at DESC LIMIT 1', ['email:' + email]);
-    const pr = await query('SELECT * FROM otps WHERE identifier = $1 ORDER BY created_at DESC LIMIT 1', ['phone:' + phone]);
-    const se = er.rows[0], sp = pr.rows[0];
+    const se = er.rows[0];
     if (!se || se.code !== emailCode || new Date() > new Date(se.expires_at))
       return sendError(res, 'Code email invalide ou expiré.', 400);
-    if (!sp || sp.code !== phoneCode || new Date() > new Date(sp.expires_at))
-      return sendError(res, 'Code SMS invalide ou expiré.', 400);
+
+    // Vérifier SMS seulement si phoneCode fourni
+    if (phone && phoneCode) {
+      const pr = await query('SELECT * FROM otps WHERE identifier = $1 ORDER BY created_at DESC LIMIT 1', ['phone:' + phone]);
+      const sp = pr.rows[0];
+      if (!sp || sp.code !== phoneCode || new Date() > new Date(sp.expires_at))
+        return sendError(res, 'Code SMS invalide ou expiré.', 400);
+    }
+
     res.json({ success: true });
   } catch (err) {
     console.error('[verify/check]', err);
@@ -278,16 +283,13 @@ app.post('/api/verify/check', async (req, res) => {
 // ─── REGISTER ─────────────────────────────────────────────────────────────
 app.post('/api/register', async (req, res) => {
   const { email, phone, emailCode, phoneCode, password, firstName, lastName, campus, department, gender, country, offeredSkills, requestedSkills, availability, languages, avatar } = req.body;
-  if (!email || !phone || !emailCode || !phoneCode || !password || !firstName || !lastName)
+  if (!email || !emailCode || !password || !firstName || !lastName)
     return sendError(res, 'Champs obligatoires manquants.', 400);
   try {
     const er = await query('SELECT * FROM otps WHERE identifier = $1 ORDER BY created_at DESC LIMIT 1', ['email:' + email]);
-    const pr = await query('SELECT * FROM otps WHERE identifier = $1 ORDER BY created_at DESC LIMIT 1', ['phone:' + phone]);
-    const se = er.rows[0], sp = pr.rows[0];
+    const se = er.rows[0];
     if (!se || se.code !== emailCode || new Date() > new Date(se.expires_at))
       return sendError(res, 'Code email invalide ou expiré.', 403);
-    if (!sp || sp.code !== phoneCode || new Date() > new Date(sp.expires_at))
-      return sendError(res, 'Code SMS invalide ou expiré.', 403);
 
     const existing = await query('SELECT uid FROM users WHERE email = $1', [email]);
     if (existing.rows.length > 0) return sendError(res, 'Cet email est déjà utilisé.', 409);
