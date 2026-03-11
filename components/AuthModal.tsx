@@ -237,7 +237,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
                 <form onSubmit={handleLoginVerify} className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
                   <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
                     <p className="text-xs text-blue-800 font-medium">
-                      Un code de connexion a été envoyé à <strong>{email}</strong>. Valable 5 minutes.
+                      Un code de connexion a été envoyé à <strong>{email}</strong>. Valable 10 minutes.
                     </p>
                   </div>
                   <div className="space-y-2">
@@ -290,7 +290,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
                 <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                   <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
                     <p className="text-xs text-blue-800 font-medium">
-                      Un code a été envoyé à <strong>{email}</strong>. Valable 5 minutes.
+                      Un code a été envoyé à <strong>{email}</strong>. Valable 10 minutes.
                     </p>
                   </div>
                   <div className="space-y-2">
