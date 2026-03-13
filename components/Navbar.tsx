@@ -139,7 +139,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, user, onNavigate, onLogin,
                   onClick={() => { onNavigate('profile'); setIsOpen(false); }}
                   className="w-full bg-blue-50 text-blue-600 py-3 rounded-xl font-bold"
                 >
-                  Mon Profil (⏰ {user.credits})
+                  ⏰ {user.credits} — Mon Profil
                 </button>
                 <button
                   onClick={() => { onLogout(); setIsOpen(false); }}

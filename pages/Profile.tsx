@@ -76,9 +76,9 @@ const Profile: React.FC<ProfileProps> = ({
   const connection = getConnectionStatus();
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-12">
-      <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 overflow-hidden border border-slate-100">
-        <div className="h-48 bg-slate-900 p-8 flex items-end justify-between relative group">
+    <div className="max-w-5xl mx-auto px-2 sm:px-6 py-4 sm:py-12">
+      <div className="bg-white rounded-[1.5rem] sm:rounded-[2.5rem] shadow-xl shadow-slate-200/50 overflow-hidden border border-slate-100">
+        <div className="h-32 sm:h-48 bg-slate-900 p-3 sm:p-8 flex items-end justify-between relative group">
           {isEditing ? (
             editedUser.coverPhoto ? (
               <img src={editedUser.coverPhoto} className="absolute inset-0 w-full h-full object-cover opacity-80" alt="Cover" />
@@ -97,21 +97,21 @@ const Profile: React.FC<ProfileProps> = ({
           {isEditing && (
             <div className="absolute top-4 right-4 z-20">
               <input type="file" accept="image/*" className="hidden" ref={coverInputRef} onChange={handleCoverPhotoChange} />
-              <button onClick={() => coverInputRef.current?.click()} className="bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-4 py-2 rounded-xl font-bold transition border border-white/30 text-sm">
+              <button onClick={() => coverInputRef.current?.click()} className="bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-2 sm:px-4 py-1 sm:py-2 rounded-xl font-bold transition border border-white/30 text-xs sm:text-sm">
                 📷 Changer la couverture
               </button>
             </div>
           )}
 
-          <div className="flex items-center gap-6 translate-y-12 relative z-10">
-            <div className="w-32 h-32 rounded-3xl bg-white p-2 shadow-2xl">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-6 translate-y-8 sm:translate-y-12 relative z-10">
+            <div className="w-20 h-20 sm:w-32 sm:h-32 rounded-2xl sm:rounded-3xl bg-white p-1 sm:p-2 shadow-2xl">
               <div className="w-full h-full rounded-2xl bg-slate-100 flex items-center justify-center overflow-hidden">
                 {user.avatar ? <img src={user.avatar} className="w-full h-full object-cover" /> : <span className="text-4xl">👤</span>}
               </div>
             </div>
             <div className="pb-4">
-              <div className="bg-white/95 backdrop-blur-md px-6 py-3 rounded-2xl shadow-xl">
-                <h2 className="font-heading text-2xl font-bold text-slate-900">
+              <div className="bg-white/95 backdrop-blur-md px-3 sm:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl">
+                <h2 className="font-heading text-base sm:text-2xl font-bold text-slate-900">
                   {user.firstName} {user.lastName}
                 </h2>
                 <p className="text-slate-500 font-bold text-[10px] uppercase tracking-widest">{user.department}</p>
@@ -122,7 +122,7 @@ const Profile: React.FC<ProfileProps> = ({
           {readOnly && currentUser && currentUser.uid !== user.uid && (
             <div className="relative z-10 flex gap-4">
               {!connection && (
-                <button onClick={() => onSendConnection?.(user.uid)} className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg hover:bg-blue-700 transition">
+                <button onClick={() => onSendConnection?.(user.uid)} className="bg-blue-600 text-white px-3 sm:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-bold shadow-lg hover:bg-blue-700 transition text-xs sm:text-sm">
                   Se connecter
                 </button>
               )}
@@ -146,7 +146,7 @@ const Profile: React.FC<ProfileProps> = ({
           )}
 
           {!readOnly && (
-            <button onClick={() => setIsEditing(true)} className="bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-6 py-3 rounded-2xl font-bold transition border border-white/30 relative z-10">
+            <button onClick={() => setIsEditing(true)} className="bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-3 sm:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-bold transition border border-white/30 relative z-10 text-xs sm:text-sm">
               Modifier
             </button>
           )}
@@ -154,7 +154,7 @@ const Profile: React.FC<ProfileProps> = ({
 
         {/* Tabs */}
         {!readOnly && (
-          <div className="mt-20 px-10 border-b border-slate-100 flex gap-8">
+          <div className="mt-14 sm:mt-20 px-3 sm:px-10 border-b border-slate-100 flex gap-4 sm:gap-8 overflow-x-auto">
             <button onClick={() => setActiveTab('info')} className={`pb-4 text-sm font-bold uppercase tracking-widest transition ${activeTab === 'info' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-400'}`}>Profil</button>
             <button onClick={() => setActiveTab('suivi')} className={`pb-4 text-sm font-bold uppercase tracking-widest transition ${activeTab === 'suivi' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-400'}`}>Suivi Crédits</button>
             <button onClick={() => setActiveTab('connections')} className={`pb-4 text-sm font-bold uppercase tracking-widest transition ${activeTab === 'connections' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-400'}`}>Réseau</button>
@@ -162,7 +162,7 @@ const Profile: React.FC<ProfileProps> = ({
           </div>
         )}
 
-        <div className="pt-10 px-10 pb-16">
+        <div className="pt-6 sm:pt-10 px-3 sm:px-10 pb-8 sm:pb-16">
           {activeTab === 'info' && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
               <div className="md:col-span-2 space-y-8">
