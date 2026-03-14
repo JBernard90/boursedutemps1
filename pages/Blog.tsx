@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { BlogPost, User, MediaItem, BlogComment } from '../types';
 import { Edit2, Trash2, MessageCircle, Heart, Share2, ExternalLink } from 'lucide-react';
-import { db, doc, updateDoc, deleteDoc, addDoc, collection } from '../api';
+import { serverTimestamp } from '../api';
 
 interface BlogProps {
   blogs: BlogPost[];
@@ -20,6 +20,7 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
   const [mediaData, setMediaData] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<'image' | 'video'>('image');
   const [externalLink, setExternalLink] = useState('');
+  const [videoLink, setVideoLink] = useState('');
   const [activeCommentPost, setActiveCommentPost] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -38,36 +39,58 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Supprimer définitivement cette publication ?")) return;
-    await deleteDoc(doc(db, 'blogs', id));
+    const token = localStorage.getItem('token');
+    await fetch('/api/blogs/' + id, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } });
+    onUpdate(blogs.filter(b => b.id !== id));
   };
 
   const handlePost = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    const media: MediaItem[] = mediaData ? [{ type: mediaType, url: mediaData }] : [];
-    
+    const token = localStorage.getItem('token');
+    // Construire la liste media : image base64 + lien vidéo YouTube/Drive
+    const media: MediaItem[] = [];
+    if (mediaData && mediaType === 'image') media.push({ type: 'image', url: mediaData });
+    if (videoLink.trim()) media.push({ type: 'video', url: videoLink.trim() });
+
     const postData = {
       title: newTitle,
       content: newContent,
       category: newCategory,
-      media: media,
-      externalLink: externalLink,
+      media,
+      externalLink,
+      authorId: user.uid,
+      authorName: user.firstName + ' ' + user.lastName,
+      authorAvatar: user.avatar,
+      likes: [],
+      dislikes: [],
+      comments: [],
     };
 
     if (editingPost) {
-      await updateDoc(doc(db, 'blogs', editingPost.id), postData);
-    } else {
-      await addDoc(collection(db, 'blogs'), {
-        ...postData,
-        authorId: user.uid,
-        authorName: `${user.firstName} ${user.lastName}`,
-        authorAvatar: user.avatar,
-        likes: [],
-        dislikes: [],
-        reposts: 0,
-        comments: [],
-        createdAt: new Date().toISOString(),
+      const res = await fetch('/api/blogs/' + editingPost.id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify(postData),
       });
+      if (res.ok) {
+        const updated = await res.json();
+        onUpdate(blogs.map(b => b.id === editingPost.id ? updated : b));
+      }
+    } else {
+      const res = await fetch('/api/blogs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify(postData),
+      });
+      if (res.ok) {
+        const created = await res.json();
+        onUpdate([created, ...blogs]);
+      } else {
+        const err = await res.json();
+        alert('Erreur : ' + (err.error || 'Impossible de publier'));
+        return;
+      }
     }
 
     setShowAdd(false);
@@ -81,49 +104,62 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
     setMediaData(null);
     setExternalLink('');
     setCommentText('');
+    setVideoLink('');
   };
 
   const handleLike = async (blog: BlogPost) => {
     if (!user) { onAuthClick(); return; }
+    const token = localStorage.getItem('token');
     const hasLiked = blog.likes.includes(user.uid);
     const newLikes = hasLiked ? blog.likes.filter(id => id !== user.uid) : [...blog.likes, user.uid];
-    await updateDoc(doc(db, 'blogs', blog.id), { likes: newLikes });
+    await fetch('/api/blogs/' + blog.id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ likes: newLikes }),
+    });
+    onUpdate(blogs.map(b => b.id === blog.id ? { ...b, likes: newLikes } : b));
   };
 
   const handleShare = async (blog: BlogPost) => {
+    const token = localStorage.getItem('token');
+    const newShares = (blog.shares || 0) + 1;
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: blog.title,
-          text: blog.content,
-          url: window.location.href,
-        });
-        await updateDoc(doc(db, 'blogs', blog.id), { shares: (blog.shares || 0) + 1 });
-      } catch (err) {
-        console.error("Erreur de partage:", err);
-      }
+        await navigator.share({ title: blog.title, text: blog.content, url: window.location.href });
+      } catch (err) { console.error("Erreur de partage:", err); }
     } else {
       navigator.clipboard.writeText(window.location.href);
       alert("Lien copié dans le presse-papier !");
-      await updateDoc(doc(db, 'blogs', blog.id), { shares: (blog.shares || 0) + 1 });
     }
+    await fetch('/api/blogs/' + blog.id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ shares: newShares }),
+    });
+    onUpdate(blogs.map(b => b.id === blog.id ? { ...b, shares: newShares } : b));
   };
 
   const handleComment = async (blog: BlogPost) => {
     if (!user) { onAuthClick(); return; }
     if (!commentText.trim()) return;
-    
+    const token = localStorage.getItem('token');
     const newComment = {
       id: Math.random().toString(36).substr(2, 9),
       authorId: user.uid,
-      authorName: `${user.firstName} ${user.lastName}`,
+      authorName: user.firstName + ' ' + user.lastName,
       authorAvatar: user.avatar,
       content: commentText,
       createdAt: new Date().toISOString()
     };
-    
-    await updateDoc(doc(db, 'blogs', blog.id), { comments: [...blog.comments, newComment] });
+    const newComments = [...blog.comments, newComment];
+    await fetch('/api/blogs/' + blog.id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ comments: newComments }),
+    });
+    onUpdate(blogs.map(b => b.id === blog.id ? { ...b, comments: newComments } : b));
     setCommentText('');
+    setVideoLink('');
     setActiveCommentPost(null);
   };
 
@@ -177,9 +213,20 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
                   onClick={() => fileInputRef.current?.click()}
                   className="w-full px-5 py-4 rounded-2xl bg-slate-100 border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-200 transition flex items-center justify-center gap-2"
                 >
-                  {mediaData ? "✅ Fichier prêt" : "📁 Importer Photo/Vidéo"}
+                  {mediaData ? "✅ Photo prête" : "📷 Importer une Photo"}
                 </button>
               </div>
+            </div>
+
+            <div>
+              <input
+                type="url"
+                placeholder="🎬 Lien vidéo YouTube ou Google Drive (optionnel)"
+                className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                value={videoLink}
+                onChange={e => setVideoLink(e.target.value)}
+              />
+              <p className="text-[10px] text-slate-400 mt-1 px-2">Exemple : https://www.youtube.com/watch?v=...</p>
             </div>
 
             {mediaData && (
@@ -234,8 +281,17 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
                 <div className="rounded-3xl overflow-hidden mb-6 bg-slate-50 border border-slate-100">
                   {blog.media[0].type === 'image' ? (
                     <img src={blog.media[0].url} className="w-full h-auto max-h-[500px] object-cover" alt="Media" />
+                  ) : blog.media[0].url.includes('youtube.com') || blog.media[0].url.includes('youtu.be') ? (
+                    <iframe
+                      src={blog.media[0].url.replace('watch?v=', 'embed/').replace('youtu.be/', 'www.youtube.com/embed/')}
+                      className="w-full aspect-video rounded-2xl"
+                      allowFullScreen
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    />
                   ) : (
-                    <video src={blog.media[0].url} controls className="w-full h-auto max-h-[500px]" />
+                    <a href={blog.media[0].url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-4 text-blue-600 font-bold hover:underline">
+                      🎬 Voir la vidéo
+                    </a>
                   )}
                 </div>
               )}
