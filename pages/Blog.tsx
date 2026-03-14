@@ -19,30 +19,22 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
   const [newCategory, setNewCategory] = useState('Expérience');
   const [mediaData, setMediaData] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<'image' | 'video'>('image');
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState('');
   const [externalLink, setExternalLink] = useState('');
   const [videoLink, setVideoLink] = useState('');
   const [activeCommentPost, setActiveCommentPost] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploading(true);
-    setUploadProgress('Envoi en cours...');
-    try {
-      const result = await uploadToCloudinary(file);
-      setMediaData(result.url);
-      setMediaType(result.type);
-      setUploadProgress('✅ Fichier prêt !');
-    } catch (err) {
-      alert('Erreur upload. Vérifiez votre connexion.');
-      setUploadProgress('');
-    } finally {
-      setUploading(false);
-    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setMediaData(reader.result as string);
+      setMediaType(file.type.startsWith('video') ? 'video' : 'image');
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleDelete = async (id: string) => {
@@ -221,7 +213,7 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
                   onClick={() => fileInputRef.current?.click()}
                   className="w-full px-5 py-4 rounded-2xl bg-slate-100 border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-200 transition flex items-center justify-center gap-2"
                 >
-                  {mediaData ? "✅ Photo prête" : "📷 Importer une Photo"}
+                  {mediaData ? mediaType === "video" ? "✅ Vidéo prête" : "✅ Photo prête" : "📁 Importer Photo/Vidéo"}
                 </button>
               </div>
             </div>

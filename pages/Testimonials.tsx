@@ -1,7 +1,7 @@
 
 import React, { useState, useRef } from 'react';
 import { Testimonial, User, MediaItem } from '../types';
-import { uploadToCloudinary } from '../cloudinary';
+import { db, doc, updateDoc, deleteDoc, addDoc, collection } from '../api';
 import { Edit2, Trash2, MessageCircle, Heart, Share2 } from 'lucide-react';
 
 interface TestimonialsProps {
@@ -19,104 +19,98 @@ const Testimonials: React.FC<TestimonialsProps> = ({ testimonials, user, onAuthC
   const [newRating, setNewRating] = useState(5);
   const [mediaData, setMediaData] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<'image' | 'video'>('image');
-  const [uploading, setUploading] = useState(false);
   const [activeCommentPost, setActiveCommentPost] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploading(true);
-    try {
-      const result = await uploadToCloudinary(file);
-      setMediaData(result.url);
-      setMediaType(result.type);
-    } catch { alert('Erreur upload. Vérifiez votre connexion.'); }
-    finally { setUploading(false); }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setMediaData(reader.result as string);
+      setMediaType(file.type.startsWith('video') ? 'video' : 'image');
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Supprimer définitivement ce témoignage ?")) return;
-    const token = localStorage.getItem('token');
-    const res = await fetch('/api/testimonials/' + id, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } });
-    if (res.ok) onUpdate(testimonials.filter(x => x.id !== id));
+    await deleteDoc(doc(db, 'testimonials', id));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return onAuthClick();
-    const token = localStorage.getItem('token');
+    
     const media: MediaItem[] = mediaData ? [{ type: mediaType, url: mediaData }] : [];
+    
     const postData = {
-      title: newTitle, content: newContent, rating: newRating, media,
-      authorId: user.uid, authorName: user.firstName + ' ' + user.lastName,
-      authorAvatar: user.avatar, votes: [], likes: [], shares: 0, comments: [],
+      title: newTitle,
+      content: newContent,
+      rating: newRating,
+      media: media,
     };
+
     if (editingPost) {
-      const res = await fetch('/api/testimonials/' + editingPost.id, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-        body: JSON.stringify(postData),
-      });
-      if (res.ok) { const u = await res.json(); onUpdate(testimonials.map(x => x.id === editingPost.id ? u : x)); }
+      await updateDoc(doc(db, 'testimonials', editingPost.id), postData);
     } else {
-      const res = await fetch('/api/testimonials', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-        body: JSON.stringify(postData),
+      await addDoc(collection(db, 'testimonials'), {
+        ...postData,
+        authorId: user.uid,
+        authorName: `${user.firstName} ${user.lastName}`,
+        authorAvatar: user.avatar,
+        votes: [],
+        likes: [],
+        shares: 0,
+        comments: [],
+        createdAt: new Date().toISOString(),
       });
-      if (res.ok) { const c = await res.json(); onUpdate([c, ...testimonials]); }
-      else { const err = await res.json(); alert('Erreur : ' + (err.error || 'Impossible de publier')); return; }
     }
-    setShowAdd(false); setEditingPost(null);
-    setNewTitle(''); setNewContent(''); setMediaData(null); setNewRating(5);
+
+    setShowAdd(false);
+    setEditingPost(null);
+    setNewTitle('');
+    setNewContent('');
+    setMediaData(null);
+    setNewRating(5);
   };
 
   const handleLike = async (t: Testimonial) => {
     if (!user) { onAuthClick(); return; }
-    const token = localStorage.getItem('token');
     const likes = t.likes || [];
     const hasLiked = likes.includes(user.uid);
     const newLikes = hasLiked ? likes.filter(id => id !== user.uid) : [...likes, user.uid];
-    await fetch('/api/testimonials/' + t.id, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({ likes: newLikes }),
-    });
-    onUpdate(testimonials.map(x => x.id === t.id ? { ...x, likes: newLikes } : x));
+    await updateDoc(doc(db, 'testimonials', t.id), { likes: newLikes });
   };
 
   const handleShare = async (t: Testimonial) => {
-    const token = localStorage.getItem('token');
-    const newShares = (t.shares || 0) + 1;
     if (navigator.share) {
-      try { await navigator.share({ title: t.title, text: t.content, url: window.location.href }); }
-      catch (err) { console.error("Erreur de partage:", err); }
+      try {
+        await navigator.share({ title: t.title, text: t.content, url: window.location.href });
+        await updateDoc(doc(db, 'testimonials', t.id), { shares: (t.shares || 0) + 1 });
+      } catch (err) { console.error("Erreur de partage:", err); }
     } else {
       navigator.clipboard.writeText(window.location.href);
       alert("Lien copié dans le presse-papier !");
+      await updateDoc(doc(db, 'testimonials', t.id), { shares: (t.shares || 0) + 1 });
     }
-    await fetch('/api/testimonials/' + t.id, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({ shares: newShares }),
-    });
-    onUpdate(testimonials.map(x => x.id === t.id ? { ...x, shares: newShares } : x));
   };
 
   const handleComment = async (t: Testimonial) => {
     if (!user) { onAuthClick(); return; }
     if (!commentText.trim()) return;
-    const token = localStorage.getItem('token');
     const newComment = {
       id: Math.random().toString(36).substr(2, 9),
-      authorId: user.uid, authorName: user.firstName + ' ' + user.lastName,
-      authorAvatar: user.avatar, content: commentText, createdAt: new Date().toISOString()
+      authorId: user.uid,
+      authorName: `${user.firstName} ${user.lastName}`,
+      authorAvatar: user.avatar,
+      content: commentText,
+      createdAt: new Date().toISOString()
     };
-    const newComments = [...(t.comments || []), newComment];
-    await fetch('/api/testimonials/' + t.id, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({ comments: newComments }),
-    });
-    onUpdate(testimonials.map(x => x.id === t.id ? { ...x, comments: newComments } : x));
-    setCommentText(''); setActiveCommentPost(null);
+    await updateDoc(doc(db, 'testimonials', t.id), { comments: [...(t.comments || []), newComment] });
+    setCommentText('');
+    setActiveCommentPost(null);
   };
 
   return (
@@ -158,7 +152,7 @@ const Testimonials: React.FC<TestimonialsProps> = ({ testimonials, user, onAuthC
               <div className="relative">
                 <input type="file" accept="image/*,video/*" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
                 <button type="button" onClick={() => fileInputRef.current?.click()} className="w-full px-5 py-4 rounded-2xl bg-slate-100 border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-200 transition flex items-center justify-center gap-2 h-full">
-                  {uploading ? "⏳ Envoi en cours..." : mediaData ? "✅ Fichier prêt" : "📁 Importer Photo/Vidéo"}
+                  {mediaData ? mediaType === "video" ? "✅ Vidéo prête" : "✅ Photo prête" : "📁 Importer Photo/Vidéo"}
                 </button>
               </div>
             </div>
