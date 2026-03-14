@@ -22,15 +22,34 @@ const Forum: React.FC<ForumProps> = ({ user, topics }) => {
   const [commentText, setCommentText] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+
+  const uploadToCloudinary = async (file: File): Promise<string> => {
+    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', uploadPreset);
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await res.json();
+    if (!data.secure_url) throw new Error('Erreur upload Cloudinary');
+    return data.secure_url;
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setMediaData(reader.result as string);
+    setMediaData('loading');
+    try {
+      const url = await uploadToCloudinary(file);
+      setMediaData(url);
       setMediaType(file.type.startsWith('video') ? 'video' : 'image');
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      alert('Erreur lors de l'upload du fichier. Réessayez.');
+      setMediaData(null);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -144,7 +163,7 @@ const Forum: React.FC<ForumProps> = ({ user, topics }) => {
               <div className="relative">
                 <input type="file" accept="image/*,video/*" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
                 <button type="button" onClick={() => fileInputRef.current?.click()} className="w-full px-5 py-4 rounded-2xl bg-slate-100 border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-200 transition flex items-center justify-center gap-2 h-full">
-                  {mediaData ? mediaType === "video" ? "✅ Vidéo prête" : "✅ Photo prête" : "📁 Importer Photo/Vidéo"}
+                  {mediaData === "loading" ? "⏳ Chargement..." : mediaData ? mediaType === "video" ? "✅ Vidéo prête" : "✅ Photo prête" : "📁 Importer Photo/Vidéo"}
                 </button>
               </div>
             </div>

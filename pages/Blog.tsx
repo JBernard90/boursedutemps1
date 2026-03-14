@@ -213,7 +213,7 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
                   onClick={() => fileInputRef.current?.click()}
                   className="w-full px-5 py-4 rounded-2xl bg-slate-100 border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-200 transition flex items-center justify-center gap-2"
                 >
-                  {mediaData ? mediaType === "video" ? "✅ Vidéo prête" : "✅ Photo prête" : "📁 Importer Photo/Vidéo"}
+                  {mediaData === "loading" ? "⏳ Chargement..." : mediaData ? mediaType === "video" ? "✅ Vidéo prête" : "✅ Photo prête" : "📁 Importer Photo/Vidéo"}
                 </button>
               </div>
             </div>
