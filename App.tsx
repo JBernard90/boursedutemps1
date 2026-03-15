@@ -585,13 +585,16 @@ const App: React.FC = () => {
   const handleSendConnection = async (targetUid: string) => {
     if (!user) { setShowAuthModal('login'); return; }
     try {
-      await addDoc(collection(db, 'connections'), {
+      const res = await addDoc(collection(db, 'connections'), {
         senderId: user.uid,
         receiverId: targetUid,
         status: 'sent',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       });
+      // Mise à jour immédiate du state
+      const newConn = { id: res.id, senderId: user.uid, receiverId: targetUid, status: 'sent', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+      setConnections(prev => [...prev, newConn]);
       const target = users.find(u => u.uid === targetUid);
       if (target) triggerNotification(target, "demande de connexion", user.firstName);
     } catch (e) {
@@ -605,6 +608,12 @@ const App: React.FC = () => {
         status: newStatus,
         updatedAt: new Date().toISOString()
       });
+      // Mise à jour immédiate du state
+      if (newStatus === 'cancelled' || newStatus === 'refused') {
+        setConnections(prev => prev.filter(c => c.id !== connectionId));
+      } else {
+        setConnections(prev => prev.map(c => c.id === connectionId ? { ...c, status: newStatus } : c));
+      }
     } catch (e) {
       console.error(e);
     }

@@ -267,7 +267,7 @@ const Profile: React.FC<ProfileProps> = ({
                         </div>
                       )}
                     </section>
-                    <section className="pt-12 border-t border-slate-100">
+                    {!readOnly && <section className="pt-12 border-t border-slate-100">
                       <h3 className="font-heading text-lg font-bold text-red-600 mb-4">Zone de danger</h3>
                       <div className="bg-red-50 p-6 rounded-2xl border border-red-100 flex flex-col md:flex-row gap-4 justify-between items-center">
                         <div>
@@ -289,7 +289,7 @@ const Profile: React.FC<ProfileProps> = ({
                           </button>
                         </div>
                       </div>
-                    </section>
+                    </section>}
                   </>
                 )}
               </div>
