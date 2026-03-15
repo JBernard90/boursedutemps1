@@ -390,14 +390,15 @@ const INITIAL_TESTIMONIALS: Testimonial[] = [];
 const App: React.FC = () => {
   const [currentPage, setCurrentPageState] = useState<Page>('home');
 
-  const setCurrentPage = (page: Page) => {
-    window.history.pushState({ page }, '', '/' + (page === 'home' ? '' : page));
+  const setCurrentPage = (page: Page, extra?: any) => {
+    window.history.pushState({ page, ...extra }, '', '/' + (page === 'home' ? '' : page));
     setCurrentPageState(page);
   };
 
   useEffect(() => {
     const handlePopState = (e: PopStateEvent) => {
       const page = (e.state?.page as Page) || 'home';
+      if (e.state?.viewingUserId) setViewingUserId(e.state.viewingUserId);
       setCurrentPageState(page);
     };
     window.history.replaceState({ page: 'home' }, '', '/');
@@ -673,14 +674,14 @@ const App: React.FC = () => {
       case 'about': return <About />;
       case 'services': return <ServicesPage user={user} services={services} onUpdate={setServices} onBuy={(s, amt) => handleTransaction(s, amt, 'service')} onUpdateStatus={handleUpdateExchangeStatus} />;
       case 'requests': return <RequestsPage user={user} requests={requests} onUpdate={setRequests} onFulfill={(r, amt) => handleTransaction(r, amt, 'request')} onUpdateStatus={handleUpdateExchangeStatus} />;
-      case 'members': return <Members users={users} onViewProfile={(uid) => { setViewingUserId(uid); setCurrentPage('profile-view'); }} />;
+      case 'members': return <Members users={users} onViewProfile={(uid) => { setViewingUserId(uid); setCurrentPage('profile-view', { viewingUserId: uid }); }} />;
       case 'forum': return <Forum user={user} topics={forumTopics} onAdd={(t) => setForumTopics([t, ...forumTopics])} />;
       case 'blog': return <Blog blogs={blogs} onUpdate={(b) => { setBlogs(b); localStorage.setItem('stb_blogs', JSON.stringify(b)); }} user={user} onAuthClick={() => setShowAuthModal('login')} />;
       case 'testimonials': return <Testimonials testimonials={testimonials} onUpdate={(t) => { setTestimonials(t); localStorage.setItem('stb_testimonials', JSON.stringify(t)); }} user={user} onAuthClick={() => setShowAuthModal('login')} />;
       case 'profile': return user ? <Profile user={user} allUsers={users} transactions={transactions} connections={connections} messages={messages} onUpdate={handleUpdateUser} onSendConnection={handleSendConnection} onUpdateConnection={handleUpdateConnection} onUpdateMessages={setMessages} onDeactivate={handleDeactivateAccount} onDelete={handleDeleteAccount} /> : <Home navigate={setCurrentPage} blogs={blogs} testimonials={testimonials} stats={stats} />;
       case 'profile-view': 
         const target = users.find(u => u.uid === viewingUserId);
-        return target ? <Profile user={target} currentUser={user} allUsers={users} transactions={transactions} connections={connections} messages={messages} onUpdate={() => {}} onSendConnection={handleSendConnection} onUpdateConnection={handleUpdateConnection} onUpdateMessages={setMessages} readOnly /> : <Members users={users} onViewProfile={() => {}} />;
+        return target ? <Profile user={target} currentUser={user} allUsers={users} transactions={transactions} connections={connections} messages={messages} onUpdate={() => {}} onSendConnection={(uid) => { if (!user) { setShowAuthModal('login'); return; } handleSendConnection(uid); }} onUpdateConnection={handleUpdateConnection} onUpdateMessages={setMessages} readOnly /> : <Members users={users} onViewProfile={(uid) => { setViewingUserId(uid); setCurrentPage('profile-view'); }} />;
       case 'moderation': return <Moderation users={users} onUpdateUsers={setUsers} services={services} onUpdateServices={setServices} requests={requests} onUpdateRequests={setRequests} currentUser={user!} />;
       default: return <Home navigate={setCurrentPage} blogs={blogs} testimonials={testimonials} stats={stats} />;
     }
