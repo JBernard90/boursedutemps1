@@ -51,7 +51,6 @@ export const getDoc = async (path: string) => {
 
 export const getDocs = async (q: any) => {
   let url = `/${q.col || q}`;
-  // Simple query string builder could be added here if needed
   const data = await request(url);
   return {
     docs: data.map((d: any) => ({ id: d.id || d.uid, data: () => d }))
@@ -86,11 +85,38 @@ export const deleteDoc = async (path: string) => {
   });
 };
 
+// --- Polling intervals optimises pour reduire l'egress Supabase ---
+// Collections qui changent souvent : 60 secondes
+// Collections statiques : 5 minutes
+const POLL_INTERVALS: Record<string, number> = {
+  blogs: 60000,        // 1 minute
+  forum_topics: 60000, // 1 minute  
+  forumTopics: 60000,  // 1 minute
+  testimonials: 120000,// 2 minutes
+  services: 60000,     // 1 minute
+  requests: 60000,     // 1 minute
+  users: 120000,       // 2 minutes
+  connections: 30000,  // 30 secondes (important pour les notifs)
+  transactions: 120000,// 2 minutes
+};
+
+const DEFAULT_INTERVAL = 60000; // 1 minute par defaut
+
+// Detecter si l'utilisateur est actif sur la page
+let isPageVisible = !document.hidden;
+document.addEventListener('visibilitychange', () => {
+  isPageVisible = !document.hidden;
+});
+
 export const onSnapshot = (q: any, callback: (snapshot: any) => void, errorCallback?: (error: any) => void) => {
   let isCancelled = false;
-  
+  const colName = q.col || q;
+  const interval = POLL_INTERVALS[colName] || DEFAULT_INTERVAL;
+
   const fetchSnapshot = async () => {
     if (isCancelled) return;
+    // Ne pas fetcher si la page est cachee (onglet inactif)
+    if (!isPageVisible) return;
     try {
       const snapshot = await getDocs(q);
       if (!isCancelled) callback(snapshot);
@@ -99,12 +125,15 @@ export const onSnapshot = (q: any, callback: (snapshot: any) => void, errorCallb
     }
   };
 
+  // Fetch initial
   fetchSnapshot();
-  const interval = setInterval(fetchSnapshot, 5000); // Poll every 5 seconds
+  
+  // Puis a l'intervalle defini
+  const intervalId = setInterval(fetchSnapshot, interval);
 
   return () => {
     isCancelled = true;
-    clearInterval(interval);
+    clearInterval(intervalId);
   };
 };
 
