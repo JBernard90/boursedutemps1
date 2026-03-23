@@ -1073,6 +1073,59 @@ app.get('/api/admin/stats', authenticateToken, async (req, res) => {
   }
 });
 
+
+// --- DAILY.CO LIVE --------------------------------------------------------
+app.post('/api/live/create', authenticateToken, async (req, res) => {
+  const { title } = req.body;
+  if (!process.env.DAILY_API_KEY) return sendError(res, 'Daily API key manquante', 500);
+  try {
+    // Create a Daily.co room
+    const roomName = 'live-' + Date.now();
+    const response = await fetch('https://api.daily.co/v1/rooms', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + process.env.DAILY_API_KEY
+      },
+      body: JSON.stringify({
+        name: roomName,
+        properties: {
+          exp: Math.floor(Date.now() / 1000) + 3600, // Expire in 1 hour
+          max_participants: 50,
+          enable_chat: true,
+          enable_screenshare: true,
+          start_video_off: false,
+          start_audio_off: false,
+        }
+      })
+    });
+    const room = await response.json();
+    if (!room.url) return sendError(res, 'Erreur création salle Daily', 500);
+
+    res.json({
+      url: room.url,
+      name: title || 'Live Bourse du Temps',
+      roomName: room.name
+    });
+  } catch(e) {
+    console.error('[live/create]', e);
+    sendError(res, e.message);
+  }
+});
+
+// Get active live rooms
+app.get('/api/live/rooms', async (req, res) => {
+  if (!process.env.DAILY_API_KEY) return res.json([]);
+  try {
+    const response = await fetch('https://api.daily.co/v1/rooms?limit=10', {
+      headers: { 'Authorization': 'Bearer ' + process.env.DAILY_API_KEY }
+    });
+    const data = await response.json();
+    const rooms = (data.data || []).filter(r => r.config && r.config.exp > Date.now() / 1000);
+    res.json(rooms.map(r => ({ name: r.name, url: 'https://' + r.name.split('-')[0] + '.daily.co/' + r.name })));
+  } catch(e) { res.json([]); }
+});
+
 // --- 404 + ERROR ----------------------------------------------------------
 app.use('/api/*', function(req, res) {
   res.status(404).json({ error: 'Route ' + req.originalUrl + ' introuvable', success: false });

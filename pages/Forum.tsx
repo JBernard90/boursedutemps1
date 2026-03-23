@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { User, ForumTopic, MediaItem } from '../types';
 import { db, doc, updateDoc, deleteDoc, addDoc, collection } from '../api';
-import { Edit2, Trash2, MessageCircle, Heart, Share2, Bold, Italic, Underline, List, ListOrdered, Link, Quote, Type, Image, Film, FileText } from 'lucide-react';
+import { Edit2, Trash2, MessageCircle, Heart, Share2, Bold, Italic, Underline, List, ListOrdered, Link, Quote, Type, Image, Film, FileText, Video, Users } from 'lucide-react';
 
 interface ForumProps {
   user: User | null;
@@ -193,6 +193,43 @@ const Forum: React.FC<ForumProps> = ({ user, topics }) => {
   const [externalLink, setExternalLink] = useState('');
   const [activeCommentPost, setActiveCommentPost] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
+
+  // --- LIVE VIDEO ---
+  const [liveRoom, setLiveRoom] = useState<{ url: string; name: string } | null>(null);
+  const [liveLoading, setLiveLoading] = useState(false);
+  const [showLiveModal, setShowLiveModal] = useState(false);
+  const [liveTitle, setLiveTitle] = useState('');
+
+  const startLive = async () => {
+    if (!user) return alert('Connectez-vous pour démarrer un live');
+    if (!liveTitle.trim()) return alert('Donnez un titre à votre live');
+    setLiveLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/live/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ title: liveTitle })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setLiveRoom(data);
+        setShowLiveModal(false);
+        setLiveTitle('');
+      } else {
+        alert('Erreur lors de la création du live');
+      }
+    } catch(e) { alert('Erreur réseau'); }
+    finally { setLiveLoading(false); }
+  };
+
+  const joinLive = (url: string, name: string) => {
+    setLiveRoom({ url, name });
+  };
+
+  const endLive = () => {
+    setLiveRoom(null);
+  };
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const [uploadingAttach, setUploadingAttach] = useState(false);
   const attachInputRef = useRef<HTMLInputElement>(null);
