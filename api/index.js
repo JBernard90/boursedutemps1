@@ -1075,32 +1075,57 @@ app.get('/api/admin/stats', authenticateToken, async (req, res) => {
 
 
 // --- DAILY.CO LIVE --------------------------------------------------------
+const https = require('https');
+
+const dailyRequest = (method, path, body, apiKey) => {
+  return new Promise((resolve, reject) => {
+    const data = body ? JSON.stringify(body) : null;
+    const options = {
+      hostname: 'api.daily.co',
+      path: '/v1' + path,
+      method: method,
+      headers: {
+        'Authorization': 'Bearer ' + apiKey,
+        'Content-Type': 'application/json',
+        ...(data ? { 'Content-Length': Buffer.byteLength(data) } : {})
+      }
+    };
+    const req = https.request(options, (res) => {
+      let responseData = '';
+      res.on('data', (chunk) => { responseData += chunk; });
+      res.on('end', () => {
+        try { resolve(JSON.parse(responseData)); }
+        catch(e) { resolve(responseData); }
+      });
+    });
+    req.on('error', reject);
+    if (data) req.write(data);
+    req.end();
+  });
+};
+
 app.post('/api/live/create', authenticateToken, async (req, res) => {
   const { title } = req.body;
-  if (!process.env.DAILY_API_KEY) return sendError(res, 'Daily API key manquante', 500);
+  const apiKey = process.env.DAILY_API_KEY;
+  if (!apiKey) return sendError(res, 'Daily API key manquante', 500);
   try {
-    // Create a Daily.co room
-    const roomName = 'live-' + Date.now();
-    const response = await fetch('https://api.daily.co/v1/rooms', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + process.env.DAILY_API_KEY
-      },
-      body: JSON.stringify({
-        name: roomName,
-        properties: {
-          exp: Math.floor(Date.now() / 1000) + 3600, // Expire in 1 hour
-          max_participants: 50,
-          enable_chat: true,
-          enable_screenshare: true,
-          start_video_off: false,
-          start_audio_off: false,
-        }
-      })
-    });
-    const room = await response.json();
-    if (!room.url) return sendError(res, 'Erreur création salle Daily', 500);
+    const roomName = 'bdt-live-' + Date.now();
+    const room = await dailyRequest('POST', '/rooms', {
+      name: roomName,
+      properties: {
+        exp: Math.floor(Date.now() / 1000) + 7200,
+        max_participants: 50,
+        enable_chat: true,
+        enable_screenshare: true,
+        start_video_off: false,
+        start_audio_off: false,
+      }
+    }, apiKey);
+
+    if (!room.url) {
+      console.error('[live/create] Daily response:', JSON.stringify(room));
+      return sendError(res, 'Erreur création salle: ' + JSON.stringify(room), 500);
+    }
 
     res.json({
       url: room.url,
@@ -1113,16 +1138,13 @@ app.post('/api/live/create', authenticateToken, async (req, res) => {
   }
 });
 
-// Get active live rooms
 app.get('/api/live/rooms', async (req, res) => {
-  if (!process.env.DAILY_API_KEY) return res.json([]);
+  const apiKey = process.env.DAILY_API_KEY;
+  if (!apiKey) return res.json([]);
   try {
-    const response = await fetch('https://api.daily.co/v1/rooms?limit=10', {
-      headers: { 'Authorization': 'Bearer ' + process.env.DAILY_API_KEY }
-    });
-    const data = await response.json();
+    const data = await dailyRequest('GET', '/rooms?limit=10', null, apiKey);
     const rooms = (data.data || []).filter(r => r.config && r.config.exp > Date.now() / 1000);
-    res.json(rooms.map(r => ({ name: r.name, url: 'https://' + r.name.split('-')[0] + '.daily.co/' + r.name })));
+    res.json(rooms.map(r => ({ name: r.name, url: r.url })));
   } catch(e) { res.json([]); }
 });
 
