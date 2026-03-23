@@ -193,6 +193,38 @@ const Forum: React.FC<ForumProps> = ({ user, topics }) => {
   const [externalLink, setExternalLink] = useState('');
   const [activeCommentPost, setActiveCommentPost] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const [uploadingAttach, setUploadingAttach] = useState(false);
+  const attachInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadMediaAttach = async (file: File): Promise<string> => {
+    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+    if (!cloudName || !uploadPreset) throw new Error('Cloudinary non configuré');
+    const isVideo = file.type.startsWith('video');
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', uploadPreset);
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/${isVideo ? 'video' : 'image'}/upload`, { method: 'POST', body: formData });
+    const data = await res.json();
+    if (!data.secure_url) throw new Error('Erreur upload');
+    return data.secure_url;
+  };
+
+  const handleAttachFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploadingAttach(true);
+    try {
+      const uploaded: MediaItem[] = [];
+      for (const file of files) {
+        const url = await uploadMediaAttach(file);
+        uploaded.push({ type: file.type.startsWith('video') ? 'video' : 'image', url });
+      }
+      setMediaItems(prev => [...prev, ...uploaded]);
+    } catch { alert("Erreur upload. Réessayez."); }
+    finally { setUploadingAttach(false); e.target.value = ''; }
+  };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Supprimer définitivement ce sujet ?")) return;
@@ -204,10 +236,10 @@ const Forum: React.FC<ForumProps> = ({ user, topics }) => {
     if (!user) return alert('Connectez-vous pour participer');
     try {
       if (editingPost) {
-        await updateDoc(doc(db, 'forumTopics', editingPost.id), { title: newTitle, content: newMsg, externalLink });
+        await updateDoc(doc(db, 'forumTopics', editingPost.id), { title: newTitle, content: newMsg, externalLink, media: mediaItems });
       } else {
         await addDoc(collection(db, 'forumTopics'), {
-          title: newTitle, content: newMsg, externalLink,
+          title: newTitle, content: newMsg, externalLink, media: mediaItems,
           authorId: user.uid, authorName: `${user.firstName} ${user.lastName}`,
           authorAvatar: user.avatar || null,
           likes: [], shares: 0, comments: [],
@@ -215,7 +247,7 @@ const Forum: React.FC<ForumProps> = ({ user, topics }) => {
         });
       }
       setShowAdd(false); setEditingPost(null);
-      setNewTitle(''); setNewMsg(''); setExternalLink('');
+      setNewTitle(''); setNewMsg(''); setExternalLink(''); setMediaItems([]);
     } catch (err: any) { alert('Erreur : ' + err.message); }
   };
 
@@ -268,6 +300,35 @@ const Forum: React.FC<ForumProps> = ({ user, topics }) => {
               <RichTextEditor value={newMsg} onChange={setNewMsg} placeholder="Votre message..." />
             </div>
             <input type="url" placeholder="🔗 Lien externe (optionnel)" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none" value={externalLink} onChange={e => setExternalLink(e.target.value)} />
+
+            {/* Bouton Importer Photos/Vidéos */}
+            <div>
+              <input ref={attachInputRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={handleAttachFiles} />
+              <button
+                type="button"
+                onClick={() => attachInputRef.current?.click()}
+                className="w-full px-5 py-4 rounded-2xl bg-slate-100 border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-200 transition flex items-center justify-center gap-2"
+              >
+                {uploadingAttach ? "⏳ Chargement..." : mediaItems.length > 0 ? `✅ ${mediaItems.length} photo(s)/vidéo(s) jointe(s)` : "📁 Importer Photos/Vidéos"}
+              </button>
+            </div>
+
+            {/* Aperçu des médias joints */}
+            {mediaItems.length > 0 && (
+              <div className="rounded-2xl border border-slate-100 bg-slate-50 p-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {mediaItems.map((m, i) => (
+                  <div key={i} className="relative">
+                    {m.type === 'image' ? (
+                      <img src={m.url} className="w-full h-24 object-cover rounded-xl" alt="Preview" />
+                    ) : (
+                      <video src={m.url} className="w-full h-24 object-cover rounded-xl" />
+                    )}
+                    <button type="button" onClick={() => setMediaItems(prev => prev.filter((_, j) => j !== i))} className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">×</button>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <div className="flex gap-4 pt-4">
               <button type="submit" className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition">{editingPost ? 'Mettre à jour' : 'Publier'}</button>
               <button type="button" onClick={() => { setShowAdd(false); setEditingPost(null); }} className="bg-slate-100 text-slate-500 px-8 py-3 rounded-xl font-bold">Annuler</button>
@@ -292,6 +353,15 @@ const Forum: React.FC<ForumProps> = ({ user, topics }) => {
               <div className="flex-grow">
                 <h3 className="font-heading text-xl font-bold text-slate-800 mb-2 pr-16">{topic.title}</h3>
                 <RichContent html={topic.content || topic.message || ''} />
+                {(topic.media || []).length > 0 && (
+                  <div className={`mb-4 grid gap-2 ${(topic.media||[]).length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                    {(topic.media||[]).map((m, i) => (
+                      <div key={i} className="rounded-2xl overflow-hidden bg-slate-50 border border-slate-100">
+                        {m.type === 'image' ? <img src={m.url} className="w-full h-auto max-h-[300px] object-cover" alt="Media" /> : <video src={m.url} controls className="w-full max-h-[300px]" />}
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {topic.externalLink && (
                   <a href={topic.externalLink} target="_blank" rel="noopener noreferrer" className="inline-block mb-4 text-blue-600 hover:underline text-sm font-medium">🔗 Lien externe</a>
                 )}

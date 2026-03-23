@@ -322,6 +322,38 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
   const [externalLink, setExternalLink] = useState('');
   const [activeCommentPost, setActiveCommentPost] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const [uploadingAttach, setUploadingAttach] = useState(false);
+  const attachInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadMediaAttach = async (file: File): Promise<string> => {
+    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+    if (!cloudName || !uploadPreset) throw new Error('Cloudinary non configuré');
+    const isVideo = file.type.startsWith('video');
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', uploadPreset);
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/${isVideo ? 'video' : 'image'}/upload`, { method: 'POST', body: formData });
+    const data = await res.json();
+    if (!data.secure_url) throw new Error('Erreur upload');
+    return data.secure_url;
+  };
+
+  const handleAttachFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploadingAttach(true);
+    try {
+      const uploaded: MediaItem[] = [];
+      for (const file of files) {
+        const url = await uploadMediaAttach(file);
+        uploaded.push({ type: file.type.startsWith('video') ? 'video' : 'image', url });
+      }
+      setMediaItems(prev => [...prev, ...uploaded]);
+    } catch { alert("Erreur upload. Réessayez."); }
+    finally { setUploadingAttach(false); e.target.value = ''; }
+  };
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDelete = async (id: string) => {
@@ -498,6 +530,35 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
               value={externalLink}
               onChange={e => setExternalLink(e.target.value)}
             />
+
+
+            {/* Bouton Importer Photos/Vidéos */}
+            <div>
+              <input ref={attachInputRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={handleAttachFiles} />
+              <button
+                type="button"
+                onClick={() => attachInputRef.current?.click()}
+                className="w-full px-5 py-4 rounded-2xl bg-slate-100 border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-200 transition flex items-center justify-center gap-2"
+              >
+                {uploadingAttach ? "⏳ Chargement..." : mediaItems.length > 0 ? `✅ ${mediaItems.length} photo(s)/vidéo(s) jointe(s)` : "📁 Importer Photos/Vidéos"}
+              </button>
+            </div>
+
+            {/* Aperçu des médias joints */}
+            {mediaItems.length > 0 && (
+              <div className="rounded-2xl border border-slate-100 bg-slate-50 p-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {mediaItems.map((m, i) => (
+                  <div key={i} className="relative">
+                    {m.type === 'image' ? (
+                      <img src={m.url} className="w-full h-24 object-cover rounded-xl" alt="Preview" />
+                    ) : (
+                      <video src={m.url} className="w-full h-24 object-cover rounded-xl" />
+                    )}
+                    <button type="button" onClick={() => setMediaItems(prev => prev.filter((_, j) => j !== i))} className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">×</button>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="flex gap-4 pt-2">
               <button type="submit" className="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 transition">
