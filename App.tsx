@@ -546,10 +546,14 @@ const App: React.FC = () => {
     };
   }, []);
 
-  const triggerNotification = async (targetUser: User, type: string, fromName: string) => {
-    // Real API integration would go here (SendGrid / Twilio)
-    console.log(`Real Notification sent to ${targetUser.email} and ${targetUser.whatsapp}`);
-    // In a real app, we would call a cloud function here
+  const sendNotification = async (endpoint: string, data: any) => {
+    try {
+      await fetch('/api/notify/' + endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+    } catch(e) { console.error('Notification error:', e); }
   };
 
   const handleAuth = async (loggedInUser: User) => {
@@ -584,7 +588,13 @@ const App: React.FC = () => {
         createdAt: new Date().toISOString()
       });
 
-      if (provider) triggerNotification(provider, type === 'service' ? "proposition de service" : "demande de service", user.firstName);
+      if (provider) sendNotification('exchange', {
+        targetEmail: provider.email,
+        targetName: provider.firstName + ' ' + provider.lastName,
+        fromName: user.firstName + ' ' + user.lastName,
+        title: item.title,
+        type
+      });
       alert(`Succès ! ${negotiatedAmount} crédits ont été transférés.`);
     } catch (e) {
       console.error(e);
@@ -606,7 +616,11 @@ const App: React.FC = () => {
       const newConn = { id: res.id, senderId: user.uid, receiverId: targetUid, status: 'sent', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
       setConnections(prev => [...prev, newConn]);
       const target = users.find(u => u.uid === targetUid);
-      if (target) triggerNotification(target, "demande de connexion", user.firstName);
+      if (target) sendNotification('connection', {
+        receiverEmail: target.email,
+        receiverName: target.firstName + ' ' + target.lastName,
+        senderName: user.firstName + ' ' + user.lastName
+      });
     } catch (e) {
       console.error(e);
     }
@@ -618,7 +632,17 @@ const App: React.FC = () => {
         status: newStatus,
         updatedAt: new Date().toISOString()
       });
-      // Mise à jour immédiate du state
+      if (newStatus === 'accepted' && user) {
+        const conn = connections.find(c => c.id === connectionId);
+        if (conn) {
+          const sender = users.find(u => u.uid === conn.senderId);
+          if (sender) sendNotification('connection-accepted', {
+            receiverEmail: sender.email,
+            receiverName: sender.firstName + ' ' + sender.lastName,
+            accepterName: user.firstName + ' ' + user.lastName
+          });
+        }
+      }
       if (newStatus === 'cancelled' || newStatus === 'refused') {
         setConnections(prev => prev.filter(c => c.id !== connectionId));
       } else {

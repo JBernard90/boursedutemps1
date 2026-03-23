@@ -313,6 +313,16 @@ const RichContent: React.FC<{ html: string }> = ({ html }) => {
 // ---- Main Blog Component ----
 const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
   const [showAdd, setShowAdd] = useState(false);
+
+  const sendNotif = async (endpoint: string, data: any) => {
+    try {
+      await fetch('/api/notify/' + endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+    } catch(e) {}
+  };
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
   const [newTitle, setNewTitle] = useState('');
   const [newContent, setNewContent] = useState('');
@@ -474,9 +484,33 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
       body: JSON.stringify({ comments: updatedComments }),
     });
     onUpdate(blogs.map(b => b.id === blog.id ? { ...b, comments: updatedComments } : b));
+    // Notify author
+    const author = blogs.find(b => b.id === blog.id);
+    if (author && user && author.authorId !== user.uid) {
+      sendNotif('comment', {
+        authorEmail: null, // fetched server-side via authorId
+        authorId: author.authorId,
+        authorName: author.authorName,
+        commenterName: user.firstName + ' ' + user.lastName,
+        postTitle: blog.title,
+        postType: 'blog',
+        postId: blog.id
+      });
+    }
     setCommentText('');
     setActiveCommentPost(null);
   };
+
+  // Scroll to specific publication if hash in URL
+  React.useEffect(() => {
+    const hash = window.location.hash;
+    if (hash) {
+      setTimeout(() => {
+        const el = document.querySelector(hash);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 500);
+    }
+  }, [blogs]);
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-12">
@@ -573,7 +607,7 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
 
       <div className="space-y-10">
         {blogs.map(blog => (
-          <article key={blog.id} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition">
+          <article id={`blog-${blog.id}`} key={blog.id} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition">
             <div className="p-8">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-12 h-12 rounded-full bg-slate-100 overflow-hidden border-2 border-white shadow-sm">

@@ -709,6 +709,188 @@ app.post('/api/make-admin', async (req, res) => {
   }
 });
 
+
+// --- HELPER EMAIL ---------------------------------------------------------
+const sendNotificationEmail = async (to, subject, html) => {
+  if (!to) return;
+  try {
+    await transporter.sendMail({
+      from: '"Bourse du Temps" <' + process.env.EMAIL_USER + '>',
+      to,
+      subject,
+      html
+    });
+  } catch(e) {
+    console.error('[Notification email error]', e.message);
+  }
+};
+
+const emailStyle = `
+  font-family: Arial, sans-serif;
+  max-width: 500px;
+  margin: 0 auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+`;
+
+const emailHeader = `
+  <div style="background:#1e40af;padding:24px;text-align:center;">
+    <img src="https://i.postimg.cc/5Y3Rg6zs/image-1.jpg" style="width:60px;height:60px;border-radius:50%;margin-bottom:12px;" />
+    <h1 style="color:white;margin:0;font-size:20px;">Bourse du Temps</h1>
+  </div>
+`;
+
+const emailFooter = `
+  <div style="background:#f8fafc;padding:16px;text-align:center;border-top:1px solid #e2e8f0;">
+    <p style="color:#94a3b8;font-size:12px;margin:0;">
+      Université Senghor — Alexandrie, Égypte<br/>
+      <a href="https://boursedutemps.vercel.app" style="color:#1e40af;">boursedutemps.vercel.app</a>
+    </p>
+  </div>
+`;
+
+// --- NOTIFY: CONNEXION REQUEST --------------------------------------------
+app.post('/api/notify/connection', async (req, res) => {
+  const { receiverEmail, receiverName, senderName } = req.body;
+  if (!receiverEmail) return res.json({ success: false });
+  const html = `<div style="${emailStyle}">
+    ${emailHeader}
+    <div style="padding:32px;">
+      <h2 style="color:#1e293b;margin-top:0;">Nouvelle demande de connexion 🔗</h2>
+      <p style="color:#475569;">Bonjour <strong>${receiverName}</strong>,</p>
+      <p style="color:#475569;"><strong>${senderName}</strong> souhaite se connecter avec vous sur la Bourse du Temps.</p>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="https://boursedutemps.vercel.app/members" style="background:#1e40af;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">
+          Voir la demande →
+        </a>
+      </div>
+      <p style="color:#94a3b8;font-size:12px;">Connectez-vous à votre profil pour accepter ou refuser cette demande.</p>
+    </div>
+    ${emailFooter}
+  </div>`;
+  await sendNotificationEmail(receiverEmail, `${senderName} souhaite se connecter avec vous`, html);
+  res.json({ success: true });
+});
+
+// --- NOTIFY: CONNECTION ACCEPTED ------------------------------------------
+app.post('/api/notify/connection-accepted', async (req, res) => {
+  const { receiverEmail, receiverName, accepterName } = req.body;
+  if (!receiverEmail) return res.json({ success: false });
+  const html = `<div style="${emailStyle}">
+    ${emailHeader}
+    <div style="padding:32px;">
+      <h2 style="color:#1e293b;margin-top:0;">Demande de connexion acceptée ✅</h2>
+      <p style="color:#475569;">Bonjour <strong>${receiverName}</strong>,</p>
+      <p style="color:#475569;"><strong>${accepterName}</strong> a accepté votre demande de connexion. Vous pouvez maintenant échanger des messages !</p>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="https://boursedutemps.vercel.app/members" style="background:#16a34a;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">
+          Voir mes connexions →
+        </a>
+      </div>
+    </div>
+    ${emailFooter}
+  </div>`;
+  await sendNotificationEmail(receiverEmail, `${accepterName} a accepté votre demande de connexion`, html);
+  res.json({ success: true });
+});
+
+// --- NOTIFY: NEW COMMENT --------------------------------------------------
+app.post('/api/notify/comment', async (req, res) => {
+  let { authorEmail, authorId, authorName, commenterName, postTitle, postType, postId } = req.body;
+  // Fetch author email from DB if not provided
+  if (!authorEmail && authorId) {
+    try {
+      const r = await query('SELECT email, first_name, last_name FROM users WHERE uid = $1', [authorId]);
+      if (r.rows.length) {
+        authorEmail = r.rows[0].email;
+        if (!authorName) authorName = r.rows[0].first_name + ' ' + r.rows[0].last_name;
+      }
+    } catch(e) {}
+  }
+  if (!authorEmail) return res.json({ success: false });
+  const pageMap = { blog: 'blog', forum: 'forum', testimonials: 'testimonials' };
+  const page = pageMap[postType] || 'blog';
+  const anchorMap = { blog: 'blog', forum: 'forum', testimonials: 'testimonial' };
+  const anchor = anchorMap[postType] || 'blog';
+  const url = `https://boursedutemps.vercel.app/${page}#${anchor}-${postId}`;
+  const html = `<div style="${emailStyle}">
+    ${emailHeader}
+    <div style="padding:32px;">
+      <h2 style="color:#1e293b;margin-top:0;">Nouveau commentaire 💬</h2>
+      <p style="color:#475569;">Bonjour <strong>${authorName}</strong>,</p>
+      <p style="color:#475569;"><strong>${commenterName}</strong> a commenté votre publication <strong>"${postTitle}"</strong>.</p>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${url}" style="background:#1e40af;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">
+          Voir le commentaire →
+        </a>
+      </div>
+    </div>
+    ${emailFooter}
+  </div>`;
+  await sendNotificationEmail(authorEmail, `${commenterName} a commenté votre publication`, html);
+  res.json({ success: true });
+});
+
+// --- NOTIFY: NEW LIKE -----------------------------------------------------
+app.post('/api/notify/like', async (req, res) => {
+  let { authorEmail, authorId, authorName, likerName, postTitle, postType, postId } = req.body;
+  if (!authorEmail && authorId) {
+    try {
+      const r = await query('SELECT email, first_name, last_name FROM users WHERE uid = $1', [authorId]);
+      if (r.rows.length) {
+        authorEmail = r.rows[0].email;
+        if (!authorName) authorName = r.rows[0].first_name + ' ' + r.rows[0].last_name;
+      }
+    } catch(e) {}
+  }
+  if (!authorEmail) return res.json({ success: false });
+  const pageMap = { blog: 'blog', forum: 'forum', testimonials: 'testimonials' };
+  const page = pageMap[postType] || 'blog';
+  const anchorMap = { blog: 'blog', forum: 'forum', testimonials: 'testimonial' };
+  const anchor = anchorMap[postType] || 'blog';
+  const url = `https://boursedutemps.vercel.app/${page}#${anchor}-${postId}`;
+  const html = `<div style="${emailStyle}">
+    ${emailHeader}
+    <div style="padding:32px;">
+      <h2 style="color:#1e293b;margin-top:0;">Quelqu'un aime votre publication ❤️</h2>
+      <p style="color:#475569;">Bonjour <strong>${authorName}</strong>,</p>
+      <p style="color:#475569;"><strong>${likerName}</strong> a aimé votre publication <strong>"${postTitle}"</strong>.</p>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${url}" style="background:#dc2626;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">
+          Voir la publication →
+        </a>
+      </div>
+    </div>
+    ${emailFooter}
+  </div>`;
+  await sendNotificationEmail(authorEmail, `${likerName} aime votre publication`, html);
+  res.json({ success: true });
+});
+
+// --- NOTIFY: NEW SERVICE/REQUEST ------------------------------------------
+app.post('/api/notify/exchange', async (req, res) => {
+  const { targetEmail, targetName, fromName, title, type } = req.body;
+  if (!targetEmail) return res.json({ success: false });
+  const isService = type === 'service';
+  const html = `<div style="${emailStyle}">
+    ${emailHeader}
+    <div style="padding:32px;">
+      <h2 style="color:#1e293b;margin-top:0;">${isService ? 'Nouveau service proposé 🛠️' : 'Nouvelle demande reçue 📋'}</h2>
+      <p style="color:#475569;">Bonjour <strong>${targetName}</strong>,</p>
+      <p style="color:#475569;"><strong>${fromName}</strong> ${isService ? 'a accepté votre service' : 'a répondu à votre demande'} : <strong>"${title}"</strong>.</p>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="https://boursedutemps.vercel.app/${isService ? 'services' : 'requests'}" style="background:#7c3aed;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">
+          Voir les détails →
+        </a>
+      </div>
+    </div>
+    ${emailFooter}
+  </div>`;
+  await sendNotificationEmail(targetEmail, `${fromName} a répondu à votre ${isService ? 'service' : 'demande'}`, html);
+  res.json({ success: true });
+});
+
 // --- 404 + ERROR ----------------------------------------------------------
 app.use('/api/*', function(req, res) {
   res.status(404).json({ error: 'Route ' + req.originalUrl + ' introuvable', success: false });
