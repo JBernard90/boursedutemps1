@@ -16,6 +16,7 @@ const Testimonials = lazy(() => import('./pages/Testimonials'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Moderation = lazy(() => import('./pages/Moderation'));
 const MessagesPage = lazy(() => import('./pages/Messages'));
+const AdminStats = lazy(() => import('./pages/AdminStats'));
 import AuthModal from './components/AuthModal';
 
 const ADMIN_EMAIL = 'jeanbernardpierrelouis@gmail.com';
@@ -392,7 +393,7 @@ const App: React.FC = () => {
   // Detect initial page from URL (for social share redirects)
   const getInitialPage = (): Page => {
     const path = window.location.pathname.replace('/', '').split('/')[0];
-    const validPages: Page[] = ['home', 'about', 'services', 'requests', 'members', 'forum', 'blog', 'testimonials', 'profile', 'moderation', 'messages'];
+    const validPages: Page[] = ['home', 'about', 'services', 'requests', 'members', 'forum', 'blog', 'testimonials', 'profile', 'moderation', 'messages', 'admin-stats'];
     return validPages.includes(path as Page) ? (path as Page) || 'home' : 'home';
   };
 
@@ -738,6 +739,7 @@ const App: React.FC = () => {
         const target = users.find(u => u.uid === viewingUserId);
         return target ? <Profile user={target} currentUser={user} allUsers={users} transactions={transactions} connections={connections} messages={messages} onUpdate={() => {}} onSendConnection={(uid) => { if (!user) { setShowAuthModal('login'); return; } handleSendConnection(uid); }} onUpdateConnection={handleUpdateConnection} onUpdateMessages={setMessages} readOnly /> : <Members users={users} onViewProfile={(uid) => { setViewingUserId(uid); setCurrentPage('profile-view'); }} />;
       case 'messages': return user ? <MessagesPage user={user} users={users} /> : <Home navigate={setCurrentPage} blogs={blogs} testimonials={testimonials} stats={stats} />;
+      case 'admin-stats': return user?.role === 'admin' ? <AdminStats user={user} /> : <Home navigate={setCurrentPage} blogs={blogs} testimonials={testimonials} stats={stats} />;
       case 'moderation': return <Moderation users={users} onUpdateUsers={setUsers} services={services} onUpdateServices={setServices} requests={requests} onUpdateRequests={setRequests} currentUser={user!} />;
       default: return <Home navigate={setCurrentPage} blogs={blogs} testimonials={testimonials} stats={stats} />;
     }

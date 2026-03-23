@@ -966,6 +966,113 @@ app.post('/api/notify/message', async (req, res) => {
   res.json({ success: true });
 });
 
+
+// --- ADMIN STATS ----------------------------------------------------------
+app.get('/api/admin/stats', authenticateToken, async (req, res) => {
+  try {
+    // Verify admin
+    const userRes = await query('SELECT role FROM users WHERE uid = $1', [req.user.uid]);
+    if (!userRes.rows.length || userRes.rows[0].role !== 'admin') {
+      return sendError(res, 'Accès refusé', 403);
+    }
+
+    // Total counts
+    const [members, blogs, forums, testimonials, services, requests, messages, connections, transactions] = await Promise.all([
+      query('SELECT COUNT(*) as count FROM users'),
+      query('SELECT COUNT(*) as count FROM blogs'),
+      query('SELECT COUNT(*) as count FROM forum_topics'),
+      query('SELECT COUNT(*) as count FROM testimonials'),
+      query('SELECT COUNT(*) as count FROM services'),
+      query('SELECT COUNT(*) as count FROM requests'),
+      query('SELECT COUNT(*) as count FROM messages'),
+      query("SELECT COUNT(*) as count FROM connections WHERE status = 'accepted'"),
+      query('SELECT COUNT(*) as count FROM transactions'),
+    ]);
+
+    // Members registered per day (last 30 days)
+    const membersPerDay = await query(`
+      SELECT DATE(created_at) as date, COUNT(*) as count 
+      FROM users 
+      WHERE created_at >= NOW() - INTERVAL '30 days'
+      GROUP BY DATE(created_at) 
+      ORDER BY date ASC
+    `);
+
+    // Most active members (by publications + messages)
+    const topMembers = await query(`
+      SELECT u.uid, u.first_name, u.last_name, u.avatar, u.department,
+        (SELECT COUNT(*) FROM blogs WHERE author_id = u.uid) +
+        (SELECT COUNT(*) FROM forum_topics WHERE author_id = u.uid) +
+        (SELECT COUNT(*) FROM testimonials WHERE author_id = u.uid) +
+        (SELECT COUNT(*) FROM messages WHERE sender_id = u.uid) as activity_score
+      FROM users u
+      ORDER BY activity_score DESC
+      LIMIT 5
+    `);
+
+    // Recent members
+    const recentMembers = await query(`
+      SELECT uid, first_name, last_name, avatar, department, created_at
+      FROM users 
+      ORDER BY created_at DESC 
+      LIMIT 5
+    `);
+
+    // Publications per category
+    const blogCategories = await query(`
+      SELECT category, COUNT(*) as count 
+      FROM blogs 
+      GROUP BY category 
+      ORDER BY count DESC
+    `);
+
+    // Credits in circulation
+    const credits = await query('SELECT SUM(credits) as total FROM users');
+
+    // Active vs inactive members
+    const activeMembers = await query(`
+      SELECT COUNT(DISTINCT sender_id) as count FROM messages 
+      WHERE created_at >= NOW() - INTERVAL '7 days'
+    `);
+
+    res.json({
+      totals: {
+        members: parseInt(members.rows[0].count),
+        blogs: parseInt(blogs.rows[0].count),
+        forums: parseInt(forums.rows[0].count),
+        testimonials: parseInt(testimonials.rows[0].count),
+        services: parseInt(services.rows[0].count),
+        requests: parseInt(requests.rows[0].count),
+        messages: parseInt(messages.rows[0].count),
+        connections: parseInt(connections.rows[0].count),
+        transactions: parseInt(transactions.rows[0].count),
+        publications: parseInt(blogs.rows[0].count) + parseInt(forums.rows[0].count) + parseInt(testimonials.rows[0].count),
+        creditsCirculation: parseInt(credits.rows[0].total || 0),
+        activeThisWeek: parseInt(activeMembers.rows[0].count),
+      },
+      membersPerDay: membersPerDay.rows,
+      topMembers: topMembers.rows.map(m => ({
+        uid: m.uid,
+        name: m.first_name + ' ' + m.last_name,
+        avatar: m.avatar,
+        department: m.department,
+        score: parseInt(m.activity_score)
+      })),
+      recentMembers: recentMembers.rows.map(m => ({
+        uid: m.uid,
+        name: m.first_name + ' ' + m.last_name,
+        avatar: m.avatar,
+        department: m.department,
+        createdAt: m.created_at
+      })),
+      blogCategories: blogCategories.rows,
+    });
+  } catch(e) {
+    console.error('[admin/stats]', e);
+    sendError(res, e.message);
+  }
+});
+
 // --- 404 + ERROR ----------------------------------------------------------
 app.use('/api/*', function(req, res) {
   res.status(404).json({ error: 'Route ' + req.originalUrl + ' introuvable', success: false });

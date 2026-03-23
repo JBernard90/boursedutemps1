@@ -91,6 +91,18 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, user, unreadMessages = 0, 
                 Modération
               </button>
             )}
+            {user?.role === 'admin' && (
+              <button
+                onClick={() => onNavigate('admin-stats')}
+                className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors ml-1 ${
+                  currentPage === 'admin-stats'
+                    ? 'text-green-600 bg-green-50'
+                    : 'text-green-500 hover:text-green-600 hover:bg-green-50/50'
+                }`}
+              >
+                Statistiques
+              </button>
+            )}
             
             <div className="ml-4 pl-4 border-l border-slate-100 flex items-center gap-3">
               {user ? (

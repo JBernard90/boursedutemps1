@@ -1,5 +1,5 @@
 
-export type Page = 'home' | 'about' | 'services' | 'requests' | 'members' | 'forum' | 'blog' | 'testimonials' | 'profile' | 'moderation' | 'profile-view' | 'messages';
+export type Page = 'home' | 'about' | 'services' | 'requests' | 'members' | 'forum' | 'blog' | 'testimonials' | 'profile' | 'moderation' | 'profile-view' | 'messages' | 'admin-stats';
 
 export interface User {
   id: string;
