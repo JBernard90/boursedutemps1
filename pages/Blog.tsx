@@ -322,7 +322,6 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
   const [externalLink, setExternalLink] = useState('');
   const [activeCommentPost, setActiveCommentPost] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
-  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const [uploadingAttach, setUploadingAttach] = useState(false);
   const attachInputRef = useRef<HTMLInputElement>(null);
 
