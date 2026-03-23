@@ -173,6 +173,22 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, user, unreadMessages = 0, 
                   Messages
                   {unreadMessages > 0 && <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{unreadMessages}</span>}
                 </button>
+                {isAdminOrMod && (
+                  <button
+                    onClick={() => { onNavigate('moderation'); setIsOpen(false); }}
+                    className={`w-full py-3 rounded-xl font-bold ${currentPage === 'moderation' ? 'bg-purple-100 text-purple-700' : 'bg-purple-50 text-purple-600'}`}
+                  >
+                    Modération
+                  </button>
+                )}
+                {user?.role === 'admin' && (
+                  <button
+                    onClick={() => { onNavigate('admin-stats'); setIsOpen(false); }}
+                    className={`w-full py-3 rounded-xl font-bold ${currentPage === 'admin-stats' ? 'bg-green-100 text-green-700' : 'bg-green-50 text-green-600'}`}
+                  >
+                    Statistiques
+                  </button>
+                )}
                 <button 
                   onClick={() => { onNavigate('profile'); setIsOpen(false); }}
                   className="w-full bg-blue-50 text-blue-600 py-3 rounded-xl font-bold"
