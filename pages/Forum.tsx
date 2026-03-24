@@ -213,9 +213,12 @@ const Forum: React.FC<ForumProps> = ({ user, topics }) => {
       });
       if (res.ok) {
         const data = await res.json();
-        setLiveRoom(data);
+        // Ouvrir dans un nouvel onglet sans limite de temps
+        window.open(data.url, '_blank');
         setShowLiveModal(false);
         setLiveTitle('');
+        // Afficher le lien a partager
+        alert('Votre live est prêt ! Partagez ce lien avec vos membres :\n\n' + data.url);
       } else {
         alert('Erreur lors de la création du live');
       }
@@ -224,7 +227,7 @@ const Forum: React.FC<ForumProps> = ({ user, topics }) => {
   };
 
   const joinLive = (url: string, name: string) => {
-    setLiveRoom({ url, name });
+    window.open(url, '_blank');
   };
 
   const endLive = () => {
@@ -344,25 +347,7 @@ const Forum: React.FC<ForumProps> = ({ user, topics }) => {
         </div>
       )}
 
-      {/* Salle live active */}
-      {liveRoom && (
-        <div className="fixed inset-0 bg-black z-50 flex flex-col">
-          <div className="flex items-center justify-between px-6 py-3 bg-slate-900">
-            <div className="flex items-center gap-3">
-              <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
-              <span className="text-white font-bold">{liveRoom.name}</span>
-            </div>
-            <button onClick={endLive} className="bg-red-600 text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-red-700 transition">
-              Quitter
-            </button>
-          </div>
-          <iframe
-            src={liveRoom.url}
-            allow="camera; microphone; fullscreen; display-capture; autoplay"
-            className="flex-1 w-full border-0"
-          />
-        </div>
-      )}
+
 
       <div className="flex justify-between items-center mb-10">
         <h1 className="font-heading text-4xl font-bold text-slate-900">Forum des échanges</h1>
