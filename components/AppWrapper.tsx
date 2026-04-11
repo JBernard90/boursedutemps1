@@ -1,22 +1,23 @@
 "use client";
 
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { auth, db, onAuthStateChanged, collection, onSnapshot, query, where, orderBy, doc, getDoc, setDoc, updateDoc, addDoc, serverTimestamp } from '../api';
 import { Page, User, Service, Request, BlogPost, Testimonial, ForumTopic, Transaction, Connection, ChatMessage, Notification } from '../types';
 import Navbar from './Navbar';
 import AuthModal from './AuthModal';
 
-// Lazy load pages from components/pages-old
-const Home = lazy(() => import('./pages-old/Home'));
-const About = lazy(() => import('./pages-old/About'));
-const ServicesPage = lazy(() => import('./pages-old/ServicesPage'));
-const RequestsPage = lazy(() => import('./pages-old/RequestsPage'));
-const Members = lazy(() => import('./pages-old/Members'));
-const Forum = lazy(() => import('./pages-old/Forum'));
-const Blog = lazy(() => import('./pages-old/Blog'));
-const Testimonials = lazy(() => import('./pages-old/Testimonials'));
-const Profile = lazy(() => import('./pages-old/Profile'));
-const Moderation = lazy(() => import('./pages-old/Moderation'));
+// Lazy load pages from components/pages-old using next/dynamic
+const Home = dynamic(() => import('./pages-old/Home'), { ssr: false });
+const About = dynamic(() => import('./pages-old/About'), { ssr: false });
+const ServicesPage = dynamic(() => import('./pages-old/ServicesPage'), { ssr: false });
+const RequestsPage = dynamic(() => import('./pages-old/RequestsPage'), { ssr: false });
+const Members = dynamic(() => import('./pages-old/Members'), { ssr: false });
+const Forum = dynamic(() => import('./pages-old/Forum'), { ssr: false });
+const Blog = dynamic(() => import('./pages-old/Blog'), { ssr: false });
+const Testimonials = dynamic(() => import('./pages-old/Testimonials'), { ssr: false });
+const Profile = dynamic(() => import('./pages-old/Profile'), { ssr: false });
+const Moderation = dynamic(() => import('./pages-old/Moderation'), { ssr: false });
 
 const ADMIN_EMAIL = 'jeanbernardpierrelouis@gmail.com';
 

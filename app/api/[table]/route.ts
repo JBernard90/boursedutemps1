@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { query } from '../../../db';
 import jwt from 'jsonwebtoken';
 
+export const dynamic = 'force-dynamic';
+
 const toCamelCase = (obj: any) => {
   if (Array.isArray(obj)) {
     return obj.map(v => toCamelCase(v));

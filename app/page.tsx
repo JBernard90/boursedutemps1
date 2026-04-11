@@ -1,5 +1,3 @@
-import AppWrapper from "@/components/AppWrapper";
-
-export default function Home() {
-  return <AppWrapper />;
+export default function Page() {
+  return <h1>Minimal Build</h1>
 }

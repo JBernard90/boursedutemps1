@@ -8,7 +8,12 @@ export const orderBy = (field: string, dir: string) => ({ type: 'orderBy', field
 
 const API_BASE = '/api';
 
-const getToken = () => localStorage.getItem('token');
+const getToken = () => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('token');
+  }
+  return null;
+};
 
 const request = async (url: string, options: RequestInit = {}) => {
   const token = getToken();
@@ -99,23 +104,32 @@ export const onSnapshot = (q: any, callback: (snapshot: any) => void, errorCallb
     }
   };
 
-  fetchSnapshot();
-  const interval = setInterval(fetchSnapshot, 5000); // Poll every 5 seconds
+  if (typeof window !== 'undefined') {
+    fetchSnapshot();
+    const interval = setInterval(fetchSnapshot, 5000); // Poll every 5 seconds
 
-  return () => {
-    isCancelled = true;
-    clearInterval(interval);
-  };
+    return () => {
+      isCancelled = true;
+      clearInterval(interval);
+    };
+  }
+  return () => { isCancelled = true; };
 };
 
 export const db = {};
 export const auth = {
   signOut: async () => {
-    localStorage.removeItem('token');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+    }
   }
 };
 
 export const onAuthStateChanged = (authObj: any, callback: (user: any) => void) => {
+  if (typeof window === 'undefined') {
+    callback(null);
+    return () => {};
+  }
   const token = getToken();
   if (token) {
     request('/auth/me')

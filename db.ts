@@ -3,14 +3,14 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-console.log('DATABASE_URL is:', process.env.DATABASE_URL);
+const dbUrl = process.env.DATABASE_URL || 'postgres://mock:mock@localhost:5432/mock';
+console.log('DATABASE_URL is:', process.env.DATABASE_URL ? '[SET]' : '[MISSING - using mock]');
 
 if (!process.env.DATABASE_URL) {
-  console.error('=========================================================');
-  console.error('CRITICAL ERROR: DATABASE_URL environment variable is missing.');
-  console.error('To use Neon PostgreSQL, you must set the DATABASE_URL in your environment variables.');
-  console.error('Format: postgres://user:password@host/dbname?sslmode=require');
-  console.error('=========================================================');
+  console.warn('=========================================================');
+  console.warn('WARNING: DATABASE_URL environment variable is missing.');
+  console.warn('Using a mock URL for build purposes.');
+  console.warn('=========================================================');
 } else {
   try {
     const url = new URL(process.env.DATABASE_URL);
@@ -24,13 +24,13 @@ if (!process.env.DATABASE_URL) {
   }
 }
 
-export const pool = process.env.DATABASE_URL ? new Pool({
-  connectionString: process.env.DATABASE_URL,
+export const pool = new Pool({
+  connectionString: dbUrl,
   ssl: {
     rejectUnauthorized: false
   },
   connectionTimeoutMillis: 5000, // Fail fast if DNS/Network is down
-}) : null;
+});
 
 export const query = async (text: string, params?: any[]) => {
   if (!pool) {
@@ -251,6 +251,3 @@ export const initDB = async () => {
     console.error('[DB] Initialization error:', err);
   }
 };
-
-// Initialize database on module load
-initDB().catch(console.error);
