@@ -1,6 +1,8 @@
 
+"use client";
+
 import React, { useState, useRef, useEffect } from 'react';
-import { Page, User, Notification } from './types';
+import { Page, User, Notification } from '../types';
 
 interface NavbarProps {
   currentPage: Page;

@@ -110,9 +110,8 @@ export const onSnapshot = (q: any, callback: (snapshot: any) => void, errorCallb
 
 export const db = {};
 export const auth = {
-  signOut: () => {
+  signOut: async () => {
     localStorage.removeItem('token');
-    window.location.reload();
   }
 };
 

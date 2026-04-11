@@ -251,3 +251,6 @@ export const initDB = async () => {
     console.error('[DB] Initialization error:', err);
   }
 };
+
+// Initialize database on module load
+initDB().catch(console.error);

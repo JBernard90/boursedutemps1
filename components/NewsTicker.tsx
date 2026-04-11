@@ -1,6 +1,6 @@
 
 import React, { useRef } from 'react';
-import { BlogPost, Testimonial, Page } from './types';
+import { BlogPost, Testimonial, Page } from '../types';
 
 interface NewsTickerProps {
   blogs: BlogPost[];
