@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Page, BlogPost, Testimonial } from '../types';
-import NewsTicker from '../components/NewsTicker';
+import NewsTicker from '../NewsTicker';
 
 interface HomeProps {
   navigate: (p: Page) => void;

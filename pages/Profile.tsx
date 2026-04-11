@@ -16,6 +16,8 @@ interface ProfileProps {
   onDeactivate?: () => void;
   onDelete?: () => void;
   readOnly?: boolean;
+  initialTab?: 'info' | 'connections' | 'messages' | 'suivi';
+  initialChatPartner?: string | null;
 }
 
 const Profile: React.FC<ProfileProps> = ({ 
@@ -31,13 +33,15 @@ const Profile: React.FC<ProfileProps> = ({
   onUpdateMessages,
   onDeactivate,
   onDelete,
-  readOnly = false 
+  readOnly = false,
+  initialTab = 'info',
+  initialChatPartner = null
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState(user);
-  const [activeTab, setActiveTab] = useState<'info' | 'connections' | 'messages' | 'suivi'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'connections' | 'messages' | 'suivi'>(initialTab);
   const [messageContent, setMessageContent] = useState('');
-  const [selectedChatPartner, setSelectedChatPartner] = useState<string | null>(null);
+  const [selectedChatPartner, setSelectedChatPartner] = useState<string | null>(initialChatPartner);
   const coverInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleSave = () => {
@@ -76,9 +80,9 @@ const Profile: React.FC<ProfileProps> = ({
   const connection = getConnectionStatus();
 
   return (
-    <div className="max-w-5xl mx-auto px-2 sm:px-6 py-4 sm:py-12">
-      <div className="bg-white rounded-[1.5rem] sm:rounded-[2.5rem] shadow-xl shadow-slate-200/50 overflow-hidden border border-slate-100">
-        <div className="h-32 sm:h-48 bg-slate-900 p-3 sm:p-8 flex items-end justify-between relative group">
+    <div className="max-w-5xl mx-auto px-6 py-12">
+      <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 overflow-hidden border border-slate-100">
+        <div className="h-48 bg-slate-900 p-8 flex items-end justify-between relative group">
           {isEditing ? (
             editedUser.coverPhoto ? (
               <img src={editedUser.coverPhoto} className="absolute inset-0 w-full h-full object-cover opacity-80" alt="Cover" />
@@ -97,21 +101,21 @@ const Profile: React.FC<ProfileProps> = ({
           {isEditing && (
             <div className="absolute top-4 right-4 z-20">
               <input type="file" accept="image/*" className="hidden" ref={coverInputRef} onChange={handleCoverPhotoChange} />
-              <button onClick={() => coverInputRef.current?.click()} className="bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-2 sm:px-4 py-1 sm:py-2 rounded-xl font-bold transition border border-white/30 text-xs sm:text-sm">
+              <button onClick={() => coverInputRef.current?.click()} className="bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-4 py-2 rounded-xl font-bold transition border border-white/30 text-sm">
                 📷 Changer la couverture
               </button>
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-6 translate-y-8 sm:translate-y-12 relative z-10">
-            <div className="w-20 h-20 sm:w-32 sm:h-32 rounded-2xl sm:rounded-3xl bg-white p-1 sm:p-2 shadow-2xl">
+          <div className="flex items-center gap-6 translate-y-12 relative z-10">
+            <div className="w-32 h-32 rounded-3xl bg-white p-2 shadow-2xl">
               <div className="w-full h-full rounded-2xl bg-slate-100 flex items-center justify-center overflow-hidden">
                 {user.avatar ? <img src={user.avatar} className="w-full h-full object-cover" /> : <span className="text-4xl">👤</span>}
               </div>
             </div>
             <div className="pb-4">
-              <div className="bg-white/95 backdrop-blur-md px-3 sm:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl shadow-xl">
-                <h2 className="font-heading text-base sm:text-2xl font-bold text-slate-900">
+              <div className="bg-white/95 backdrop-blur-md px-6 py-3 rounded-2xl shadow-xl">
+                <h2 className="font-heading text-2xl font-bold text-slate-900">
                   {user.firstName} {user.lastName}
                 </h2>
                 <p className="text-slate-500 font-bold text-[10px] uppercase tracking-widest">{user.department}</p>
@@ -119,42 +123,42 @@ const Profile: React.FC<ProfileProps> = ({
             </div>
           </div>
           
+          {readOnly && currentUser && currentUser.uid !== user.uid && (
+            <div className="relative z-10 flex gap-4">
+              {!connection && (
+                <button onClick={() => onSendConnection?.(user.uid)} className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg hover:bg-blue-700 transition">
+                  Se connecter
+                </button>
+              )}
+              {connection?.status === 'sent' && connection.senderId === currentUser.uid && (
+                <button onClick={() => onUpdateConnection?.(connection.id, 'cancelled')} className="bg-slate-700 text-white px-6 py-3 rounded-2xl font-bold transition">
+                  Annuler la demande
+                </button>
+              )}
+              {connection?.status === 'sent' && connection.receiverId === currentUser.uid && (
+                <div className="flex gap-2">
+                  <button onClick={() => onUpdateConnection?.(connection.id, 'accepted')} className="bg-green-600 text-white px-6 py-3 rounded-2xl font-bold transition">Accepter</button>
+                  <button onClick={() => onUpdateConnection?.(connection.id, 'refused')} className="bg-red-600 text-white px-6 py-3 rounded-2xl font-bold transition">Refuser</button>
+                </div>
+              )}
+              {connection?.status === 'accepted' && (
+                <span className="bg-green-500/20 backdrop-blur-md text-green-100 px-6 py-3 rounded-2xl font-bold border border-green-500/30">
+                  Connecté
+                </span>
+              )}
+            </div>
+          )}
+
           {!readOnly && (
-            <button onClick={() => setIsEditing(true)} className="bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-3 sm:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-bold transition border border-white/30 relative z-10 text-xs sm:text-sm">
+            <button onClick={() => setIsEditing(true)} className="bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-6 py-3 rounded-2xl font-bold transition border border-white/30 relative z-10">
               Modifier
             </button>
           )}
         </div>
 
-        {readOnly && (!currentUser || currentUser.uid !== user.uid) && (
-          <div className="px-4 sm:px-10 py-4 flex flex-wrap gap-3 border-b-2 border-blue-100 bg-blue-50">
-            {(!currentUser || !connection) && (
-              <button onClick={() => onSendConnection?.(user.uid)} className="bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold shadow-lg hover:bg-blue-700 transition text-sm">
-                + Se connecter
-              </button>
-            )}
-            {currentUser && connection?.status === 'sent' && connection.senderId === currentUser.uid && (
-              <button onClick={() => onUpdateConnection?.(connection.id, 'cancelled')} className="bg-slate-200 text-slate-700 px-6 py-2.5 rounded-xl font-bold transition text-sm">
-                Demande envoyée · Annuler
-              </button>
-            )}
-            {currentUser && connection?.status === 'sent' && connection.receiverId === currentUser.uid && (
-              <div className="flex gap-2">
-                <button onClick={() => onUpdateConnection?.(connection.id, 'accepted')} className="bg-green-600 text-white px-5 py-2.5 rounded-xl font-bold transition text-sm">✓ Accepter</button>
-                <button onClick={() => onUpdateConnection?.(connection.id, 'refused')} className="bg-red-100 text-red-600 px-5 py-2.5 rounded-xl font-bold transition text-sm">✗ Refuser</button>
-              </div>
-            )}
-            {connection?.status === 'accepted' && (
-              <span className="bg-green-50 text-green-700 px-6 py-2.5 rounded-xl font-bold border border-green-200 text-sm">
-                ✅ Connecté
-              </span>
-            )}
-          </div>
-        )}
-
         {/* Tabs */}
         {!readOnly && (
-          <div className="mt-14 sm:mt-20 px-3 sm:px-10 border-b border-slate-100 flex gap-4 sm:gap-8 overflow-x-auto">
+          <div className="mt-20 px-10 border-b border-slate-100 flex gap-8">
             <button onClick={() => setActiveTab('info')} className={`pb-4 text-sm font-bold uppercase tracking-widest transition ${activeTab === 'info' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-400'}`}>Profil</button>
             <button onClick={() => setActiveTab('suivi')} className={`pb-4 text-sm font-bold uppercase tracking-widest transition ${activeTab === 'suivi' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-400'}`}>Suivi Crédits</button>
             <button onClick={() => setActiveTab('connections')} className={`pb-4 text-sm font-bold uppercase tracking-widest transition ${activeTab === 'connections' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-400'}`}>Réseau</button>
@@ -162,7 +166,7 @@ const Profile: React.FC<ProfileProps> = ({
           </div>
         )}
 
-        <div className="pt-6 sm:pt-10 px-3 sm:px-10 pb-8 sm:pb-16">
+        <div className="pt-10 px-10 pb-16">
           {activeTab === 'info' && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
               <div className="md:col-span-2 space-y-8">
@@ -242,26 +246,6 @@ const Profile: React.FC<ProfileProps> = ({
                       </div>
                     </section>
 
-                    {connection?.status === 'accepted' && (
-                      <section>
-                        <h3 className="font-heading text-lg font-bold text-slate-800 mb-4">Contact</h3>
-                        <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-3">
-                          {user.email && (
-                            <div className="flex items-center gap-3">
-                              <span className="text-xl">📧</span>
-                              <a href={`mailto:${user.email}`} className="text-blue-600 font-bold text-sm hover:underline">{user.email}</a>
-                            </div>
-                          )}
-                          {user.phone && (
-                            <div className="flex items-center gap-3">
-                              <span className="text-xl">📱</span>
-                              <a href={`https://wa.me/${user.phone.replace(/[^0-9]/g,'')}`} target="_blank" rel="noopener noreferrer" className="text-green-600 font-bold text-sm hover:underline">{user.phone}</a>
-                            </div>
-                          )}
-                        </div>
-                      </section>
-                    )}
-
                     <section>
                       <h3 className="font-heading text-lg font-bold text-slate-800 mb-4">Échanges Récents</h3>
                       {userTransactions.length === 0 ? (
@@ -287,7 +271,7 @@ const Profile: React.FC<ProfileProps> = ({
                         </div>
                       )}
                     </section>
-                    {!readOnly && <section className="pt-12 border-t border-slate-100">
+                    <section className="pt-12 border-t border-slate-100">
                       <h3 className="font-heading text-lg font-bold text-red-600 mb-4">Zone de danger</h3>
                       <div className="bg-red-50 p-6 rounded-2xl border border-red-100 flex flex-col md:flex-row gap-4 justify-between items-center">
                         <div>
@@ -309,7 +293,7 @@ const Profile: React.FC<ProfileProps> = ({
                           </button>
                         </div>
                       </div>
-                    </section>}
+                    </section>
                   </>
                 )}
               </div>
@@ -402,8 +386,3 @@ const Profile: React.FC<ProfileProps> = ({
 };
 
 export default Profile;
-
-
-
-
-

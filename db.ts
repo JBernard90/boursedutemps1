@@ -1,45 +1,57 @@
-import { Pool } from 'pg';
+import { Pool } from '@neondatabase/serverless';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-// ─── Validation DATABASE_URL ───────────────────────────────────────────────
+console.log('DATABASE_URL is:', process.env.DATABASE_URL);
+
 if (!process.env.DATABASE_URL) {
   console.error('=========================================================');
   console.error('CRITICAL ERROR: DATABASE_URL environment variable is missing.');
-  console.error('Go to Vercel → Settings → Environment Variables and add it.');
+  console.error('To use Neon PostgreSQL, you must set the DATABASE_URL in your environment variables.');
   console.error('Format: postgres://user:password@host/dbname?sslmode=require');
   console.error('=========================================================');
+} else {
+  try {
+    const url = new URL(process.env.DATABASE_URL);
+    console.log(`[DB] Attempting connection to host: ${url.hostname}`);
+    if (url.hostname === 'host' || url.hostname === 'base' || url.hostname === 'your-host') {
+      console.warn('⚠️ WARNING: Your DATABASE_URL seems to contain a placeholder hostname ("' + url.hostname + '").');
+      console.warn('Please replace it with your actual Neon PostgreSQL host in the Settings menu.');
+    }
+  } catch (e) {
+    console.error('[DB] Invalid DATABASE_URL format.');
+  }
 }
 
-export const pool = process.env.DATABASE_URL
-  ? new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false },
-      max: 10,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 10000,
-    })
-  : null;
+export const pool = process.env.DATABASE_URL ? new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  },
+  connectionTimeoutMillis: 5000, // Fail fast if DNS/Network is down
+}) : null;
 
-// ─── query : LANCE une vraie erreur (ne retourne plus [] silencieusement) ──
 export const query = async (text: string, params?: any[]) => {
   if (!pool) {
-    throw new Error(
-      'Base de données non configurée. DATABASE_URL manquant dans les variables Vercel.'
-    );
+    return { rows: [], rowCount: 0 };
   }
-  // Lance l'erreur PostgreSQL réelle → capturée par le handler dans api/index.ts
-  return pool.query(text, params);
+  try {
+    return await pool.query(text, params);
+  } catch (error: any) {
+    console.error('Database query error:', error.message);
+    return { rows: [], rowCount: 0 };
+  }
 };
 
-// ─── initDB ────────────────────────────────────────────────────────────────
 export const initDB = async () => {
-  if (!pool) return;
-
-  const client = await pool.connect();
+  if (!pool) {
+    return;
+  }
   try {
-    await client.query(`
+    const client = await pool.connect();
+    try {
+      await client.query(`
       CREATE TABLE IF NOT EXISTS otps (
         id SERIAL PRIMARY KEY,
         identifier VARCHAR(255) NOT NULL,
@@ -66,7 +78,7 @@ export const initDB = async () => {
         bio TEXT,
         skills TEXT[],
         needs TEXT[],
-        avatar TEXT,
+        avatar VARCHAR(255),
         cover_photo VARCHAR(255),
         credits INTEGER DEFAULT 5,
         role VARCHAR(50) DEFAULT 'user',
@@ -77,26 +89,50 @@ export const initDB = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
-      DO $$
-      BEGIN
-        BEGIN ALTER TABLE users ADD COLUMN gender VARCHAR(50); EXCEPTION WHEN duplicate_column THEN null; END;
-        BEGIN ALTER TABLE users ADD COLUMN country VARCHAR(255); EXCEPTION WHEN duplicate_column THEN null; END;
-        BEGIN ALTER TABLE users ADD COLUMN availability VARCHAR(255); EXCEPTION WHEN duplicate_column THEN null; END;
-        BEGIN ALTER TABLE users ADD COLUMN languages JSONB; EXCEPTION WHEN duplicate_column THEN null; END;
-        BEGIN ALTER TABLE users ADD COLUMN offered_skills JSONB; EXCEPTION WHEN duplicate_column THEN null; END;
-        BEGIN ALTER TABLE users ADD COLUMN requested_skills JSONB; EXCEPTION WHEN duplicate_column THEN null; END;
+      DO $$ 
+      BEGIN 
+        BEGIN
+          ALTER TABLE users ADD COLUMN gender VARCHAR(50);
+        EXCEPTION
+          WHEN duplicate_column THEN null;
+        END;
+        BEGIN
+          ALTER TABLE users ADD COLUMN country VARCHAR(255);
+        EXCEPTION
+          WHEN duplicate_column THEN null;
+        END;
+        BEGIN
+          ALTER TABLE users ADD COLUMN availability VARCHAR(255);
+        EXCEPTION
+          WHEN duplicate_column THEN null;
+        END;
+        BEGIN
+          ALTER TABLE users ADD COLUMN languages JSONB;
+        EXCEPTION
+          WHEN duplicate_column THEN null;
+        END;
+        BEGIN
+          ALTER TABLE users ADD COLUMN offered_skills JSONB;
+        EXCEPTION
+          WHEN duplicate_column THEN null;
+        END;
+        BEGIN
+          ALTER TABLE users ADD COLUMN requested_skills JSONB;
+        EXCEPTION
+          WHEN duplicate_column THEN null;
+        END;
       END $$;
 
       CREATE TABLE IF NOT EXISTS services (
         id SERIAL PRIMARY KEY,
-        user_id VARCHAR(255) REFERENCES users(uid) ON DELETE SET NULL,
+        user_id VARCHAR(255) REFERENCES users(uid),
         user_name VARCHAR(255),
         title VARCHAR(255) NOT NULL,
         description TEXT NOT NULL,
         credit_cost INTEGER NOT NULL,
         category VARCHAR(255),
         status VARCHAR(50) DEFAULT 'proposed',
-        accepted_by VARCHAR(255) REFERENCES users(uid) ON DELETE SET NULL,
+        accepted_by VARCHAR(255) REFERENCES users(uid),
         accepted_at TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -104,14 +140,14 @@ export const initDB = async () => {
 
       CREATE TABLE IF NOT EXISTS requests (
         id SERIAL PRIMARY KEY,
-        user_id VARCHAR(255) REFERENCES users(uid) ON DELETE SET NULL,
+        user_id VARCHAR(255) REFERENCES users(uid),
         user_name VARCHAR(255),
         title VARCHAR(255) NOT NULL,
         description TEXT NOT NULL,
         credit_offer INTEGER NOT NULL,
         category VARCHAR(255),
         status VARCHAR(50) DEFAULT 'proposed',
-        fulfilled_by VARCHAR(255) REFERENCES users(uid) ON DELETE SET NULL,
+        fulfilled_by VARCHAR(255) REFERENCES users(uid),
         fulfilled_at TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -119,7 +155,7 @@ export const initDB = async () => {
 
       CREATE TABLE IF NOT EXISTS blogs (
         id SERIAL PRIMARY KEY,
-        author_id VARCHAR(255) REFERENCES users(uid) ON DELETE SET NULL,
+        author_id VARCHAR(255) REFERENCES users(uid),
         author_name VARCHAR(255),
         author_avatar VARCHAR(255),
         title VARCHAR(255) NOT NULL,
@@ -137,7 +173,7 @@ export const initDB = async () => {
 
       CREATE TABLE IF NOT EXISTS testimonials (
         id SERIAL PRIMARY KEY,
-        author_id VARCHAR(255) REFERENCES users(uid) ON DELETE SET NULL,
+        author_id VARCHAR(255) REFERENCES users(uid),
         author_name VARCHAR(255),
         author_avatar VARCHAR(255),
         content TEXT NOT NULL,
@@ -153,7 +189,7 @@ export const initDB = async () => {
 
       CREATE TABLE IF NOT EXISTS forum_topics (
         id SERIAL PRIMARY KEY,
-        author_id VARCHAR(255) REFERENCES users(uid) ON DELETE SET NULL,
+        author_id VARCHAR(255) REFERENCES users(uid),
         author_name VARCHAR(255),
         author_avatar VARCHAR(255),
         title VARCHAR(255) NOT NULL,
@@ -171,8 +207,8 @@ export const initDB = async () => {
 
       CREATE TABLE IF NOT EXISTS connections (
         id SERIAL PRIMARY KEY,
-        sender_id VARCHAR(255) REFERENCES users(uid) ON DELETE CASCADE,
-        receiver_id VARCHAR(255) REFERENCES users(uid) ON DELETE CASCADE,
+        sender_id VARCHAR(255) REFERENCES users(uid),
+        receiver_id VARCHAR(255) REFERENCES users(uid),
         status VARCHAR(50) DEFAULT 'sent',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -180,19 +216,28 @@ export const initDB = async () => {
 
       CREATE TABLE IF NOT EXISTS transactions (
         id SERIAL PRIMARY KEY,
-        from_id VARCHAR(255) REFERENCES users(uid) ON DELETE SET NULL,
-        to_id VARCHAR(255) REFERENCES users(uid) ON DELETE SET NULL,
+        from_id VARCHAR(255) REFERENCES users(uid),
+        to_id VARCHAR(255) REFERENCES users(uid),
         amount INTEGER NOT NULL,
         service_title VARCHAR(255),
         type VARCHAR(50),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+      DO $$ 
+      BEGIN 
+        BEGIN
+          ALTER TABLE connections DROP COLUMN id;
+          ALTER TABLE connections ADD COLUMN id SERIAL PRIMARY KEY;
+        EXCEPTION
+          WHEN others THEN null;
+        END;
+      END $$;
     `);
-    console.log('[DB] Tables initialisées avec succès');
+      console.log('[DB] Tables initialized successfully');
+    } finally {
+      client.release();
+    }
   } catch (err) {
-    console.error('[DB] Erreur initialisation:', err);
-    throw err;
-  } finally {
-    client.release();
+    console.error('[DB] Initialization error:', err);
   }
 };

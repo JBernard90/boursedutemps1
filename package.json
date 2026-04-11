@@ -2,6 +2,7 @@
   "name": "bourse-du-temps",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
     "start": "tsx server.ts",
@@ -28,12 +29,10 @@
     "react-markdown": "^10.1.0",
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.2.1",
-    "tsx": "^4.21.0",
-    "twilio": "^5.12.2"
+    "tsx": "^4.21.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
-    "@types/compression": "^1.7.5",
     "@types/dotenv": "^6.1.1",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",

@@ -1,13 +1,7 @@
 {
+  "version": 2,
   "rewrites": [
-    { "source": "/api/test", "destination": "/api/test.js" },
-    { "source": "/api/(.*)", "destination": "/api/index.js" },
-    { "source": "/share/blog/:id", "destination": "/api/index.js" },
-    { "source": "/share/testimonials/:id", "destination": "/api/index.js" },
-    { "source": "/share/forum/:id", "destination": "/api/index.js" },
-    { "source": "/google1801069cb5a6ae0c.html", "destination": "/api/index.js" },
-    { "source": "/sitemap.xml", "destination": "/api/index.js" },
-    { "source": "/robots.txt", "destination": "/api/index.js" },
+    { "source": "/api/(.*)", "destination": "/api/index.ts" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

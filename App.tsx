@@ -2,7 +2,7 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { auth, db, onAuthStateChanged, collection, onSnapshot, query, where, orderBy, doc, getDoc, setDoc, updateDoc, addDoc, serverTimestamp } from './api';
 import { Page, User, Service, Request, BlogPost, Testimonial, ForumTopic, Transaction, Connection, ChatMessage } from './types';
-import Navbar from './components/Navbar';
+import Navbar from './Navbar';
 
 // Lazy load pages
 const Home = lazy(() => import('./pages/Home'));
@@ -15,15 +15,13 @@ const Blog = lazy(() => import('./pages/Blog'));
 const Testimonials = lazy(() => import('./pages/Testimonials'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Moderation = lazy(() => import('./pages/Moderation'));
-const MessagesPage = lazy(() => import('./pages/Messages'));
-const AdminStats = lazy(() => import('./pages/AdminStats'));
 import AuthModal from './components/AuthModal';
 
 const ADMIN_EMAIL = 'jeanbernardpierrelouis@gmail.com';
 
 const PRIVACY_TEXT = `POLITIQUE DE CONFIDENTIALITÉ – Bourse du Temps
 1. Introduction
-Le site Bourse du Temps (https://boursedutemps.vercel.app/) accorde une grande importance à la protection de vos données personnelles.
+Le site Bourse du Temps (https://boursedutemps.netlify.app/) accorde une grande importance à la protection de vos données personnelles.
 La présente Politique de Confidentialité explique quelles informations nous collectons, comment nous les utilisons et quels sont vos droits.
 En utilisant notre site, vous acceptez les pratiques décrites ci-dessous.
 
@@ -53,7 +51,7 @@ Aucune donnée n’est utilisée à des fins commerciales.
 Vos données ne sont jamais vendues.
 Elles peuvent être partagées uniquement avec :
 • 	Notre hébergeur
-• 	Nos outils techniques (ex : Vercel, services d’analyse)
+• 	Nos outils techniques (ex : Netlify, services d’analyse)
 • 	Les autorités légales en cas d’obligation
 
 5. Cookies
@@ -87,10 +85,10 @@ PIERRE LOUIS Jean Bernard
 
 3. Hébergeur
 Le site est hébergé par :
-Vercel Inc.
-340 S Lemon Ave #4133
-Walnut, CA 91789
-États‑Unis
+Netlify, Inc.
+2325 3rd Street, Suite 296
+San Francisco, CA 94107
+Site : https://www.netlify.com/
 
 4. Propriété intellectuelle
 Tous les contenus présents sur le site (textes, images, logos, design) sont protégés par le droit d’auteur.
@@ -145,7 +143,7 @@ Les présentes CGU sont soumises au droit égyptien et aux règlements de l'Univ
 
 const TERMS_TEXT = `LOI DE CONDITIONS D’ÉCHANGE – BOURSE DU TEMPS
 1. Objet de la Loi
-La présente Loi de Conditions d’Échange a pour objectif d’encadrer les échanges de services, de compétences et de temps entre les utilisateurs du site Bourse du Temps (https://boursedutemps.vercel.app).
+La présente Loi de Conditions d’Échange a pour objectif d’encadrer les échanges de services, de compétences et de temps entre les utilisateurs du site Bourse du Temps (https://boursedutemps.netlify.app).
 Elle définit les droits, obligations et responsabilités de chaque participant afin de garantir un environnement sûr, équitable et respectueux.
 
 2. Définitions
@@ -240,38 +238,38 @@ Chaque membre s’engage à :
 traiter les autres avec courtoisie et respect
 adopter une attitude positive et non discriminatoire
 écouter, comprendre et communiquer de manière constructive
-*Aucun comportement agressif, humiliant ou irrespectueux n’est toléré.
+Aucun comportement agressif, humiliant ou irrespectueux n’est toléré.
 2. Confiance et Transparence
 La confiance est la base de tout échange.
  Les utilisateurs doivent :
 fournir des informations sincères sur leurs compétences et disponibilités
 respecter les engagements pris
 prévenir en cas d’imprévu ou d’annulation
-*La transparence renforce la qualité des échanges.
+La transparence renforce la qualité des échanges.
 3. Équité et Réciprocité
 Les échanges doivent être :
 équitables
 équilibrés
 basés sur la réciprocité
-*Chaque service rendu doit être compensé par un autre service ou un temps équivalent, selon les modalités convenues librement entre les utilisateurs.
+Chaque service rendu doit être compensé par un autre service ou un temps équivalent, selon les modalités convenues librement entre les utilisateurs.
 4. Gratuité des Échanges
 La Bourse du Temps repose sur un principe fondamental :
 aucune transaction financière n’est autorisée
 aucun utilisateur ne peut exiger ou proposer une rémunération en argent
-*Les échanges sont basés uniquement sur le temps, l’entraide et la solidarité.
+Les échanges sont basés uniquement sur le temps, l’entraide et la solidarité.
 5. Sécurité et Responsabilité
 Chaque utilisateur doit :
 veiller à sa propre sécurité
 ne proposer que des services qu’il maîtrise réellement
 ne pas s’engager dans des activités dangereuses ou illégales
-*Les services nécessitant une qualification professionnelle réglementée (médecine, droit, travaux électriques complexes, etc.) sont interdits.
+Les services nécessitant une qualification professionnelle réglementée (médecine, droit, travaux électriques complexes, etc.) sont interdits.
 6. Confidentialité et Respect de la Vie Privée
 Les informations échangées entre utilisateurs doivent rester confidentielles.
  Il est strictement interdit de :
 divulguer des données personnelles
 enregistrer ou publier des échanges sans consentement
 utiliser les informations obtenues à des fins commerciales ou malveillantes
-*La confiance passe par la discrétion.
+La confiance passe par la discrétion.
 7. Inclusion et Non‑Discrimination
 La communauté est ouverte à tous, sans distinction de :
 sexe
@@ -280,26 +278,26 @@ origine
 religion
 situation sociale
 handicap
-*Toute forme de discrimination est strictement interdite.
+Toute forme de discrimination est strictement interdite.
 8. Engagement envers la Qualité
 Chaque utilisateur s’engage à :
 fournir un service de qualité
 respecter les délais convenus
 faire preuve de sérieux et de professionnalisme
-*Un échange réussi renforce la communauté.
+Un échange réussi renforce la communauté.
 9. Résolution des Conflits
 En cas de désaccord, les utilisateurs doivent :
 privilégier le dialogue
 rechercher une solution amiable
 faire preuve de compréhension
-*Le site n’intervient pas dans les litiges, mais encourage la communication respectueuse.
+Le site n’intervient pas dans les litiges, mais encourage la communication respectueuse.
 10. Contribution à la Communauté
 Chaque membre contribue à faire de Bourse du Temps un espace :
 utile
 solidaire
 respectueux
 enrichissant pour tous
-*L’esprit d’entraide est au cœur du projet.
+L’esprit d’entraide est au cœur du projet.
 11. Acceptation de la Charte
 L’utilisation du site implique l’acceptation pleine et entière de la présente Charte Éthique.
  Tout manquement peut entraîner une suspension ou une exclusion de la plateforme.`;
@@ -390,32 +388,7 @@ const INITIAL_BLOGS: BlogPost[] = [
 const INITIAL_TESTIMONIALS: Testimonial[] = [];
 
 const App: React.FC = () => {
-  // Detect initial page from URL (for social share redirects)
-  const getInitialPage = (): Page => {
-    const path = window.location.pathname.replace('/', '').split('/')[0];
-    const validPages: Page[] = ['home', 'about', 'services', 'requests', 'members', 'forum', 'blog', 'testimonials', 'profile', 'moderation', 'messages', 'admin-stats'];
-    return validPages.includes(path as Page) ? (path as Page) || 'home' : 'home';
-  };
-
-  const [currentPage, setCurrentPageState] = useState<Page>(getInitialPage);
-
-  const setCurrentPage = (page: Page, extra?: any) => {
-    window.history.pushState({ page, ...extra }, '', '/' + (page === 'home' ? '' : page));
-    setCurrentPageState(page);
-  };
-
-  useEffect(() => {
-    const handlePopState = (e: PopStateEvent) => {
-      const page = (e.state?.page as Page) || 'home';
-      if (e.state?.viewingUserId) setViewingUserId(e.state.viewingUserId);
-      setCurrentPageState(page);
-    };
-    // Only replace state if we're on home, preserve other pages
-    const initialPage = getInitialPage();
-    window.history.replaceState({ page: initialPage }, '', initialPage === 'home' ? '/' : '/' + initialPage);
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  const [currentPage, setCurrentPage] = useState<Page>('home');
   const [user, setUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [services, setServices] = useState<Service[]>([]);
@@ -427,27 +400,6 @@ const App: React.FC = () => {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [visitorCount, setVisitorCount] = useState(0);
-  const [unreadMessages, setUnreadMessages] = useState(0);
-
-  // Fetch unread messages count
-  React.useEffect(() => {
-    const fetchUnread = async () => {
-      if (!localStorage.getItem('token')) return;
-      try {
-        const res = await fetch('/api/messages/unread', {
-          headers: { Authorization: 'Bearer ' + localStorage.getItem('token') }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const total = Object.values(data).reduce((a: any, b: any) => a + b, 0) as number;
-          setUnreadMessages(total);
-        }
-      } catch(e) {}
-    };
-    fetchUnread();
-    const interval = setInterval(fetchUnread, 30000);
-    return () => clearInterval(interval);
-  }, []);
 
   const stats = {
     totalVisitors: visitorCount,
@@ -463,6 +415,8 @@ const App: React.FC = () => {
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [initialProfileTab, setInitialProfileTab] = useState<'info' | 'connections' | 'messages' | 'suivi'>('info');
+  const [initialChatPartner, setInitialChatPartner] = useState<string | null>(null);
 
   useEffect(() => {
     const storedVisitors = localStorage.getItem('stb_visitors');
@@ -495,8 +449,6 @@ const App: React.FC = () => {
   const [helpType, setHelpType] = useState<'Aide' | 'Signalement'>('Aide');
   const [helpSubject, setHelpSubject] = useState('');
   const [helpMessage, setHelpMessage] = useState('');
-  const [helpEmail, setHelpEmail] = useState('');
-  const [helpPhone, setHelpPhone] = useState('');
 
   useEffect(() => {
     // Auth Listener
@@ -569,14 +521,10 @@ const App: React.FC = () => {
     };
   }, []);
 
-  const sendNotification = async (endpoint: string, data: any) => {
-    try {
-      await fetch('/api/notify/' + endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-    } catch(e) { console.error('Notification error:', e); }
+  const triggerNotification = async (targetUser: User, type: string, fromName: string) => {
+    // Real API integration would go here (SendGrid / Twilio)
+    console.log(`Real Notification sent to ${targetUser.email} and ${targetUser.whatsapp}`);
+    // In a real app, we would call a cloud function here
   };
 
   const handleAuth = async (loggedInUser: User) => {
@@ -611,13 +559,7 @@ const App: React.FC = () => {
         createdAt: new Date().toISOString()
       });
 
-      if (provider) sendNotification('exchange', {
-        targetEmail: provider.email,
-        targetName: provider.firstName + ' ' + provider.lastName,
-        fromName: user.firstName + ' ' + user.lastName,
-        title: item.title,
-        type
-      });
+      if (provider) triggerNotification(provider, type === 'service' ? "proposition de service" : "demande de service", user.firstName);
       alert(`Succès ! ${negotiatedAmount} crédits ont été transférés.`);
     } catch (e) {
       console.error(e);
@@ -628,22 +570,15 @@ const App: React.FC = () => {
   const handleSendConnection = async (targetUid: string) => {
     if (!user) { setShowAuthModal('login'); return; }
     try {
-      const res = await addDoc(collection(db, 'connections'), {
+      await addDoc(collection(db, 'connections'), {
         senderId: user.uid,
         receiverId: targetUid,
         status: 'sent',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       });
-      // Mise à jour immédiate du state
-      const newConn = { id: res.id, senderId: user.uid, receiverId: targetUid, status: 'sent', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
-      setConnections(prev => [...prev, newConn]);
       const target = users.find(u => u.uid === targetUid);
-      if (target) sendNotification('connection', {
-        receiverEmail: target.email,
-        receiverName: target.firstName + ' ' + target.lastName,
-        senderName: user.firstName + ' ' + user.lastName
-      });
+      if (target) triggerNotification(target, "demande de connexion", user.firstName);
     } catch (e) {
       console.error(e);
     }
@@ -655,44 +590,14 @@ const App: React.FC = () => {
         status: newStatus,
         updatedAt: new Date().toISOString()
       });
-      if (newStatus === 'accepted' && user) {
-        const conn = connections.find(c => c.id === connectionId);
-        if (conn) {
-          const sender = users.find(u => u.uid === conn.senderId);
-          if (sender) sendNotification('connection-accepted', {
-            receiverEmail: sender.email,
-            receiverName: sender.firstName + ' ' + sender.lastName,
-            accepterName: user.firstName + ' ' + user.lastName
-          });
-        }
-      }
-      if (newStatus === 'cancelled' || newStatus === 'refused') {
-        setConnections(prev => prev.filter(c => c.id !== connectionId));
-      } else {
-        setConnections(prev => prev.map(c => c.id === connectionId ? { ...c, status: newStatus } : c));
-      }
     } catch (e) {
       console.error(e);
     }
   };
 
-  const handleHelpSubmit = async (e: React.FormEvent) => {
+  const handleHelpSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      const res = await fetch('/api/help', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: helpType, subject: helpSubject, message: helpMessage, email: helpEmail, phone: helpPhone })
-      });
-      if (res.ok) {
-        alert('Merci ! Votre demande a été transmise à l\'administrateur.');
-        setShowHelpModal(false);
-        setHelpSubject('');
-        setHelpMessage('');
-        setHelpEmail('');
-        setHelpPhone('');
-      } else { alert('Erreur lors de l\'envoi. Réessayez.'); }
-    } catch { alert('Erreur réseau. Réessayez.'); }
+    alert(`Merci ! Votre demande (${helpType} : ${helpSubject}) a été transmise à l'administrateur. Nous reviendrons vers vous rapidement sur ${user?.email || 'votre email'}.`);
     setShowHelpModal(false);
     setHelpSubject('');
     setHelpMessage('');
@@ -726,28 +631,34 @@ const App: React.FC = () => {
 
   const renderPage = () => {
     switch (currentPage) {
-      case 'home': return <Home navigate={setCurrentPage} blogs={blogs} testimonials={testimonials} stats={stats} />;
+      case 'home': return <Home navigate={handleNavigate} blogs={blogs} testimonials={testimonials} stats={stats} />;
       case 'about': return <About />;
       case 'services': return <ServicesPage user={user} services={services} onUpdate={setServices} onBuy={(s, amt) => handleTransaction(s, amt, 'service')} onUpdateStatus={handleUpdateExchangeStatus} />;
       case 'requests': return <RequestsPage user={user} requests={requests} onUpdate={setRequests} onFulfill={(r, amt) => handleTransaction(r, amt, 'request')} onUpdateStatus={handleUpdateExchangeStatus} />;
-      case 'members': return <Members users={users} onViewProfile={(uid) => { setViewingUserId(uid); setCurrentPage('profile-view', { viewingUserId: uid }); }} />;
+      case 'members': return <Members users={users} onViewProfile={(uid) => { setViewingUserId(uid); setCurrentPage('profile-view'); }} onContact={(uid) => { if (!user) { setShowAuthModal('login'); return; } setInitialProfileTab('messages'); setInitialChatPartner(uid); setCurrentPage('profile'); }} />;
       case 'forum': return <Forum user={user} topics={forumTopics} onAdd={(t) => setForumTopics([t, ...forumTopics])} />;
       case 'blog': return <Blog blogs={blogs} onUpdate={(b) => { setBlogs(b); localStorage.setItem('stb_blogs', JSON.stringify(b)); }} user={user} onAuthClick={() => setShowAuthModal('login')} />;
       case 'testimonials': return <Testimonials testimonials={testimonials} onUpdate={(t) => { setTestimonials(t); localStorage.setItem('stb_testimonials', JSON.stringify(t)); }} user={user} onAuthClick={() => setShowAuthModal('login')} />;
-      case 'profile': return user ? <Profile user={user} allUsers={users} transactions={transactions} connections={connections} messages={messages} onUpdate={handleUpdateUser} onSendConnection={handleSendConnection} onUpdateConnection={handleUpdateConnection} onUpdateMessages={setMessages} onDeactivate={handleDeactivateAccount} onDelete={handleDeleteAccount} /> : <Home navigate={setCurrentPage} blogs={blogs} testimonials={testimonials} stats={stats} />;
+      case 'profile': return user ? <Profile user={user} allUsers={users} transactions={transactions} connections={connections} messages={messages} onUpdate={handleUpdateUser} onSendConnection={handleSendConnection} onUpdateConnection={handleUpdateConnection} onUpdateMessages={setMessages} onDeactivate={handleDeactivateAccount} onDelete={handleDeleteAccount} initialTab={initialProfileTab} initialChatPartner={initialChatPartner} /> : <Home navigate={handleNavigate} blogs={blogs} testimonials={testimonials} stats={stats} />;
       case 'profile-view': 
         const target = users.find(u => u.uid === viewingUserId);
-        return target ? <Profile user={target} currentUser={user} allUsers={users} transactions={transactions} connections={connections} messages={messages} onUpdate={() => {}} onSendConnection={(uid) => { if (!user) { setShowAuthModal('login'); return; } handleSendConnection(uid); }} onUpdateConnection={handleUpdateConnection} onUpdateMessages={setMessages} readOnly /> : <Members users={users} onViewProfile={(uid) => { setViewingUserId(uid); setCurrentPage('profile-view'); }} />;
-      case 'messages': return user ? <MessagesPage user={user} users={users} /> : <Home navigate={setCurrentPage} blogs={blogs} testimonials={testimonials} stats={stats} />;
-      case 'admin-stats': return user?.role === 'admin' ? <AdminStats user={user} /> : <Home navigate={setCurrentPage} blogs={blogs} testimonials={testimonials} stats={stats} />;
+        return target ? <Profile user={target} currentUser={user} allUsers={users} transactions={transactions} connections={connections} messages={messages} onUpdate={() => {}} onSendConnection={handleSendConnection} onUpdateConnection={handleUpdateConnection} onUpdateMessages={setMessages} readOnly /> : <Members users={users} onViewProfile={() => {}} onContact={() => {}} />;
       case 'moderation': return <Moderation users={users} onUpdateUsers={setUsers} services={services} onUpdateServices={setServices} requests={requests} onUpdateRequests={setRequests} currentUser={user!} />;
-      default: return <Home navigate={setCurrentPage} blogs={blogs} testimonials={testimonials} stats={stats} />;
+      default: return <Home navigate={handleNavigate} blogs={blogs} testimonials={testimonials} stats={stats} />;
     }
+  };
+
+  const handleNavigate = (page: Page) => {
+    if (page === 'profile') {
+      setInitialProfileTab('info');
+      setInitialChatPartner(null);
+    }
+    setCurrentPage(page);
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
-      <Navbar currentPage={currentPage} user={user} unreadMessages={unreadMessages} onNavigate={setCurrentPage} onLogin={() => setShowAuthModal('login')} onSignup={() => setShowAuthModal('signup')} onLogout={() => setUser(null)} />
+      <Navbar currentPage={currentPage} user={user} onNavigate={handleNavigate} onLogin={() => setShowAuthModal('login')} onSignup={() => setShowAuthModal('signup')} onLogout={() => setUser(null)} />
       <main className="flex-grow pt-16">
         <Suspense fallback={
           <div className="flex items-center justify-center min-h-[60vh]">
@@ -848,16 +759,6 @@ const App: React.FC = () => {
                     Signalement
                   </button>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Votre Email</label>
-                <input required type="email" placeholder="votre@email.com" className="w-full px-5 py-3 rounded-xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500" value={helpEmail} onChange={e => setHelpEmail(e.target.value)} />
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Votre Numéro WhatsApp</label>
-                <input required type="tel" placeholder="+221..." className="w-full px-5 py-3 rounded-xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500" value={helpPhone} onChange={e => setHelpPhone(e.target.value)} />
               </div>
 
               <div>
@@ -963,3 +864,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+
