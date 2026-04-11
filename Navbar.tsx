@@ -1,18 +1,34 @@
 
-import React, { useState } from 'react';
-import { Page, User } from './types';
+import React, { useState, useRef, useEffect } from 'react';
+import { Page, User, Notification } from './types';
 
 interface NavbarProps {
   currentPage: Page;
   user: User | null;
+  notifications: Notification[];
   onNavigate: (p: Page) => void;
   onLogin: () => void;
   onSignup: () => void;
   onLogout: () => void;
+  onMarkRead: (id: string) => void;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ currentPage, user, onNavigate, onLogin, onSignup, onLogout }) => {
+const Navbar: React.FC<NavbarProps> = ({ currentPage, user, notifications, onNavigate, onLogin, onSignup, onLogout, onMarkRead }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notificationRef = useRef<HTMLDivElement>(null);
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const navItems: { label: string; page: Page }[] = [
     { label: 'Accueil', page: 'home' },
@@ -74,6 +90,70 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, user, onNavigate, onLogin,
             )}
             
             <div className="ml-4 pl-4 border-l border-slate-100 flex items-center gap-3">
+              {user && (
+                <div className="relative" ref={notificationRef}>
+                  <button 
+                    onClick={() => setShowNotifications(!showNotifications)}
+                    className="p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-50 rounded-full transition-colors relative"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    {unreadCount > 0 && (
+                      <span className="absolute top-1 right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full border-2 border-white">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {showNotifications && (
+                    <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="p-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                        <h3 className="font-bold text-sm text-slate-800">Notifications</h3>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{unreadCount} non lues</span>
+                      </div>
+                      <div className="max-h-96 overflow-y-auto">
+                        {notifications.length > 0 ? (
+                          notifications.map((n) => (
+                            <div 
+                              key={n.id} 
+                              onClick={() => {
+                                onMarkRead(n.id);
+                                if (n.type === 'message' || n.type === 'connection') onNavigate('profile');
+                                setShowNotifications(false);
+                              }}
+                              className={`p-4 border-b border-slate-50 cursor-pointer transition hover:bg-slate-50 ${!n.isRead ? 'bg-blue-50/30' : ''}`}
+                            >
+                              <div className="flex gap-3">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                                  n.type === 'transaction' ? 'bg-green-100 text-green-600' : 
+                                  n.type === 'connection' ? 'bg-purple-100 text-purple-600' : 
+                                  'bg-blue-100 text-blue-600'
+                                }`}>
+                                  {n.type === 'transaction' ? '💰' : n.type === 'connection' ? '🤝' : '🔔'}
+                                </div>
+                                <div className="space-y-1">
+                                  <p className="text-sm text-slate-700 leading-tight">
+                                    <span className="font-bold">{n.fromName}</span> {n.content}
+                                  </p>
+                                  <p className="text-[10px] text-slate-400 font-medium">
+                                    {new Date(n.createdAt).toLocaleDateString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="p-8 text-center">
+                            <p className="text-sm text-slate-400">Aucune notification</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {user ? (
                 <button 
                   onClick={() => onNavigate('profile')}

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { auth, db, onAuthStateChanged, collection, onSnapshot, query, where, orderBy, doc, getDoc, setDoc, updateDoc, addDoc, serverTimestamp } from './api';
-import { Page, User, Service, Request, BlogPost, Testimonial, ForumTopic, Transaction, Connection, ChatMessage } from './types';
+import { Page, User, Service, Request, BlogPost, Testimonial, ForumTopic, Transaction, Connection, ChatMessage, Notification } from './types';
 import Navbar from './Navbar';
 
 // Lazy load pages
@@ -399,6 +399,7 @@ const App: React.FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [visitorCount, setVisitorCount] = useState(0);
 
   const stats = {
@@ -443,6 +444,13 @@ const App: React.FC = () => {
       }
     }
     await updateDoc(doc(db, collectionName, id), updateData);
+    
+    if (newStatus === 'accepted' && partnerId) {
+      const partner = users.find(u => u.uid === partnerId);
+      if (partner) {
+        triggerNotification(partner.uid, type === 'service' ? 'offer' : 'request', `Votre ${type === 'service' ? 'offre' : 'demande'} a été acceptée par ${user.firstName}`, user.firstName);
+      }
+    }
   };
 
   // Formulaire d'aide
@@ -475,6 +483,24 @@ const App: React.FC = () => {
         unsubTransactions = onSnapshot(query(collection(db, 'transactions'), orderBy('createdAt', 'desc')), (snapshot) => {
           setTransactions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction)));
         }, (error) => console.error("Transactions snapshot error:", error));
+
+        const unsubMessages = onSnapshot(query(collection(db, 'messages'), orderBy('createdAt', 'asc')), (snapshot) => {
+          setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChatMessage)));
+        }, (error) => console.error("Messages snapshot error:", error));
+
+        // Notifications listener
+        const unsubNotifications = onSnapshot(
+          query(collection(db, 'notifications'), where('userId', '==', authUser.uid), orderBy('createdAt', 'desc')),
+          (snapshot) => {
+            setNotifications(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification)));
+          },
+          (error) => console.error("Notifications snapshot error:", error)
+        );
+
+        return () => {
+          unsubNotifications();
+          unsubMessages();
+        };
 
       } else {
         setUser(null);
@@ -521,10 +547,28 @@ const App: React.FC = () => {
     };
   }, []);
 
-  const triggerNotification = async (targetUser: User, type: string, fromName: string) => {
-    // Real API integration would go here (SendGrid / Twilio)
-    console.log(`Real Notification sent to ${targetUser.email} and ${targetUser.whatsapp}`);
-    // In a real app, we would call a cloud function here
+  const triggerNotification = async (targetUserId: string, type: 'request' | 'offer' | 'message' | 'connection' | 'transaction', content: string, fromName: string) => {
+    try {
+      await addDoc(collection(db, 'notifications'), {
+        userId: targetUserId,
+        type,
+        content,
+        fromName,
+        isRead: false,
+        createdAt: new Date().toISOString()
+      });
+      console.log(`Notification created for user ${targetUserId}`);
+    } catch (e) {
+      console.error("Error creating notification:", e);
+    }
+  };
+
+  const handleMarkNotificationRead = async (notificationId: string) => {
+    try {
+      await updateDoc(doc(db, 'notifications', notificationId), { isRead: true });
+    } catch (e) {
+      console.error("Error marking notification as read:", e);
+    }
   };
 
   const handleAuth = async (loggedInUser: User) => {
@@ -559,7 +603,7 @@ const App: React.FC = () => {
         createdAt: new Date().toISOString()
       });
 
-      if (provider) triggerNotification(provider, type === 'service' ? "proposition de service" : "demande de service", user.firstName);
+      if (provider) triggerNotification(provider.uid, 'transaction', `Vous avez reçu ${negotiatedAmount} crédits pour : ${item.title}`, user.firstName);
       alert(`Succès ! ${negotiatedAmount} crédits ont été transférés.`);
     } catch (e) {
       console.error(e);
@@ -578,7 +622,7 @@ const App: React.FC = () => {
         updatedAt: new Date().toISOString()
       });
       const target = users.find(u => u.uid === targetUid);
-      if (target) triggerNotification(target, "demande de connexion", user.firstName);
+      if (target) triggerNotification(target.uid, 'connection', "souhaite se connecter avec vous", user.firstName);
     } catch (e) {
       console.error(e);
     }
@@ -590,8 +634,38 @@ const App: React.FC = () => {
         status: newStatus,
         updatedAt: new Date().toISOString()
       });
+
+      if (newStatus === 'accepted') {
+        const conn = connections.find(c => c.id === connectionId);
+        if (conn && user) {
+          const targetId = conn.senderId === user.uid ? conn.receiverId : conn.senderId;
+          const target = users.find(u => u.uid === targetId);
+          if (target) {
+            triggerNotification(target.uid, 'connection', `a accepté votre demande de connexion`, user.firstName);
+          }
+        }
+      }
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleSendMessage = async (receiverId: string, content: string) => {
+    if (!user) return;
+    try {
+      await addDoc(collection(db, 'messages'), {
+        senderId: user.uid,
+        receiverId,
+        content,
+        createdAt: new Date().toISOString()
+      });
+      
+      const target = users.find(u => u.uid === receiverId);
+      if (target) {
+        triggerNotification(target.uid, 'message', `vous a envoyé un message : "${content.substring(0, 30)}${content.length > 30 ? '...' : ''}"`, user.firstName);
+      }
+    } catch (e) {
+      console.error("Error sending message:", e);
     }
   };
 
@@ -639,10 +713,10 @@ const App: React.FC = () => {
       case 'forum': return <Forum user={user} topics={forumTopics} onAdd={(t) => setForumTopics([t, ...forumTopics])} />;
       case 'blog': return <Blog blogs={blogs} onUpdate={(b) => { setBlogs(b); localStorage.setItem('stb_blogs', JSON.stringify(b)); }} user={user} onAuthClick={() => setShowAuthModal('login')} />;
       case 'testimonials': return <Testimonials testimonials={testimonials} onUpdate={(t) => { setTestimonials(t); localStorage.setItem('stb_testimonials', JSON.stringify(t)); }} user={user} onAuthClick={() => setShowAuthModal('login')} />;
-      case 'profile': return user ? <Profile user={user} allUsers={users} transactions={transactions} connections={connections} messages={messages} onUpdate={handleUpdateUser} onSendConnection={handleSendConnection} onUpdateConnection={handleUpdateConnection} onUpdateMessages={setMessages} onDeactivate={handleDeactivateAccount} onDelete={handleDeleteAccount} initialTab={initialProfileTab} initialChatPartner={initialChatPartner} /> : <Home navigate={handleNavigate} blogs={blogs} testimonials={testimonials} stats={stats} />;
+      case 'profile': return user ? <Profile user={user} allUsers={users} transactions={transactions} connections={connections} messages={messages} onUpdate={handleUpdateUser} onSendConnection={handleSendConnection} onUpdateConnection={handleUpdateConnection} onSendMessage={handleSendMessage} onUpdateMessages={setMessages} onDeactivate={handleDeactivateAccount} onDelete={handleDeleteAccount} initialTab={initialProfileTab} initialChatPartner={initialChatPartner} /> : <Home navigate={handleNavigate} blogs={blogs} testimonials={testimonials} stats={stats} />;
       case 'profile-view': 
         const target = users.find(u => u.uid === viewingUserId);
-        return target ? <Profile user={target} currentUser={user} allUsers={users} transactions={transactions} connections={connections} messages={messages} onUpdate={() => {}} onSendConnection={handleSendConnection} onUpdateConnection={handleUpdateConnection} onUpdateMessages={setMessages} readOnly /> : <Members users={users} onViewProfile={() => {}} onContact={() => {}} />;
+        return target ? <Profile user={target} currentUser={user} allUsers={users} transactions={transactions} connections={connections} messages={messages} onUpdate={() => {}} onSendConnection={handleSendConnection} onUpdateConnection={handleUpdateConnection} onSendMessage={handleSendMessage} onUpdateMessages={setMessages} readOnly /> : <Members users={users} onViewProfile={() => {}} onContact={() => {}} />;
       case 'moderation': return <Moderation users={users} onUpdateUsers={setUsers} services={services} onUpdateServices={setServices} requests={requests} onUpdateRequests={setRequests} currentUser={user!} />;
       default: return <Home navigate={handleNavigate} blogs={blogs} testimonials={testimonials} stats={stats} />;
     }
@@ -658,7 +732,16 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
-      <Navbar currentPage={currentPage} user={user} onNavigate={handleNavigate} onLogin={() => setShowAuthModal('login')} onSignup={() => setShowAuthModal('signup')} onLogout={() => setUser(null)} />
+      <Navbar 
+        currentPage={currentPage} 
+        user={user} 
+        notifications={notifications}
+        onNavigate={handleNavigate} 
+        onLogin={() => setShowAuthModal('login')} 
+        onSignup={() => setShowAuthModal('signup')} 
+        onLogout={() => setUser(null)} 
+        onMarkRead={handleMarkNotificationRead}
+      />
       <main className="flex-grow pt-16">
         <Suspense fallback={
           <div className="flex items-center justify-center min-h-[60vh]">

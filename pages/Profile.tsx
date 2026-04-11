@@ -12,6 +12,7 @@ interface ProfileProps {
   onUpdate: (u: User) => void;
   onSendConnection?: (targetUid: string) => void;
   onUpdateConnection?: (connectionId: string, status: 'accepted' | 'refused' | 'cancelled') => void;
+  onSendMessage?: (receiverId: string, content: string) => void;
   onUpdateMessages: (m: ChatMessage[]) => void;
   onDeactivate?: () => void;
   onDelete?: () => void;
@@ -30,6 +31,7 @@ const Profile: React.FC<ProfileProps> = ({
   onUpdate, 
   onSendConnection,
   onUpdateConnection,
+  onSendMessage,
   onUpdateMessages,
   onDeactivate,
   onDelete,
@@ -59,6 +61,12 @@ const Profile: React.FC<ProfileProps> = ({
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleSend = () => {
+    if (!messageContent.trim() || !selectedChatPartner || !onSendMessage) return;
+    onSendMessage(selectedChatPartner, messageContent);
+    setMessageContent('');
   };
 
   const userTransactions = transactions.filter(t => t.fromId === user.uid || t.toId === user.uid);
@@ -377,6 +385,67 @@ const Profile: React.FC<ProfileProps> = ({
                   </div>
                 )}
               </section>
+            </div>
+          )}
+
+          {activeTab === 'messages' && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[500px] animate-in fade-in">
+              <div className="md:col-span-1 border-r border-slate-100 pr-4 overflow-y-auto">
+                <h3 className="font-heading text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Conversations</h3>
+                <div className="space-y-2">
+                  {myConnections.map(conn => {
+                    const partnerId = conn.senderId === user.uid ? conn.receiverId : conn.senderId;
+                    const partner = allUsers.find(u => u.uid === partnerId);
+                    if (!partner) return null;
+                    return (
+                      <button 
+                        key={partner.uid}
+                        onClick={() => setSelectedChatPartner(partner.uid)}
+                        className={`w-full p-3 rounded-2xl flex items-center gap-3 transition ${selectedChatPartner === partner.uid ? 'bg-blue-50 border-blue-100 border' : 'hover:bg-slate-50 border border-transparent'}`}
+                      >
+                        <img src={partner.avatar} className="w-10 h-10 rounded-full object-cover" />
+                        <div className="text-left">
+                          <p className="font-bold text-xs text-slate-800">{partner.firstName}</p>
+                          <p className="text-[10px] text-slate-400 truncate w-24">Dernier message...</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="md:col-span-2 flex flex-col h-full">
+                {selectedChatPartner ? (
+                  <>
+                    <div className="flex-grow overflow-y-auto space-y-4 mb-4 pr-2">
+                      {messages
+                        .filter(m => (m.senderId === user.uid && m.receiverId === selectedChatPartner) || (m.senderId === selectedChatPartner && m.receiverId === user.uid))
+                        .map(m => (
+                          <div key={m.id} className={`flex ${m.senderId === user.uid ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`max-w-[80%] p-4 rounded-2xl text-sm ${m.senderId === user.uid ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-slate-100 text-slate-800 rounded-tl-none'}`}>
+                              {m.content}
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <input 
+                        className="flex-grow px-5 py-3 rounded-xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm" 
+                        placeholder="Écrivez votre message..."
+                        value={messageContent}
+                        onChange={e => setMessageContent(e.target.value)}
+                        onKeyPress={e => e.key === 'Enter' && handleSend()}
+                      />
+                      <button onClick={handleSend} className="bg-blue-600 text-white p-3 rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-100">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex-grow flex items-center justify-center text-slate-400 italic text-sm">
+                    Sélectionnez une conversation pour commencer à discuter.
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

@@ -223,6 +223,16 @@ export const initDB = async () => {
         type VARCHAR(50),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+
+      CREATE TABLE IF NOT EXISTS notifications (
+        id SERIAL PRIMARY KEY,
+        user_id VARCHAR(255) REFERENCES users(uid),
+        type VARCHAR(50) NOT NULL,
+        content TEXT NOT NULL,
+        from_name VARCHAR(255),
+        is_read BOOLEAN DEFAULT false,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
       DO $$ 
       BEGIN 
         BEGIN

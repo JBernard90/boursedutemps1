@@ -147,3 +147,13 @@ export interface ChatMessage {
   timestamp: string;
   isRead: boolean;
 }
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: 'request' | 'offer' | 'message' | 'connection' | 'transaction';
+  content: string;
+  fromName: string;
+  isRead: boolean;
+  createdAt: string;
+}
