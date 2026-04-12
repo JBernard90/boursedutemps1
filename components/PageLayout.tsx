@@ -31,9 +31,13 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
 
   const handleMarkRead = async (id: string) => {
     try {
-      await fetch(`/api/notifications/${id}/read`, {
+      await fetch(`/api/notifications/${id}`, {
         method: 'PATCH',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}` 
+        },
+        body: JSON.stringify({ isRead: true })
       });
     } catch (e) {
       console.error(e);

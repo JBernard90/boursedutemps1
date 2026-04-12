@@ -21,17 +21,18 @@ export async function POST(req: Request) {
 
   const hashedPassword = await bcrypt.hash(data.password, 10);
   const uid = uuidv4();
+  const role = data.email === 'jeanbernardpierrelouis@gmail.com' ? 'admin' : 'user';
 
   try {
     await query(
       `INSERT INTO users (
         uid, email, password, first_name, last_name, whatsapp, department, gender, country, 
-        availability, languages, offered_skills, requested_skills, avatar, terms_accepted
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+        availability, languages, offered_skills, requested_skills, avatar, terms_accepted, role
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
       [
         uid, data.email, hashedPassword, data.firstName, data.lastName, data.phone, data.department, 
         data.gender, data.country, data.availability, JSON.stringify(data.languages), 
-        JSON.stringify(data.offeredSkills), JSON.stringify(data.requestedSkills), data.avatar, true
+        JSON.stringify(data.offeredSkills), JSON.stringify(data.requestedSkills), data.avatar, true, role
       ]
     );
 

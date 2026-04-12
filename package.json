@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
+    "@tailwindcss/postcss": "^4.2.2",
     "@types/uuid": "^10.0.0",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
@@ -23,6 +24,7 @@
     "node-fetch": "^3.3.2",
     "nodemailer": "^8.0.1",
     "pg": "^8.20.0",
+    "postcss": "^8.5.9",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-markdown": "^10.1.0",
@@ -39,6 +41,8 @@
     "@types/node": "^22.14.0",
     "@types/nodemailer": "^7.0.11",
     "@types/pg": "^8.18.0",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "14.2.15",
     "typescript": "~5.8.2"
   }
 }

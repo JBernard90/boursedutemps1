@@ -32,16 +32,17 @@ export const pool = new Pool({
   connectionTimeoutMillis: 5000, // Fail fast if DNS/Network is down
 });
 
+let isInitialized = false;
+
 export const query = async (text: string, params?: any[]) => {
   if (!pool) {
-    return { rows: [], rowCount: 0 };
+    throw new Error('Database pool not initialized');
   }
-  try {
-    return await pool.query(text, params);
-  } catch (error: any) {
-    console.error('Database query error:', error.message);
-    return { rows: [], rowCount: 0 };
+  if (!isInitialized && text.toLowerCase().indexOf('create table') === -1 && text.toLowerCase().indexOf('alter table') === -1) {
+    await initDB();
+    isInitialized = true;
   }
+  return await pool.query(text, params);
 };
 
 export const initDB = async () => {
@@ -176,6 +177,7 @@ export const initDB = async () => {
         author_id VARCHAR(255) REFERENCES users(uid),
         author_name VARCHAR(255),
         author_avatar VARCHAR(255),
+        title VARCHAR(255),
         content TEXT NOT NULL,
         rating INTEGER NOT NULL,
         media JSONB DEFAULT '[]',
@@ -231,6 +233,14 @@ export const initDB = async () => {
         content TEXT NOT NULL,
         from_name VARCHAR(255),
         is_read BOOLEAN DEFAULT false,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS messages (
+        id SERIAL PRIMARY KEY,
+        sender_id VARCHAR(255) REFERENCES users(uid),
+        receiver_id VARCHAR(255) REFERENCES users(uid),
+        content TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
       DO $$ 

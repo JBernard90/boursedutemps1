@@ -2,6 +2,7 @@ import { Inter, Outfit } from 'next/font/google';
 import './globals.css';
 import { UserProvider } from '@/components/UserProvider';
 import { Metadata } from 'next';
+import { initDB } from '@/db';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -28,11 +29,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  await initDB();
   return (
     <html lang="en" className={`${inter.variable} ${outfit.variable}`}>
       <body className="font-sans antialiased">

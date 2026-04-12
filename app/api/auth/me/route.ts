@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getUserIdFromRequest } from '@/lib/auth';
-import { query } from '@/db';
+import { query, initDB } from '@/db';
 
 export async function GET(req: Request) {
+  await initDB();
   const uid = getUserIdFromRequest(req);
   if (!uid) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

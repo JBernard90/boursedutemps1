@@ -100,6 +100,7 @@ export const onSnapshot = (q: any, callback: (snapshot: any) => void, errorCallb
       const snapshot = await getDocs(q);
       if (!isCancelled) callback(snapshot);
     } catch (e) {
+      console.error(`[onSnapshot Error] ${q.col || q}:`, e);
       if (!isCancelled && errorCallback) errorCallback(e);
     }
   };
