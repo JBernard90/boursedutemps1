@@ -102,7 +102,15 @@ const Members: React.FC<MembersProps> = ({ users, onViewProfile, onContact }) =>
           >
             <div className="w-24 h-24 rounded-full overflow-hidden mx-auto mb-4 border-4 border-slate-50 group-hover:border-blue-100 transition relative">
               {u.avatar ? (
-                <Image src={u.avatar} alt={`${u.firstName}`} fill className="object-cover" unoptimized={u.avatar.startsWith('data:')} />
+                <Image 
+                  src={u.avatar} 
+                  alt={`${u.firstName}`} 
+                  fill 
+                  className="object-cover" 
+                  unoptimized={u.avatar.startsWith('data:')} 
+                  sizes="96px"
+                  quality={80}
+                />
               ) : (
                 <div className="w-full h-full bg-slate-100 flex items-center justify-center text-2xl font-bold text-slate-400">
                   {u.firstName[0]}

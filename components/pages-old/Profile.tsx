@@ -121,7 +121,19 @@ const Profile: React.FC<ProfileProps> = ({
           <div className="flex items-center gap-6 translate-y-12 relative z-10">
             <div className="w-32 h-32 rounded-3xl bg-white p-2 shadow-2xl">
               <div className="w-full h-full rounded-2xl bg-slate-100 flex items-center justify-center overflow-hidden relative">
-                {user.avatar ? <Image src={user.avatar} alt="Avatar" fill className="object-cover" unoptimized={user.avatar.startsWith('data:')} /> : <span className="text-4xl">👤</span>}
+                {user.avatar ? (
+                  <Image 
+                    src={user.avatar} 
+                    alt="Avatar" 
+                    fill 
+                    className="object-cover" 
+                    unoptimized={user.avatar.startsWith('data:')} 
+                    sizes="128px"
+                    priority
+                  />
+                ) : (
+                  <span className="text-4xl">👤</span>
+                )}
               </div>
             </div>
             <div className="pb-4">
@@ -356,7 +368,14 @@ const Profile: React.FC<ProfileProps> = ({
                         <div key={req.id} className="p-4 bg-white rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm">
                           <div className="flex items-center gap-3">
                             <div className="relative w-10 h-10">
-                              <Image src={sender.avatar} alt="Avatar" fill className="rounded-full object-cover" unoptimized={sender.avatar.startsWith('data:')} />
+                              <Image 
+                                src={sender.avatar} 
+                                alt="Avatar" 
+                                fill 
+                                className="rounded-full object-cover" 
+                                unoptimized={sender.avatar.startsWith('data:')} 
+                                sizes="40px"
+                              />
                             </div>
                             <p className="font-bold text-sm">{sender.firstName} {sender.lastName}</p>
                           </div>
@@ -383,7 +402,14 @@ const Profile: React.FC<ProfileProps> = ({
                       return partner ? (
                         <div key={conn.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
                           <div className="relative w-10 h-10">
-                            <Image src={partner.avatar} alt="Avatar" fill className="rounded-full object-cover" unoptimized={partner.avatar.startsWith('data:')} />
+                            <Image 
+                              src={partner.avatar} 
+                              alt="Avatar" 
+                              fill 
+                              className="rounded-full object-cover" 
+                              unoptimized={partner.avatar.startsWith('data:')} 
+                              sizes="40px"
+                            />
                           </div>
                           <p className="font-bold text-xs">{partner.firstName} {partner.lastName}</p>
                         </div>
@@ -411,7 +437,14 @@ const Profile: React.FC<ProfileProps> = ({
                         className={`w-full p-3 rounded-2xl flex items-center gap-3 transition ${selectedChatPartner === partner.uid ? 'bg-blue-50 border-blue-100 border' : 'hover:bg-slate-50 border border-transparent'}`}
                       >
                         <div className="relative w-10 h-10">
-                          <Image src={partner.avatar} alt="Avatar" fill className="rounded-full object-cover" unoptimized={partner.avatar.startsWith('data:')} />
+                          <Image 
+                            src={partner.avatar} 
+                            alt="Avatar" 
+                            fill 
+                            className="rounded-full object-cover" 
+                            unoptimized={partner.avatar.startsWith('data:')} 
+                            sizes="40px"
+                          />
                         </div>
                         <div className="text-left">
                           <p className="font-bold text-xs text-slate-800">{partner.firstName}</p>

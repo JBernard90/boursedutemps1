@@ -210,6 +210,8 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, user, notifications, onNav
                         fill 
                         className="object-cover" 
                         unoptimized={user.avatar.startsWith('data:')}
+                        sizes="28px"
+                        quality={80}
                       />
                     ) : (
                       <span className="text-[10px] text-blue-600 font-bold">{user.firstName[0]}</span>

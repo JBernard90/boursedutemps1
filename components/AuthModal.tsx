@@ -320,6 +320,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
                             fill 
                             className="object-cover" 
                             unoptimized={avatar.startsWith('data:')}
+                            sizes="96px"
                           />
                         ) : (
                           <span className="text-3xl grayscale">👤</span>
