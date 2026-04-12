@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
 import { BlogPost, User, MediaItem, BlogComment } from '../../types';
 import { Edit2, Trash2, MessageCircle, Heart, Share2, ExternalLink } from 'lucide-react';
 import { db, doc, updateDoc, deleteDoc, addDoc, collection } from '../../api';
@@ -212,7 +213,9 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
             {mediaData && (
               <div className="rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 p-2">
                 {mediaType === 'image' ? (
-                  <img src={mediaData} className="w-full h-40 object-cover rounded-xl" alt="Preview" />
+                  <div className="relative w-full h-40">
+                    <Image src={mediaData} fill className="object-cover rounded-xl" alt="Preview" unoptimized={mediaData.startsWith('data:')} />
+                  </div>
                 ) : (
                   <video src={mediaData} className="w-full h-40 object-cover rounded-xl" />
                 )}
@@ -235,8 +238,8 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
           <article key={blog.id} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition">
             <div className="p-8">
               <div className="flex items-center gap-4 mb-6">
-                <div className="w-12 h-12 rounded-full bg-slate-100 overflow-hidden border-2 border-white shadow-sm">
-                  {blog.authorAvatar ? <img src={blog.authorAvatar} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center font-bold text-slate-400">{blog.authorName[0]}</div>}
+                <div className="w-12 h-12 rounded-full bg-slate-100 overflow-hidden border-2 border-white shadow-sm relative">
+                  {blog.authorAvatar ? <Image src={blog.authorAvatar} alt="Author" fill className="object-cover" unoptimized={blog.authorAvatar.startsWith('data:')} /> : <div className="w-full h-full flex items-center justify-center font-bold text-slate-400">{blog.authorName[0]}</div>}
                 </div>
                 <div className="flex-grow">
                   <h3 className="font-bold text-slate-800">{blog.authorName}</h3>
@@ -258,9 +261,9 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
               <p className="text-slate-600 leading-relaxed mb-6 whitespace-pre-wrap">{blog.content}</p>
               
               {blog.media.length > 0 && (
-                <div className="rounded-3xl overflow-hidden mb-6 bg-slate-50 border border-slate-100">
+                <div className="rounded-3xl overflow-hidden mb-6 bg-slate-50 border border-slate-100 relative min-h-[200px]">
                   {blog.media[0].type === 'image' ? (
-                    <img src={blog.media[0].url} className="w-full h-auto max-h-[500px] object-cover" alt="Media" />
+                    <Image src={blog.media[0].url} alt="Media" width={800} height={500} className="w-full h-auto max-h-[500px] object-cover" unoptimized={blog.media[0].url.startsWith('data:')} />
                   ) : (
                     <video src={blog.media[0].url} controls className="w-full h-auto max-h-[500px]" />
                   )}
@@ -295,8 +298,8 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
                     {blog.comments.map(comment => (
                       <div key={comment.id} className="bg-slate-50 p-4 rounded-2xl">
                         <div className="flex items-center gap-2 mb-2">
-                          <div className="w-6 h-6 rounded-full bg-slate-200 overflow-hidden">
-                            {comment.authorAvatar ? <img src={comment.authorAvatar} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-[10px] font-bold">{comment.authorName[0]}</div>}
+                          <div className="w-6 h-6 rounded-full bg-slate-200 overflow-hidden relative">
+                            {comment.authorAvatar ? <Image src={comment.authorAvatar} alt="Comment Author" fill className="object-cover" unoptimized={comment.authorAvatar.startsWith('data:')} /> : <div className="w-full h-full flex items-center justify-center text-[10px] font-bold">{comment.authorName[0]}</div>}
                           </div>
                           <span className="font-bold text-sm text-slate-800">{comment.authorName}</span>
                           <span className="text-[10px] text-slate-400">{new Date(comment.createdAt).toLocaleDateString()}</span>

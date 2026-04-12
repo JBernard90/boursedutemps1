@@ -1,7 +1,8 @@
 
-"use client";
-
 import React, { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { useRouter, usePathname } from 'next/navigation';
 import { Search, Bell, Menu, X, Clock } from 'lucide-react';
 import { Page, User, Notification } from '../types';
 
@@ -22,6 +23,8 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, user, notifications, onNav
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const pathname = usePathname();
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
@@ -38,15 +41,15 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, user, notifications, onNav
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const navItems: { label: string; page: Page }[] = [
-    { label: 'Accueil', page: 'home' },
-    { label: 'À Propos', page: 'about' },
-    { label: 'Services', page: 'services' },
-    { label: 'Demandes', page: 'requests' },
-    { label: 'Membres', page: 'members' },
-    { label: 'Forum', page: 'forum' },
-    { label: 'Blog', page: 'blog' },
-    { label: 'Témoignages', page: 'testimonials' },
+  const navItems: { label: string; page: Page; path: string }[] = [
+    { label: 'Accueil', page: 'home', path: '/' },
+    { label: 'À Propos', page: 'about', path: '/about' },
+    { label: 'Services', page: 'services', path: '/services' },
+    { label: 'Demandes', page: 'requests', path: '/requests' },
+    { label: 'Membres', page: 'members', path: '/members' },
+    { label: 'Forum', page: 'forum', path: '/forum' },
+    { label: 'Blog', page: 'blog', path: '/blog' },
+    { label: 'Témoignages', page: 'testimonials', path: '/testimonials' },
   ];
 
   const isAdminOrMod = user?.role === 'admin' || user?.role === 'moderator';
@@ -56,50 +59,51 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, user, notifications, onNav
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           {/* Logo Section */}
-          <div 
+          <Link 
+            href="/"
             className="flex items-center gap-3 cursor-pointer group"
-            onClick={() => onNavigate('home')}
           >
-            <div className="relative">
-              <img 
+            <div className="relative w-10 h-10">
+              <Image 
                 src="https://i.postimg.cc/5Y3Rg6zs/image-1.jpg" 
                 alt="Logo" 
-                className="w-10 h-10 rounded-full shadow-sm group-hover:scale-105 transition-transform object-cover border border-slate-100" 
+                fill
+                className="rounded-full shadow-sm group-hover:scale-105 transition-transform object-cover border border-slate-100" 
               />
               <div className="absolute inset-0 rounded-full bg-blue-600/0 group-hover:bg-blue-600/5 transition-colors" />
             </div>
-            <span className="font-heading font-bold text-lg tracking-tight text-slate-900 hidden sm:block">
+            <span className="font-heading font-bold text-lg tracking-tight text-slate-900 hidden sm:block uppercase">
               BOURSE DU TEMPS
             </span>
-          </div>
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-1">
             {navItems.map((item) => (
-              <button
+              <Link
                 key={item.page}
-                onClick={() => onNavigate(item.page)}
+                href={item.path}
                 className={`px-3 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
-                  currentPage === item.page 
+                  pathname === item.path 
                     ? 'text-blue-600 bg-blue-50' 
                     : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'
                 }`}
               >
                 {item.label}
-              </button>
+              </Link>
             ))}
 
             {isAdminOrMod && (
-              <button
-                onClick={() => onNavigate('moderation')}
+              <Link
+                href="/moderation"
                 className={`px-3 py-2 rounded-full text-sm font-semibold transition-all duration-200 ml-1 ${
-                  currentPage === 'moderation' 
+                  pathname === '/moderation' 
                     ? 'text-purple-600 bg-purple-50' 
                     : 'text-purple-500 hover:text-purple-600 hover:bg-purple-50'
                 }`}
               >
                 Modération
-              </button>
+              </Link>
             )}
             
             <div className="ml-4 pl-4 border-l border-slate-200 flex items-center gap-2">
@@ -154,7 +158,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, user, notifications, onNav
                               key={n.id} 
                               onClick={() => {
                                 onMarkRead(n.id);
-                                if (n.type === 'message' || n.type === 'connection') onNavigate('profile');
+                                if (n.type === 'message' || n.type === 'connection') router.push('/profile');
                                 setShowNotifications(false);
                               }}
                               className={`p-4 border-b border-slate-50 cursor-pointer transition hover:bg-slate-50 ${!n.isRead ? 'bg-blue-50/30' : ''}`}
@@ -190,22 +194,28 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, user, notifications, onNav
               )}
 
               {user ? (
-                <button 
-                  onClick={() => onNavigate('profile')}
+                <Link 
+                  href="/profile"
                   className="flex items-center gap-2 bg-blue-600 text-white pl-4 pr-1.5 py-1.5 rounded-full transition-all duration-200 hover:bg-blue-700 shadow-md shadow-blue-200 group"
                 >
                   <div className="flex items-center gap-1.5">
                     <Clock className="w-4 h-4 text-blue-100" />
                     <span className="text-sm font-bold">{user.credits}</span>
                   </div>
-                  <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center overflow-hidden border border-blue-400 shadow-sm group-hover:scale-105 transition-transform">
+                  <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center overflow-hidden border border-blue-400 shadow-sm group-hover:scale-105 transition-transform relative">
                     {user.avatar ? (
-                      <img src={user.avatar} className="w-full h-full object-cover" />
+                      <Image 
+                        src={user.avatar} 
+                        alt="User avatar" 
+                        fill 
+                        className="object-cover" 
+                        unoptimized={user.avatar.startsWith('data:')}
+                      />
                     ) : (
                       <span className="text-[10px] text-blue-600 font-bold">{user.firstName[0]}</span>
                     )}
                   </div>
-                </button>
+                </Link>
               ) : (
                 <button 
                   onClick={onLogin}
@@ -231,25 +241,27 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, user, notifications, onNav
       {isOpen && (
         <div className="lg:hidden bg-white border-t border-slate-100 py-4 px-4 space-y-1 shadow-2xl animate-in slide-in-from-top duration-300">
           {navItems.map((item) => (
-            <button
+            <Link
               key={item.page}
-              onClick={() => { onNavigate(item.page); setIsOpen(false); }}
-              className={`w-full text-left px-4 py-3 rounded-xl text-base font-bold transition-colors ${
-                currentPage === item.page ? 'bg-blue-50 text-blue-600' : 'text-slate-700 hover:bg-slate-50'
+              href={item.path}
+              onClick={() => setIsOpen(false)}
+              className={`w-full text-left px-4 py-3 rounded-xl text-base font-bold transition-colors block ${
+                pathname === item.path ? 'bg-blue-50 text-blue-600' : 'text-slate-700 hover:bg-slate-50'
               }`}
             >
               {item.label}
-            </button>
+            </Link>
           ))}
           <div className="pt-4 mt-4 border-t border-slate-100 space-y-3">
             {user ? (
-              <button 
-                onClick={() => { onNavigate('profile'); setIsOpen(false); }}
+              <Link 
+                href="/profile"
+                onClick={() => setIsOpen(false)}
                 className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-100 flex items-center justify-center gap-2"
               >
                 <Clock className="w-5 h-5" />
                 Mon Profil ({user.credits} crédits)
-              </button>
+              </Link>
             ) : (
               <button 
                 onClick={() => { onLogin(); setIsOpen(false); }}

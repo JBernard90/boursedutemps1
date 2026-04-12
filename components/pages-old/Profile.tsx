@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { User, Transaction, Connection, ChatMessage } from '../../types';
 
 interface ProfileProps {
@@ -95,13 +96,13 @@ const Profile: React.FC<ProfileProps> = ({
         <div className="h-48 bg-slate-900 p-8 flex items-end justify-between relative group">
           {isEditing ? (
             editedUser.coverPhoto ? (
-              <img src={editedUser.coverPhoto} className="absolute inset-0 w-full h-full object-cover opacity-80" alt="Cover" />
+              <Image src={editedUser.coverPhoto} fill className="absolute inset-0 object-cover opacity-80" alt="Cover" unoptimized={editedUser.coverPhoto.startsWith('data:')} />
             ) : (
               <div className="absolute inset-0 bg-gradient-to-r from-blue-900 to-indigo-900 opacity-80"></div>
             )
           ) : (
             user.coverPhoto ? (
-              <img src={user.coverPhoto} className="absolute inset-0 w-full h-full object-cover opacity-80" alt="Cover" />
+              <Image src={user.coverPhoto} fill className="absolute inset-0 object-cover opacity-80" alt="Cover" unoptimized={user.coverPhoto.startsWith('data:')} />
             ) : (
               <div className="absolute inset-0 bg-gradient-to-r from-blue-900 to-indigo-900 opacity-80"></div>
             )
@@ -119,8 +120,8 @@ const Profile: React.FC<ProfileProps> = ({
 
           <div className="flex items-center gap-6 translate-y-12 relative z-10">
             <div className="w-32 h-32 rounded-3xl bg-white p-2 shadow-2xl">
-              <div className="w-full h-full rounded-2xl bg-slate-100 flex items-center justify-center overflow-hidden">
-                {user.avatar ? <img src={user.avatar} className="w-full h-full object-cover" /> : <span className="text-4xl">👤</span>}
+              <div className="w-full h-full rounded-2xl bg-slate-100 flex items-center justify-center overflow-hidden relative">
+                {user.avatar ? <Image src={user.avatar} alt="Avatar" fill className="object-cover" unoptimized={user.avatar.startsWith('data:')} /> : <span className="text-4xl">👤</span>}
               </div>
             </div>
             <div className="pb-4">
@@ -354,7 +355,9 @@ const Profile: React.FC<ProfileProps> = ({
                       return sender ? (
                         <div key={req.id} className="p-4 bg-white rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm">
                           <div className="flex items-center gap-3">
-                            <img src={sender.avatar} className="w-10 h-10 rounded-full object-cover" />
+                            <div className="relative w-10 h-10">
+                              <Image src={sender.avatar} alt="Avatar" fill className="rounded-full object-cover" unoptimized={sender.avatar.startsWith('data:')} />
+                            </div>
                             <p className="font-bold text-sm">{sender.firstName} {sender.lastName}</p>
                           </div>
                           <div className="flex gap-2">
@@ -379,7 +382,9 @@ const Profile: React.FC<ProfileProps> = ({
                       const partner = allUsers.find(u => u.uid === partnerId);
                       return partner ? (
                         <div key={conn.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
-                          <img src={partner.avatar} className="w-10 h-10 rounded-full object-cover" />
+                          <div className="relative w-10 h-10">
+                            <Image src={partner.avatar} alt="Avatar" fill className="rounded-full object-cover" unoptimized={partner.avatar.startsWith('data:')} />
+                          </div>
                           <p className="font-bold text-xs">{partner.firstName} {partner.lastName}</p>
                         </div>
                       ) : null;
@@ -405,7 +410,9 @@ const Profile: React.FC<ProfileProps> = ({
                         onClick={() => setSelectedChatPartner(partner.uid)}
                         className={`w-full p-3 rounded-2xl flex items-center gap-3 transition ${selectedChatPartner === partner.uid ? 'bg-blue-50 border-blue-100 border' : 'hover:bg-slate-50 border border-transparent'}`}
                       >
-                        <img src={partner.avatar} className="w-10 h-10 rounded-full object-cover" />
+                        <div className="relative w-10 h-10">
+                          <Image src={partner.avatar} alt="Avatar" fill className="rounded-full object-cover" unoptimized={partner.avatar.startsWith('data:')} />
+                        </div>
                         <div className="text-left">
                           <p className="font-bold text-xs text-slate-800">{partner.firstName}</p>
                           <p className="text-[10px] text-slate-400 truncate w-24">Dernier message...</p>

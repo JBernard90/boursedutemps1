@@ -2,6 +2,7 @@
 "use client";
 
 import React from 'react';
+import Image from 'next/image';
 import { User, Service, Request } from '../../types';
 
 interface ModerationProps {
@@ -68,8 +69,8 @@ const Moderation: React.FC<ModerationProps> = ({ users, onUpdateUsers, services,
                 <tr key={u.id}>
                   <td className="px-8 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100">
-                        {u.avatar ? <img src={u.avatar} className="w-full h-full object-cover" /> : null}
+                      <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100 relative">
+                        {u.avatar ? <Image src={u.avatar} alt="Avatar" fill className="object-cover" unoptimized={u.avatar.startsWith('data:')} /> : null}
                       </div>
                       <span className="font-bold text-slate-700 text-sm">{u.firstName} {u.lastName}</span>
                     </div>

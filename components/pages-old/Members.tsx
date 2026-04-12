@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { User } from '../../types';
 
 interface MembersProps {
@@ -99,9 +100,9 @@ const Members: React.FC<MembersProps> = ({ users, onViewProfile, onContact }) =>
             onClick={() => onViewProfile(u.uid)}
             className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all text-center cursor-pointer group"
           >
-            <div className="w-24 h-24 rounded-full overflow-hidden mx-auto mb-4 border-4 border-slate-50 group-hover:border-blue-100 transition">
+            <div className="w-24 h-24 rounded-full overflow-hidden mx-auto mb-4 border-4 border-slate-50 group-hover:border-blue-100 transition relative">
               {u.avatar ? (
-                <img src={u.avatar} alt={`${u.firstName}`} className="w-full h-full object-cover" />
+                <Image src={u.avatar} alt={`${u.firstName}`} fill className="object-cover" unoptimized={u.avatar.startsWith('data:')} />
               ) : (
                 <div className="w-full h-full bg-slate-100 flex items-center justify-center text-2xl font-bold text-slate-400">
                   {u.firstName[0]}

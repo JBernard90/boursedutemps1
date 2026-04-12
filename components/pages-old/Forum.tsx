@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useRef } from 'react';
+import Image from 'next/image';
 import { User, ForumTopic, MediaItem } from '../../types';
 import { db, doc, updateDoc, deleteDoc, addDoc, collection } from '../../api';
 import { Edit2, Trash2, MessageCircle, Heart, Share2 } from 'lucide-react';
@@ -154,7 +155,9 @@ const Forum: React.FC<ForumProps> = ({ user, topics }) => {
             {mediaData && (
               <div className="rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 p-2">
                 {mediaType === 'image' ? (
-                  <img src={mediaData} className="w-full h-40 object-cover rounded-xl" alt="Preview" />
+                  <div className="relative w-full h-40">
+                    <Image src={mediaData} fill className="object-cover rounded-xl" alt="Preview" unoptimized={mediaData.startsWith('data:')} />
+                  </div>
                 ) : (
                   <video src={mediaData} className="w-full h-40 object-cover rounded-xl" />
                 )}
@@ -186,8 +189,8 @@ const Forum: React.FC<ForumProps> = ({ user, topics }) => {
             )}
 
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-lg font-bold text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition overflow-hidden">
-                {topic.authorAvatar ? <img src={topic.authorAvatar} className="w-full h-full object-cover" /> : topic.authorName[0]}
+              <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-lg font-bold text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition overflow-hidden relative">
+                {topic.authorAvatar ? <Image src={topic.authorAvatar} alt="Author" fill className="object-cover" unoptimized={topic.authorAvatar.startsWith('data:')} /> : topic.authorName[0]}
               </div>
               <div className="flex-grow">
                 <h3 className="font-heading text-xl font-bold text-slate-800 mb-2 pr-16">{topic.title}</h3>
@@ -200,9 +203,9 @@ const Forum: React.FC<ForumProps> = ({ user, topics }) => {
                 )}
 
                 {topic.media && topic.media.length > 0 && (
-                  <div className="rounded-2xl overflow-hidden mb-4 bg-slate-50 border border-slate-100">
+                  <div className="rounded-2xl overflow-hidden mb-4 bg-slate-50 border border-slate-100 relative min-h-[200px]">
                     {topic.media[0].type === 'image' ? (
-                      <img src={topic.media[0].url} className="w-full h-auto max-h-[300px] object-cover" alt="Media" />
+                      <Image src={topic.media[0].url} alt="Media" width={800} height={300} className="w-full h-auto max-h-[300px] object-cover" unoptimized={topic.media[0].url.startsWith('data:')} />
                     ) : (
                       <video src={topic.media[0].url} controls className="w-full h-auto max-h-[300px]" />
                     )}
@@ -235,8 +238,8 @@ const Forum: React.FC<ForumProps> = ({ user, topics }) => {
                       {(topic.comments || []).map(comment => (
                         <div key={comment.id} className="bg-slate-50 p-3 rounded-2xl">
                           <div className="flex items-center gap-2 mb-1">
-                            <div className="w-5 h-5 rounded-full bg-slate-200 overflow-hidden">
-                              {comment.authorAvatar ? <img src={comment.authorAvatar} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-[8px] font-bold">{comment.authorName[0]}</div>}
+                            <div className="w-5 h-5 rounded-full bg-slate-200 overflow-hidden relative">
+                              {comment.authorAvatar ? <Image src={comment.authorAvatar} alt="Comment Author" fill className="object-cover" unoptimized={comment.authorAvatar.startsWith('data:')} /> : <div className="w-full h-full flex items-center justify-center text-[8px] font-bold">{comment.authorName[0]}</div>}
                             </div>
                             <span className="font-bold text-xs text-slate-800">{comment.authorName}</span>
                           </div>

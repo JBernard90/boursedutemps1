@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { User } from '../types';
 
 interface AuthModalProps {
@@ -311,8 +312,18 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
                   <div className="text-center">
                     <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Photo de Profil (OBLIGATOIRE)</label>
                     <div className="flex flex-col items-center gap-4">
-                      <div className="w-24 h-24 rounded-full bg-slate-100 overflow-hidden flex items-center justify-center border-4 border-blue-50 shadow-inner">
-                        {avatar ? <img src={avatar} className="w-full h-full object-cover" /> : <span className="text-3xl grayscale">👤</span>}
+                      <div className="w-24 h-24 rounded-full bg-slate-100 overflow-hidden flex items-center justify-center border-4 border-blue-50 shadow-inner relative">
+                        {avatar ? (
+                          <Image 
+                            src={avatar} 
+                            alt="Avatar preview" 
+                            fill 
+                            className="object-cover" 
+                            unoptimized={avatar.startsWith('data:')}
+                          />
+                        ) : (
+                          <span className="text-3xl grayscale">👤</span>
+                        )}
                       </div>
                       <input type="file" accept="image/*" onChange={handleFileChange} className="text-xs text-slate-500 cursor-pointer" required />
                     </div>
