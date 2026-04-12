@@ -27,7 +27,7 @@ const Moderation: React.FC<ModerationProps> = ({ users, onUpdateUsers, services,
     if (window.confirm("Supprimer cette annonce ?")) {
       const up = services.filter(s => s.id !== sid);
       onUpdateServices(up);
-      localStorage.setItem('stb_services', JSON.stringify(up));
+      localStorage.setItem('bdt_services', JSON.stringify(up));
     }
   };
 
@@ -35,7 +35,7 @@ const Moderation: React.FC<ModerationProps> = ({ users, onUpdateUsers, services,
     if (window.confirm("Supprimer cette demande ?")) {
       const up = requests.filter(r => r.id !== rid);
       onUpdateRequests(up);
-      localStorage.setItem('stb_requests', JSON.stringify(up));
+      localStorage.setItem('bdt_requests', JSON.stringify(up));
     }
   };
 

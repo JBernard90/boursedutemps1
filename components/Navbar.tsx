@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
+import { Search, Bell, Menu, X, Clock } from 'lucide-react';
 import { Page, User, Notification } from '../types';
 
 interface NavbarProps {
@@ -18,7 +19,9 @@ interface NavbarProps {
 const Navbar: React.FC<NavbarProps> = ({ currentPage, user, notifications, onNavigate, onLogin, onSignup, onLogout, onMarkRead }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
@@ -26,6 +29,9 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, user, notifications, onNav
     const handleClickOutside = (event: MouseEvent) => {
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
         setShowNotifications(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setIsSearchOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -46,32 +52,37 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, user, notifications, onNav
   const isAdminOrMod = user?.role === 'admin' || user?.role === 'moderator';
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-100 shadow-sm">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200/50 shadow-sm transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
+          {/* Logo Section */}
           <div 
             className="flex items-center gap-3 cursor-pointer group"
             onClick={() => onNavigate('home')}
           >
-            <img 
-              src="https://i.postimg.cc/5Y3Rg6zs/image-1.jpg" 
-              alt="Logo" 
-              className="w-12 h-12 rounded-full shadow-sm group-hover:scale-110 transition-transform object-cover" 
-            />
-            <span className="font-heading font-bold text-lg text-slate-800 hidden sm:block">
+            <div className="relative">
+              <img 
+                src="https://i.postimg.cc/5Y3Rg6zs/image-1.jpg" 
+                alt="Logo" 
+                className="w-10 h-10 rounded-full shadow-sm group-hover:scale-105 transition-transform object-cover border border-slate-100" 
+              />
+              <div className="absolute inset-0 rounded-full bg-blue-600/0 group-hover:bg-blue-600/5 transition-colors" />
+            </div>
+            <span className="font-heading font-bold text-lg tracking-tight text-slate-900 hidden sm:block">
               BOURSE DU TEMPS
             </span>
           </div>
 
+          {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-1">
             {navItems.map((item) => (
               <button
                 key={item.page}
                 onClick={() => onNavigate(item.page)}
-                className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors ${
+                className={`px-3 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
                   currentPage === item.page 
                     ? 'text-blue-600 bg-blue-50' 
-                    : 'text-slate-500 hover:text-blue-600 hover:bg-slate-50'
+                    : 'text-slate-600 hover:text-blue-600 hover:bg-slate-50'
                 }`}
               >
                 {item.label}
@@ -81,28 +92,50 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, user, notifications, onNav
             {isAdminOrMod && (
               <button
                 onClick={() => onNavigate('moderation')}
-                className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors ml-2 ${
+                className={`px-3 py-2 rounded-full text-sm font-semibold transition-all duration-200 ml-1 ${
                   currentPage === 'moderation' 
                     ? 'text-purple-600 bg-purple-50' 
-                    : 'text-purple-400 hover:text-purple-600 hover:bg-purple-50/50'
+                    : 'text-purple-500 hover:text-purple-600 hover:bg-purple-50'
                 }`}
               >
                 Modération
               </button>
             )}
             
-            <div className="ml-4 pl-4 border-l border-slate-100 flex items-center gap-3">
+            <div className="ml-4 pl-4 border-l border-slate-200 flex items-center gap-2">
+              {/* Search Icon */}
+              <div className="relative" ref={searchRef}>
+                <button 
+                  onClick={() => setIsSearchOpen(!isSearchOpen)}
+                  className={`p-2 rounded-full transition-all duration-200 ${
+                    isSearchOpen ? 'text-blue-600 bg-blue-50' : 'text-slate-500 hover:text-blue-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <Search className="w-5 h-5" />
+                </button>
+                {isSearchOpen && (
+                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-100 p-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <input 
+                      autoFocus
+                      type="text" 
+                      placeholder="Rechercher..." 
+                      className="w-full px-4 py-2 text-sm bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none"
+                    />
+                  </div>
+                )}
+              </div>
+
               {user && (
                 <div className="relative" ref={notificationRef}>
                   <button 
                     onClick={() => setShowNotifications(!showNotifications)}
-                    className="p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-50 rounded-full transition-colors relative"
+                    className={`p-2 rounded-full transition-all duration-200 relative ${
+                      showNotifications ? 'text-blue-600 bg-blue-50' : 'text-slate-500 hover:text-blue-600 hover:bg-slate-50'
+                    }`}
                   >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                    </svg>
+                    <Bell className="w-5 h-5" />
                     {unreadCount > 0 && (
-                      <span className="absolute top-1 right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full border-2 border-white">
+                      <span className="absolute top-1.5 right-1.5 bg-red-500 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full border-2 border-white">
                         {unreadCount}
                       </span>
                     )}
@@ -127,10 +160,10 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, user, notifications, onNav
                               className={`p-4 border-b border-slate-50 cursor-pointer transition hover:bg-slate-50 ${!n.isRead ? 'bg-blue-50/30' : ''}`}
                             >
                               <div className="flex gap-3">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                                  n.type === 'transaction' ? 'bg-green-100 text-green-600' : 
-                                  n.type === 'connection' ? 'bg-purple-100 text-purple-600' : 
-                                  'bg-blue-100 text-blue-600'
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-lg ${
+                                  n.type === 'transaction' ? 'bg-green-100' : 
+                                  n.type === 'connection' ? 'bg-purple-100' : 
+                                  'bg-blue-100'
                                 }`}>
                                   {n.type === 'transaction' ? '💰' : n.type === 'connection' ? '🤝' : '🔔'}
                                 </div>
@@ -159,21 +192,24 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, user, notifications, onNav
               {user ? (
                 <button 
                   onClick={() => onNavigate('profile')}
-                  className="flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-1.5 rounded-full transition hover:bg-blue-100 border border-blue-200"
+                  className="flex items-center gap-2 bg-blue-600 text-white pl-4 pr-1.5 py-1.5 rounded-full transition-all duration-200 hover:bg-blue-700 shadow-md shadow-blue-200 group"
                 >
-                  <span className="text-sm font-bold">⏰ {user.credits}</span>
-                  <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center overflow-hidden border-2 border-white shadow-sm">
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-blue-100" />
+                    <span className="text-sm font-bold">{user.credits}</span>
+                  </div>
+                  <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center overflow-hidden border border-blue-400 shadow-sm group-hover:scale-105 transition-transform">
                     {user.avatar ? (
                       <img src={user.avatar} className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-[10px] text-white font-bold">{user.firstName[0]}</span>
+                      <span className="text-[10px] text-blue-600 font-bold">{user.firstName[0]}</span>
                     )}
                   </div>
                 </button>
               ) : (
                 <button 
                   onClick={onLogin}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full text-sm font-bold transition shadow-lg shadow-blue-100"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full text-sm font-bold transition shadow-lg shadow-blue-100 active:scale-95"
                 >
                   Accès Membre
                 </button>
@@ -181,42 +217,43 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, user, notifications, onNav
             </div>
           </div>
 
+          {/* Mobile Menu Button */}
           <button 
-            className="lg:hidden p-2 text-slate-600"
+            className="lg:hidden p-2 text-slate-600 hover:bg-slate-50 rounded-full transition-colors"
             onClick={() => setIsOpen(!isOpen)}
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={isOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
-            </svg>
+            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
       </div>
 
+      {/* Mobile Menu */}
       {isOpen && (
-        <div className="lg:hidden bg-white border-t border-slate-100 py-4 px-4 space-y-1 shadow-2xl">
+        <div className="lg:hidden bg-white border-t border-slate-100 py-4 px-4 space-y-1 shadow-2xl animate-in slide-in-from-top duration-300">
           {navItems.map((item) => (
             <button
               key={item.page}
               onClick={() => { onNavigate(item.page); setIsOpen(false); }}
-              className={`w-full text-left px-4 py-3 rounded-xl text-base font-bold ${
-                currentPage === item.page ? 'bg-blue-50 text-blue-600' : 'text-slate-700'
+              className={`w-full text-left px-4 py-3 rounded-xl text-base font-bold transition-colors ${
+                currentPage === item.page ? 'bg-blue-50 text-blue-600' : 'text-slate-700 hover:bg-slate-50'
               }`}
             >
               {item.label}
             </button>
           ))}
-          <div className="pt-4 mt-4 border-t border-slate-100">
+          <div className="pt-4 mt-4 border-t border-slate-100 space-y-3">
             {user ? (
               <button 
                 onClick={() => { onNavigate('profile'); setIsOpen(false); }}
-                className="w-full bg-blue-50 text-blue-600 py-3 rounded-xl font-bold"
+                className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-100 flex items-center justify-center gap-2"
               >
-                Mon Profil (⏰ {user.credits})
+                <Clock className="w-5 h-5" />
+                Mon Profil ({user.credits} crédits)
               </button>
             ) : (
               <button 
                 onClick={() => { onLogin(); setIsOpen(false); }}
-                className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold"
+                className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-100"
               >
                 Accès Membre
               </button>

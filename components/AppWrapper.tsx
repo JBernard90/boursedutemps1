@@ -51,11 +51,11 @@ export default function AppWrapper() {
   const [initialChatPartner, setInitialChatPartner] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedVisitors = localStorage.getItem('stb_visitors');
+    const storedVisitors = localStorage.getItem('bdt_visitors');
     const currentVisitors = storedVisitors ? parseInt(storedVisitors) : 0;
     const newVisitors = currentVisitors + 1;
     setVisitorCount(newVisitors);
-    localStorage.setItem('stb_visitors', newVisitors.toString());
+    localStorage.setItem('bdt_visitors', newVisitors.toString());
   }, []);
 
   const handleUpdateExchangeStatus = async (type: 'service' | 'request', id: string, newStatus: 'accepted' | 'cancelled' | 'in-progress', partnerId?: string) => {
@@ -337,8 +337,8 @@ export default function AppWrapper() {
       case 'requests': return <RequestsPage user={user} requests={requests} onUpdate={setRequests} onFulfill={(r, amt) => handleTransaction(r, amt, 'request')} onUpdateStatus={handleUpdateExchangeStatus} />;
       case 'members': return <Members users={users} onViewProfile={(uid) => { setViewingUserId(uid); setCurrentPage('profile-view'); }} onContact={(uid) => { if (!user) { setShowAuthModal('login'); return; } setInitialProfileTab('messages'); setInitialChatPartner(uid); setCurrentPage('profile'); }} />;
       case 'forum': return <Forum user={user} topics={forumTopics} onAdd={(t) => setForumTopics([t, ...forumTopics])} />;
-      case 'blog': return <Blog blogs={blogs} onUpdate={(b) => { setBlogs(b); localStorage.setItem('stb_blogs', JSON.stringify(b)); }} user={user} onAuthClick={() => setShowAuthModal('login')} />;
-      case 'testimonials': return <Testimonials testimonials={testimonials} onUpdate={(t) => { setTestimonials(t); localStorage.setItem('stb_testimonials', JSON.stringify(t)); }} user={user} onAuthClick={() => setShowAuthModal('login')} />;
+      case 'blog': return <Blog blogs={blogs} onUpdate={(b) => { setBlogs(b); localStorage.setItem('bdt_blogs', JSON.stringify(b)); }} user={user} onAuthClick={() => setShowAuthModal('login')} />;
+      case 'testimonials': return <Testimonials testimonials={testimonials} onUpdate={(t) => { setTestimonials(t); localStorage.setItem('bdt_testimonials', JSON.stringify(t)); }} user={user} onAuthClick={() => setShowAuthModal('login')} />;
       case 'profile': return user ? <Profile user={user} allUsers={users} transactions={transactions} connections={connections} messages={messages} onUpdate={handleUpdateUser} onSendConnection={handleSendConnection} onUpdateConnection={handleUpdateConnection} onSendMessage={handleSendMessage} onUpdateMessages={setMessages} onDeactivate={handleDeactivateAccount} onDelete={handleDeleteAccount} initialTab={initialProfileTab} initialChatPartner={initialChatPartner} /> : <Home navigate={handleNavigate} blogs={blogs} testimonials={testimonials} stats={stats} />;
       case 'profile-view': 
         const target = users.find(u => u.uid === viewingUserId);
