@@ -1,7 +1,18 @@
 @import "tailwindcss";
 
 @theme {
-  --font-heading: "Outfit", sans-serif;
+  --font-sans: var(--font-sans);
+  --font-heading: var(--font-heading);
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 :root {
@@ -12,5 +23,4 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans);
 }
