@@ -50,6 +50,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           setNotifications(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification)));
         }
       );
+
+      // Register push notifications
+      registerServiceWorker().then(() => {
+        subscribeUserToPush();
+      });
+
       return () => unsub();
     } else {
       setNotifications([]);
