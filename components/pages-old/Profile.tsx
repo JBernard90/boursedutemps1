@@ -47,12 +47,16 @@ const Profile: React.FC<ProfileProps> = ({
   const [activeTab, setActiveTab] = useState<'info' | 'connections' | 'messages' | 'suivi'>(initialTab);
   const [messageContent, setMessageContent] = useState('');
   const [selectedChatPartner, setSelectedChatPartner] = useState<string | null>(initialChatPartner);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState<string | null>(null);
   const coverInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleSave = () => {
     onUpdate(editedUser);
     setIsEditing(false);
-    alert("Profil mis à jour !");
+    setShowSuccessMessage("Profil mis à jour avec succès !");
+    setTimeout(() => setShowSuccessMessage(null), 3000);
   };
 
   const handleCoverPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -142,6 +146,18 @@ const Profile: React.FC<ProfileProps> = ({
                   {user.firstName} {user.lastName}
                 </h2>
                 <p className="text-slate-500 font-bold text-[10px] uppercase tracking-widest">{user.department}</p>
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {user.offeredSkills?.slice(0, 3).map((s, i) => (
+                    <span key={i} className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border border-green-200">
+                      {s}
+                    </span>
+                  ))}
+                  {user.requestedSkills?.slice(0, 3).map((s, i) => (
+                    <span key={i} className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border border-orange-200">
+                      {s}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -303,13 +319,13 @@ const Profile: React.FC<ProfileProps> = ({
                         </div>
                         <div className="flex gap-3">
                           <button 
-                            onClick={() => { if (confirm("Désactiver votre compte ? Vous pourrez le réactiver plus tard.")) onDeactivate?.(); }}
+                            onClick={() => setShowDeactivateConfirm(true)}
                             className="px-4 py-2 bg-white text-red-600 border border-red-200 rounded-xl text-xs font-bold hover:bg-red-100 transition"
                           >
                             Désactiver
                           </button>
                           <button 
-                            onClick={() => { if (confirm("ATTENTION : Supprimer définitivement votre compte ? Cette action est irréversible.")) onDelete?.(); }}
+                            onClick={() => setShowDeleteConfirm(true)}
                             className="px-4 py-2 bg-red-600 text-white rounded-xl text-xs font-bold hover:bg-red-700 transition shadow-lg shadow-red-100"
                           >
                             Supprimer
@@ -324,6 +340,64 @@ const Profile: React.FC<ProfileProps> = ({
                 <p className="text-xs font-bold opacity-70 mb-1 tracking-widest uppercase">Solde Actuel</p>
                 <h4 className="text-5xl font-bold">⏰ {user.credits}</h4>
                 <p className="mt-4 text-[10px] opacity-60">Crédits négociables pour vos services.</p>
+              </div>
+            </div>
+          )}
+
+          {/* Modals */}
+          {showDeactivateConfirm && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="bg-white rounded-[2rem] p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200">
+                <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center text-2xl mb-6">⚠️</div>
+                <h3 className="font-heading text-xl font-bold text-slate-900 mb-2">Désactiver votre compte ?</h3>
+                <p className="text-slate-500 text-sm mb-8 leading-relaxed">
+                  Votre profil ne sera plus visible par les autres membres. Vous pourrez le réactiver à tout moment en vous reconnectant.
+                </p>
+                <div className="flex gap-3">
+                  <button onClick={() => setShowDeactivateConfirm(false)} className="flex-1 px-6 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-200 transition">Annuler</button>
+                  <button 
+                    onClick={() => {
+                      onDeactivate?.();
+                      setShowDeactivateConfirm(false);
+                    }} 
+                    className="flex-1 px-6 py-3 bg-orange-600 text-white rounded-xl font-bold text-sm hover:bg-orange-700 transition shadow-lg shadow-orange-200"
+                  >
+                    Désactiver
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showDeleteConfirm && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="bg-white rounded-[2rem] p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200">
+                <div className="w-16 h-16 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center text-2xl mb-6">🛑</div>
+                <h3 className="font-heading text-xl font-bold text-slate-900 mb-2">Suppression définitive</h3>
+                <p className="text-slate-500 text-sm mb-8 leading-relaxed">
+                  Cette action est <span className="font-bold text-red-600">irréversible</span>. Toutes vos données, crédits et messages seront définitivement supprimés.
+                </p>
+                <div className="flex gap-3">
+                  <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 px-6 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-200 transition">Annuler</button>
+                  <button 
+                    onClick={() => {
+                      onDelete?.();
+                      setShowDeleteConfirm(false);
+                    }} 
+                    className="flex-1 px-6 py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition shadow-lg shadow-red-200"
+                  >
+                    Supprimer
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showSuccessMessage && (
+            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4">
+              <div className="bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/10">
+                <span className="text-green-400">✓</span>
+                <span className="text-sm font-bold">{showSuccessMessage}</span>
               </div>
             </div>
           )}

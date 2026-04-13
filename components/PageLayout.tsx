@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Navbar from './Navbar';
+import Footer from './Footer';
 import AuthModal from './AuthModal';
 import { useUser } from './UserProvider';
 import { useRouter, usePathname } from 'next/navigation';
@@ -59,6 +60,7 @@ export default function PageLayout({ children }: { children: React.ReactNode }) 
       <main className="flex-grow pt-16">
         {children}
       </main>
+      <Footer />
 
       {showAuthModal && (
         <AuthModal 

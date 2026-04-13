@@ -1,32 +1,27 @@
-import { Pool } from '@neondatabase/serverless';
-import dotenv from 'dotenv';
+import pg from 'pg';
 
-dotenv.config();
+let dbUrl = 'postgres://mock:mock@localhost:5432/mock';
+let isMock = true;
 
-const dbUrl = process.env.DATABASE_URL || 'postgres://mock:mock@localhost:5432/mock';
-console.log('DATABASE_URL is:', process.env.DATABASE_URL ? '[SET]' : '[MISSING - using mock]');
-
-if (!process.env.DATABASE_URL) {
+if (process.env.DATABASE_URL) {
+  try {
+    new URL(process.env.DATABASE_URL);
+    dbUrl = process.env.DATABASE_URL;
+    isMock = false;
+    console.log('[DB] DATABASE_URL is set and valid.');
+  } catch (e) {
+    console.error('[DB] Invalid DATABASE_URL format. Falling back to mock URL for build/safety.');
+  }
+} else {
   console.warn('=========================================================');
   console.warn('WARNING: DATABASE_URL environment variable is missing.');
   console.warn('Using a mock URL for build purposes.');
   console.warn('=========================================================');
-} else {
-  try {
-    const url = new URL(process.env.DATABASE_URL);
-    console.log(`[DB] Attempting connection to host: ${url.hostname}`);
-    if (url.hostname === 'host' || url.hostname === 'base' || url.hostname === 'your-host') {
-      console.warn('⚠️ WARNING: Your DATABASE_URL seems to contain a placeholder hostname ("' + url.hostname + '").');
-      console.warn('Please replace it with your actual Neon PostgreSQL host in the Settings menu.');
-    }
-  } catch (e) {
-    console.error('[DB] Invalid DATABASE_URL format.');
-  }
 }
 
-export const pool = new Pool({
+export const pool = new pg.Pool({
   connectionString: dbUrl,
-  ssl: {
+  ssl: dbUrl.includes('localhost') ? false : {
     rejectUnauthorized: false
   },
   connectionTimeoutMillis: 5000, // Fail fast if DNS/Network is down
@@ -38,7 +33,7 @@ export const query = async (text: string, params?: any[]) => {
   if (!pool) {
     throw new Error('Database pool not initialized');
   }
-  if (!isInitialized && text.toLowerCase().indexOf('create table') === -1 && text.toLowerCase().indexOf('alter table') === -1) {
+  if (!isInitialized && !isMock && text.toLowerCase().indexOf('create table') === -1 && text.toLowerCase().indexOf('alter table') === -1) {
     await initDB();
     isInitialized = true;
   }
@@ -46,7 +41,7 @@ export const query = async (text: string, params?: any[]) => {
 };
 
 export const initDB = async () => {
-  if (!pool) {
+  if (!pool || isMock) {
     return;
   }
   try {
