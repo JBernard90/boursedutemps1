@@ -93,7 +93,7 @@ export default function Footer() {
 
         <div className="pt-10 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6">
           <p className="text-slate-500 text-xs font-medium">
-            &copy; {year} Bourse du Temps - Universit&eacute; Senghor. Tous droits r&eacute;serv&eacute;s.
+            &copy; {year} Bourse du Temps. Tous droits r&eacute;serv&eacute;s.
           </p>
           <div className="flex gap-8">
             <button className="text-slate-500 hover:text-slate-300 text-xs font-medium transition-colors">Mentions L&eacute;gales</button>

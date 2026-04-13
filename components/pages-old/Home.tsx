@@ -29,7 +29,7 @@ const Home: React.FC<HomeProps> = ({ navigate, blogs, testimonials, stats }) => 
 
         <div className="relative z-10 max-w-5xl mx-auto text-center animate-in fade-in slide-in-from-bottom-6 duration-700">
           <div className="inline-block px-4 py-1.5 mb-8 rounded-full bg-blue-50 border border-blue-100">
-             <span className="text-xs font-bold text-blue-600 uppercase tracking-[0.2em]">Université Senghor - Alexandrie</span>
+             <span className="text-xs font-bold text-blue-600 uppercase tracking-[0.2em]"></span>
           </div>
           
           <h1 className="font-heading text-5xl md:text-8xl font-bold text-slate-900 mb-8 leading-tight uppercase tracking-tighter">
