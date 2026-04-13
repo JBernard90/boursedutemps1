@@ -2,23 +2,18 @@ import { NextResponse } from 'next/server';
 import { query } from '@/db';
 
 export async function POST(req: Request) {
-  const { email, phone } = await req.json();
+  const { email } = await req.json();
   
-  // Mock code generation
-  const code = '123456';
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
   try {
     await query(
       'INSERT INTO otps (identifier, code, expires_at) VALUES ($1, $2, $3)',
       [email, code, expiresAt]
     );
-    await query(
-      'INSERT INTO otps (identifier, code, expires_at) VALUES ($1, $2, $3)',
-      [phone, code, expiresAt]
-    );
     
-    console.log(`[MOCK VERIFY] Codes for ${email} and ${phone}: ${code}`);
+    console.log(`[OTP] Code pour ${email}: ${code}`);
     
     return NextResponse.json({ success: true });
   } catch (error) {
