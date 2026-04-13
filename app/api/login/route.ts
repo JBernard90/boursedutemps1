@@ -4,7 +4,6 @@ import { signToken } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
 
 export async function POST(req: Request) {
-  await initDB();
   const { email, password } = await req.json();
 
   try {

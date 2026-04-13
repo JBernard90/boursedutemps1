@@ -86,6 +86,7 @@ export const initDB = async () => {
         verified BOOLEAN DEFAULT true,
         is_verified_email BOOLEAN DEFAULT true,
         is_verified_sms BOOLEAN DEFAULT true,
+        terms_accepted BOOLEAN DEFAULT true,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
@@ -118,6 +119,11 @@ export const initDB = async () => {
         END;
         BEGIN
           ALTER TABLE users ADD COLUMN requested_skills JSONB;
+        EXCEPTION
+          WHEN duplicate_column THEN null;
+        END;
+        BEGIN
+          ALTER TABLE users ADD COLUMN terms_accepted BOOLEAN DEFAULT true;
         EXCEPTION
           WHEN duplicate_column THEN null;
         END;

@@ -5,7 +5,6 @@ import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(req: Request) {
-  await initDB();
   const data = await req.json();
 
   // Basic validation

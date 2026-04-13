@@ -3,7 +3,6 @@ import { getUserIdFromRequest } from '@/lib/auth';
 import { query, initDB } from '@/db';
 
 export async function GET(req: Request) {
-  await initDB();
   const uid = getUserIdFromRequest(req);
   if (!uid) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
