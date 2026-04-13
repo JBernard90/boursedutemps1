@@ -3,6 +3,7 @@ import './globals.css';
 import { UserProvider } from '@/components/UserProvider';
 import { Metadata } from 'next';
 
+// Root layout for Bourse du Temps
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-sans',

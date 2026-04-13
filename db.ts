@@ -30,10 +30,14 @@ export const pool = new pg.Pool({
 let isInitialized = false;
 
 export const query = async (text: string, params?: any[]) => {
+  if (isMock) {
+    console.warn(`[DB] Mock mode active. Returning empty result for query: ${text.substring(0, 50)}...`);
+    return { rows: [], rowCount: 0 };
+  }
   if (!pool) {
     throw new Error('Database pool not initialized');
   }
-  if (!isInitialized && !isMock && text.toLowerCase().indexOf('create table') === -1 && text.toLowerCase().indexOf('alter table') === -1) {
+  if (!isInitialized && text.toLowerCase().indexOf('create table') === -1 && text.toLowerCase().indexOf('alter table') === -1) {
     await initDB();
     isInitialized = true;
   }
