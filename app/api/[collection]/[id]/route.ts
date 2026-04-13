@@ -10,7 +10,7 @@ export async function GET(req: Request, { params }: { params: { collection: stri
   const idColumn = tableName === 'users' ? 'uid' : 'id';
   try {
     const result = await query(`SELECT * FROM ${tableName} WHERE ${idColumn} = $1`, [id]);
-    if (result.rowCount === 0) {
+    if ((result.rowCount ?? 0) === 0) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
     
@@ -48,7 +48,7 @@ export async function PATCH(req: Request, { params }: { params: { collection: st
     // Push Notification Logic
     if (collection === 'services' && data.status === 'accepted') {
       const serviceResult = await query('SELECT user_id, title FROM services WHERE id = $1', [id]);
-      if (serviceResult.rowCount > 0) {
+      if ((serviceResult.rowCount ?? 0) > 0) {
         const service = serviceResult.rows[0];
         await sendPushNotification(service.user_id, {
           title: 'Service accepté',
@@ -58,7 +58,7 @@ export async function PATCH(req: Request, { params }: { params: { collection: st
       }
     } else if (collection === 'requests' && data.status === 'accepted') {
       const requestResult = await query('SELECT user_id, title FROM requests WHERE id = $1', [id]);
-      if (requestResult.rowCount > 0) {
+      if ((requestResult.rowCount ?? 0) > 0) {
         const request = requestResult.rows[0];
         await sendPushNotification(request.user_id, {
           title: 'Demande acceptée',
@@ -68,7 +68,7 @@ export async function PATCH(req: Request, { params }: { params: { collection: st
       }
     } else if (collection === 'connections' && data.status === 'accepted') {
       const connResult = await query('SELECT sender_id FROM connections WHERE id = $1', [id]);
-      if (connResult.rowCount > 0) {
+      if ((connResult.rowCount ?? 0) > 0) {
         const conn = connResult.rows[0];
         await sendPushNotification(conn.sender_id, {
           title: 'Demande de connexion acceptée',
