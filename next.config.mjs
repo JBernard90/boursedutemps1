@@ -1,9 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  experimental: {
-    serverExternalPackages: ['pg', 'bcryptjs', 'jsonwebtoken'],
-  },
+  serverExternalPackages: ['pg', 'bcryptjs', 'jsonwebtoken'],
   images: {
     remotePatterns: [
       {
