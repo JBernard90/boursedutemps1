@@ -37,11 +37,7 @@ export default function Footer() {
               </h2>
             </div>
             <p className="text-slate-400 text-sm leading-relaxed mb-6">
-<<<<<<< HEAD
-              La plateforme pour favoriser l'entraide, le partage de connaissances et la solidarité. Échangez vos talents, valorisez votre temps.
-=======
-              Une plateforme pour favoriser l'entraide, le partage de connaissances et la solidarité.
->>>>>>> 5f556803d73832865de6747a4d9f5c42ab746fb8
+              La plateforme pour favoriser l&apos;entraide, le partage de connaissances et la solidarit&eacute;. &Eacute;changez vos talents, valorisez votre temps.
             </p>
             <div className="flex gap-4">
               <a href="#" className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-blue-600 hover:text-white transition-all border border-slate-700">
@@ -61,18 +57,18 @@ export default function Footer() {
             <ul className="space-y-4">
               <li><button onClick={() => handleNavigate('home')} className="text-slate-400 hover:text-blue-400 text-sm transition-colors">Accueil</button></li>
               <li><button onClick={() => handleNavigate('services')} className="text-slate-400 hover:text-blue-400 text-sm transition-colors">Services Offerts</button></li>
-              <li><button onClick={() => handleNavigate('requests')} className="text-slate-400 hover:text-blue-400 text-sm transition-colors">Demandes d'Aide</button></li>
+              <li><button onClick={() => handleNavigate('requests')} className="text-slate-400 hover:text-blue-400 text-sm transition-colors">Demandes d&apos;Aide</button></li>
               <li><button onClick={() => handleNavigate('members')} className="text-slate-400 hover:text-blue-400 text-sm transition-colors">Membres</button></li>
             </ul>
           </div>
 
           <div>
-            <h3 className="font-bold text-white mb-6 text-sm uppercase tracking-widest">Communauté</h3>
+            <h3 className="font-bold text-white mb-6 text-sm uppercase tracking-widest">Communaut&eacute;</h3>
             <ul className="space-y-4">
-              <li><button onClick={() => handleNavigate('blog')} className="text-slate-400 hover:text-blue-400 text-sm transition-colors">Blog & Actualités</button></li>
+              <li><button onClick={() => handleNavigate('blog')} className="text-slate-400 hover:text-blue-400 text-sm transition-colors">Blog &amp; Actualit&eacute;s</button></li>
               <li><button onClick={() => handleNavigate('forum')} className="text-slate-400 hover:text-blue-400 text-sm transition-colors">Forum de Discussion</button></li>
-              <li><button onClick={() => handleNavigate('testimonials')} className="text-slate-400 hover:text-blue-400 text-sm transition-colors">Témoignages</button></li>
-              <li><button onClick={() => handleNavigate('about')} className="text-slate-400 hover:text-blue-400 text-sm transition-colors">À propos</button></li>
+              <li><button onClick={() => handleNavigate('testimonials')} className="text-slate-400 hover:text-blue-400 text-sm transition-colors">T&eacute;moignages</button></li>
+              <li><button onClick={() => handleNavigate('about')} className="text-slate-400 hover:text-blue-400 text-sm transition-colors">&Agrave; propos</button></li>
             </ul>
           </div>
 
@@ -81,7 +77,7 @@ export default function Footer() {
             <ul className="space-y-4">
               <li className="flex items-start gap-3">
                 <span className="text-blue-400 mt-0.5">📍</span>
-                <span className="text-slate-400 text-sm leading-relaxed">1 Place Ahmed Orabi, Alexandrie, Égypte</span>
+                <span className="text-slate-400 text-sm leading-relaxed">1 Place Ahmed Orabi, Alexandrie, &Eacute;gypte</span>
               </li>
               <li className="flex items-center gap-3">
                 <span className="text-blue-400">✉️</span>
@@ -97,12 +93,12 @@ export default function Footer() {
 
         <div className="pt-10 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6">
           <p className="text-slate-500 text-xs font-medium">
-            © {year} Bourse du Temps - Université Senghor. Tous droits réservés.
+            &copy; {year} Bourse du Temps - Universit&eacute; Senghor. Tous droits r&eacute;serv&eacute;s.
           </p>
           <div className="flex gap-8">
-            <button className="text-slate-500 hover:text-slate-300 text-xs font-medium transition-colors">Mentions Légales</button>
-            <button className="text-slate-500 hover:text-slate-300 text-xs font-medium transition-colors">Confidentialité</button>
-            <button className="text-slate-500 hover:text-slate-300 text-xs font-medium transition-colors">Règlement Intérieur</button>
+            <button className="text-slate-500 hover:text-slate-300 text-xs font-medium transition-colors">Mentions L&eacute;gales</button>
+            <button className="text-slate-500 hover:text-slate-300 text-xs font-medium transition-colors">Confidentialit&eacute;</button>
+            <button className="text-slate-500 hover:text-slate-300 text-xs font-medium transition-colors">R&egrave;glement Int&eacute;rieur</button>
           </div>
         </div>
       </div>
