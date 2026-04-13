@@ -7,14 +7,12 @@ import { v4 as uuidv4 } from 'uuid';
 export async function POST(req: Request) {
   const data = await req.json();
 
-  // Basic validation
   if (!data.email || !data.password || !data.firstName || !data.lastName) {
     return NextResponse.json({ error: 'Champs requis manquants' }, { status: 400 });
   }
 
-  // Check if user exists
   const existing = await query('SELECT * FROM users WHERE email = $1', [data.email]);
-  if (existing.rowCount! > 0) {
+  if ((existing.rowCount ?? 0) > 0) {
     return NextResponse.json({ error: 'Cet email est déjà utilisé' }, { status: 400 });
   }
 
@@ -39,6 +37,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ token, uid });
   } catch (e: any) {
     console.error('Registration error:', e);
-    return NextResponse.json({ error: 'Erreur lors de l\'inscription' }, { status: 500 });
+    return NextResponse.json({ error: "Erreur lors de l'inscription" }, { status: 500 });
   }
 }
