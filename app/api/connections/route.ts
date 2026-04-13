@@ -36,11 +36,12 @@ export async function POST(req: Request) {
       [data.senderId, data.receiverId, data.status || 'sent']
     );
 
-    // Fetch sender name
     const senderResult = await query('SELECT first_name, last_name FROM users WHERE uid = $1', [data.senderId]);
-    const senderName = senderResult.rowCount > 0 ? `${senderResult.rows[0].first_name} ${senderResult.rows[0].last_name}` : 'Un membre';
+    const senderCount = senderResult?.rowCount ?? 0;
+    const senderName = senderCount > 0
+      ? `${senderResult.rows[0].first_name} ${senderResult.rows[0].last_name}`
+      : 'Un membre';
 
-    // Send push notification to receiver
     await sendPushNotification(data.receiverId, {
       title: 'Nouvelle demande de connexion',
       body: `${senderName} souhaite se connecter avec vous.`,
