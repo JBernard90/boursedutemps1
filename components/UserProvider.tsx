@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Notification } from '@/types';
 import { auth, onAuthStateChanged, onSnapshot, collection, db, query, where, orderBy } from '@/api';
+import { registerServiceWorker, subscribeUserToPush } from '@/lib/push';
 
 interface UserContextType {
   user: User | null;

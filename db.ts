@@ -248,7 +248,14 @@ export const initDB = async () => {
         content TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
-      DO $$ 
+
+      CREATE TABLE IF NOT EXISTS push_subscriptions (
+        id SERIAL PRIMARY KEY,
+        user_id VARCHAR(255) REFERENCES users(uid),
+        subscription JSONB NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      DO $ 
       BEGIN 
         BEGIN
           ALTER TABLE connections DROP COLUMN id;

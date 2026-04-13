@@ -23,6 +23,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, user, notifications, onNav
   const [isOpen, setIsOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -31,6 +32,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, user, notifications, onNav
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   useEffect(() => {
+    setMounted(true);
     const handleClickOutside = (event: MouseEvent) => {
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
         setShowNotifications(false);
@@ -178,7 +180,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, user, notifications, onNav
                                     <span className="font-bold">{n.fromName}</span> {n.content}
                                   </p>
                                   <p className="text-[10px] text-slate-400 font-medium">
-                                    {new Date(n.createdAt).toLocaleDateString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                    {mounted ? new Date(n.createdAt).toLocaleDateString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''}
                                   </p>
                                 </div>
                               </div>
