@@ -37,7 +37,7 @@ export default function Footer() {
               </h2>
             </div>
             <p className="text-slate-400 text-sm leading-relaxed mb-6">
-              Une initiative de l'Université Senghor pour favoriser l'entraide, le partage de connaissances et la solidarité entre étudiants et membres de la communauté.
+              La plateforme pour favoriser l'entraide, le partage de connaissances et la solidarité. Échangez vos talents, valorisez votre temps.
             </p>
             <div className="flex gap-4">
               <a href="#" className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-blue-600 hover:text-white transition-all border border-slate-700">
@@ -81,11 +81,11 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-3">
                 <span className="text-blue-400">✉️</span>
-                <span className="text-slate-400 text-sm">contact@usenghor.org</span>
+                <span className="text-slate-400 text-sm">jeanbernardpierrelouis@gmail.com</span>
               </li>
               <li className="flex items-center gap-3">
                 <span className="text-blue-400">📞</span>
-                <span className="text-slate-400 text-sm">+20 3 4843374</span>
+                <span className="text-slate-400 text-sm">+509 32 27 4422</span>
               </li>
             </ul>
           </div>
