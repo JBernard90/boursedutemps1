@@ -15,12 +15,10 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: 'Bourse du Temps - Université Senghor',
+  title: 'Bourse du Temps',
   description: 'Échangez vos talents, apprenez gratuitement et construisez l\'avenir au sein de notre banque de temps solidaire.',
   keywords: ['bourse du temps', 'université senghor', 'échange de services', 'crédits temps', 'solidarité'],
-  authors: [{ name: 'Université Senghor' }],
-  openGraph: {
-    title: 'Bourse du Temps - Université Senghor',
+    title: 'Bourse du Temps',
     description: 'Échangez vos talents, apprenez gratuitement et construisez l\'avenir au sein de notre banque de temps solidaire.',
     url: 'https://boursedutemps.vercel.app',
     siteName: 'Bourse du Temps',
