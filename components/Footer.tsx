@@ -37,7 +37,11 @@ export default function Footer() {
               </h2>
             </div>
             <p className="text-slate-400 text-sm leading-relaxed mb-6">
+<<<<<<< HEAD
               La plateforme pour favoriser l'entraide, le partage de connaissances et la solidarité. Échangez vos talents, valorisez votre temps.
+=======
+              Une plateforme pour favoriser l'entraide, le partage de connaissances et la solidarité.
+>>>>>>> 5f556803d73832865de6747a4d9f5c42ab746fb8
             </p>
             <div className="flex gap-4">
               <a href="#" className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-blue-600 hover:text-white transition-all border border-slate-700">

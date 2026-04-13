@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
-    serverComponentsExternalPackages: ['pg', 'bcryptjs', 'jsonwebtoken'],
+    serverExternalPackages: ['pg', 'bcryptjs', 'jsonwebtoken'],
   },
   images: {
     remotePatterns: [

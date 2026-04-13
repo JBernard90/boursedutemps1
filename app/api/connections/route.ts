@@ -37,18 +37,8 @@ export async function POST(req: Request) {
     );
 
     // Fetch sender name
-    const senderResult = await query(
-      'SELECT first_name, last_name FROM users WHERE uid = $1',
-      [data.senderId]
-    );
-
-    // 🔥 Correction TypeScript ici
-    const senderCount = senderResult?.rowCount ?? 0;
-
-    const senderName =
-      senderCount > 0
-        ? `${senderResult.rows[0].first_name} ${senderResult.rows[0].last_name}`
-        : 'Un membre';
+    const senderResult = await query('SELECT first_name, last_name FROM users WHERE uid = $1', [data.senderId]);
+    const senderName = senderResult.rowCount > 0 ? `${senderResult.rows[0].first_name} ${senderResult.rows[0].last_name}` : 'Un membre';
 
     // Send push notification to receiver
     await sendPushNotification(data.receiverId, {
@@ -63,4 +53,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
-
