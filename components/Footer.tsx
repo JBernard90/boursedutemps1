@@ -65,7 +65,7 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-3">
                 <span className="text-blue-600">✉️</span>
-                <span className="text-slate-500 text-sm">contact@usenghor.org</span>
+                <span className="text-slate-500 text-sm">jeanbernardpierrelouis@gmail.com</span>
               </li>
               <li className="flex items-center gap-3">
                 <span className="text-blue-600">📞</span>
@@ -77,7 +77,7 @@ export default function Footer() {
 
         <div className="pt-10 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6">
           <p className="text-slate-400 text-xs font-medium">
-            © {new Date().getFullYear()} Bourse du Temps - Université Senghor. Tous droits réservés.
+            © {new Date().getFullYear()} Bourse du Temps. Tous droits réservés.
           </p>
           <div className="flex gap-8">
             <button className="text-slate-400 hover:text-slate-600 text-xs font-medium transition-colors">Mentions Légales</button>
