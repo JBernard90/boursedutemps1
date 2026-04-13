@@ -15,7 +15,7 @@ export async function POST(req: Request) {
       [phone, phoneCode]
     );
 
-    if (emailResult.rowCount! > 0 && phoneResult.rowCount! > 0) {
+    if ((emailResult.rowCount ?? 0) > 0 && (phoneResult.rowCount ?? 0) > 0) {
       return NextResponse.json({ success: true });
     } else {
       return NextResponse.json({ error: 'Codes invalides ou expirés' }, { status: 400 });
