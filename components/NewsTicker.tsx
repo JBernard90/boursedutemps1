@@ -1,4 +1,6 @@
 
+"use client";
+
 import React, { useRef, useState } from 'react';
 import { BlogPost, Testimonial, Page } from '../types';
 

@@ -8,6 +8,7 @@ import { onSnapshot, collection, db, query, orderBy } from '@/api';
 import { useRouter } from 'next/navigation';
 
 export default function HomePage() {
+  // Force re-render to clear stale chunks
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [stats, setStats] = useState({
