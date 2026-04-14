@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import Image from 'next/image';
-import { User, ForumTopic, MediaItem } from '../../types';
+import { User, ForumTopic, MediaItem } from '../types';
 import { Edit2, Trash2, MessageCircle, Heart, Share2, Video } from 'lucide-react';
 
 interface ForumProps {
