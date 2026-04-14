@@ -6,6 +6,7 @@ import { auth, db, onAuthStateChanged, collection, onSnapshot, query, where, ord
 import { Page, User, Service, Request, BlogPost, Testimonial, ForumTopic, Transaction, Connection, ChatMessage, Notification } from '../types';
 import Navbar from './Navbar';
 import AuthModal from './AuthModal';
+import { supabase } from '@/lib/supabaseClient';
 
 // Lazy load pages from components/pages-old using next/dynamic
 const Home = dynamic(() => import('./pages-old/Home'), { ssr: false });
