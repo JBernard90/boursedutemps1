@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from 'react';
+{ ssr: false });
+const ServicesPage = dynamic(() => import('./pages-old/ServicesPage'), { ssr: false });
+const RequestsPage = dynamic(() => import('./pages-old/RequestsPage'), { ssr: false });import React, { useState, useEffect, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { auth, db, onAuthStateChanged, collection, onSnapshot, query, where, orderBy, doc, getDoc, setDoc, updateDoc, addDoc, serverTimestamp } from '../api';
 import { Page, User, Service, Request, BlogPost, Testimonial, ForumTopic, Transaction, Connection, ChatMessage, Notification } from '../types';
@@ -10,9 +12,7 @@ import { supabase } from '@/lib/supabaseClient';
 
 // Lazy load pages from components/pages-old using next/dynamic
 const Home = dynamic(() => import('./pages-old/Home'), { ssr: false });
-const About = dynamic(() => import('./pages-old/About'), { ssr: false });
-const ServicesPage = dynamic(() => import('./pages-old/ServicesPage'), { ssr: false });
-const RequestsPage = dynamic(() => import('./pages-old/RequestsPage'), { ssr: false });
+const About = dynamic(() => import('./pages-old/About'), 
 const Members = dynamic(() => import('./pages-old/Members'), { ssr: false });
 const Forum = dynamic(() => import('./pages-old/Forum'), { ssr: false });
 const Blog = dynamic(() => import('./pages-old/Blog'), { ssr: false });

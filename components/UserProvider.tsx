@@ -1,9 +1,10 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, Notification } from '@/types';
-import { auth, onAuthStateChanged, onSnapshot, collection, db, query, where, orderBy } from '@/api';
-import { registerServiceWorker, subscribeUserToPush } from '@/lib/push';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { User, Notification } from "@/types";
+import { supabase } from "@/lib/supabaseClient";
+import { onSnapshot, collection, db, query, where, orderBy } from "@/api";
+import { registerServiceWorker, subscribeUserToPush } from "@/lib/push";
 
 interface UserContextType {
   user: User | null;
@@ -20,38 +21,51 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isAuthReady, setIsAuthReady] = useState(false);
 
+  // 🔵 Supabase Auth Listener
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (authUser) => {
-      if (authUser) {
-        // Fetch full user data
-        fetch('/api/auth/me', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (!data.error) setUser(data);
-          setIsAuthReady(true);
-        })
-        .catch(() => setIsAuthReady(true));
+    const {
+      data: authListener
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.access_token) {
+        localStorage.setItem("token", session.access_token);
+
+        const res = await fetch("/api/auth/me", {
+          headers: { Authorization: `Bearer ${session.access_token}` }
+        });
+
+        const data = await res.json();
+        if (!data.error) setUser(data);
       } else {
+        localStorage.removeItem("token");
         setUser(null);
-        setIsAuthReady(true);
       }
+
+      setIsAuthReady(true);
     });
 
-    return () => unsubscribe();
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
+  // 🔵 Notifications Firestore Listener
   useEffect(() => {
     if (user) {
       const unsub = onSnapshot(
-        query(collection(db, 'notifications'), where('userId', '==', user.uid), orderBy('createdAt', 'desc')),
+        query(
+          collection(db, "notifications"),
+          where("userId", "==", user.uid),
+          orderBy("createdAt", "desc")
+        ),
         (snapshot) => {
-          setNotifications(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification)));
+          setNotifications(
+            snapshot.docs.map(
+              (doc) => ({ id: doc.id, ...doc.data() } as Notification)
+            )
+          );
         }
       );
 
-      // Register push notifications
       registerServiceWorker().then(() => {
         subscribeUserToPush();
       });
@@ -62,13 +76,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user]);
 
-  const logout = () => {
-    localStorage.removeItem('token');
+  // 🔴 LOGOUT — VERSION SUPABASE
+  const logout = async () => {
+    await supabase.auth.signOut();
+    localStorage.removeItem("token");
     setUser(null);
+    window.location.href = "/login";
   };
 
   return (
-    <UserContext.Provider value={{ user, setUser, notifications, logout, isAuthReady }}>
+    <UserContext.Provider
+      value={{ user, setUser, notifications, logout, isAuthReady }}
+    >
       {children}
     </UserContext.Provider>
   );
@@ -76,8 +95,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
 export function useUser() {
   const context = useContext(UserContext);
-  if (context === undefined) {
-    throw new Error('useUser must be used within a UserProvider');
+  if (!context) {
+    throw new Error("useUser must be used within a UserProvider");
   }
   return context;
 }
+
