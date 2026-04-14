@@ -12,7 +12,10 @@ export async function GET(req: Request) {
       'SELECT * FROM connections WHERE sender_id = $1 OR receiver_id = $1 ORDER BY created_at DESC',
       [uid]
     );
-    const connections = result.rows.map(c => ({
+
+    const rows = result?.rows ?? [];
+
+    const connections = rows.map(c => ({
       id: c.id,
       senderId: c.sender_id,
       receiverId: c.receiver_id,
@@ -20,6 +23,7 @@ export async function GET(req: Request) {
       createdAt: c.created_at,
       updatedAt: c.updated_at,
     }));
+
     return NextResponse.json(connections);
   } catch (error) {
     console.error('Error fetching connections:', error);
@@ -30,26 +34,37 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const data = await req.json();
+
     const result = await query(
       `INSERT INTO connections (sender_id, receiver_id, status)
        VALUES ($1, $2, $3) RETURNING id`,
       [data.senderId, data.receiverId, data.status || 'sent']
     );
 
+    const newId = result?.rows?.[0]?.id ?? null;
+
     // Fetch sender name
-    const senderResult = await query('SELECT first_name, last_name FROM users WHERE uid = $1', [data.senderId]);
-    const senderName = senderResult.rowCount > 0 ? `${senderResult.rows[0].first_name} ${senderResult.rows[0].last_name}` : 'Un membre';
+    const senderResult = await query(
+      'SELECT first_name, last_name FROM users WHERE uid = $1',
+      [data.senderId]
+    );
+
+    const senderName =
+      senderResult?.rowCount && senderResult.rowCount > 0
+        ? `${senderResult.rows[0].first_name} ${senderResult.rows[0].last_name}`
+        : 'Un membre';
 
     // Send push notification to receiver
     await sendPushNotification(data.receiverId, {
       title: 'Nouvelle demande de connexion',
       body: `${senderName} souhaite se connecter avec vous.`,
-      url: '/profile'
+      url: '/profile',
     });
 
-    return NextResponse.json({ id: result.rows[0].id });
+    return NextResponse.json({ id: newId });
   } catch (error) {
     console.error('Error creating connection:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
