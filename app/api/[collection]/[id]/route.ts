@@ -48,7 +48,13 @@ export async function PATCH(req: Request, { params }: { params: { collection: st
     // Push Notification Logic
     if (collection === 'services' && data.status === 'accepted') {
       const serviceResult = await query('SELECT user_id, title FROM services WHERE id = $1', [id]);
-      if (serviceResult.rowCount > 0) {
+     if (serviceResult?.rowCount && serviceResult.rowCount > 0) {
+  const service = serviceResult.rows[0];
+  await sendPushNotification(service.user_id, {
+    title: 'Service accepté',
+    body: `Votre service "${service.title}" a été accepté.`,
+  });
+}
         const service = serviceResult.rows[0];
         await sendPushNotification(service.user_id, {
           title: 'Service accepté',
