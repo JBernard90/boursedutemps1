@@ -8,11 +8,14 @@ export async function POST(req: Request) {
 
   try {
     const result = await query('SELECT * FROM users WHERE email = $1', [email]);
-    if (result.rowCount === 0) {
+
+    // Vérification sécurisée
+    if (!result?.rowCount || result.rowCount === 0) {
       return NextResponse.json({ error: 'Identifiants invalides' }, { status: 401 });
     }
 
     const user = result.rows[0];
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return NextResponse.json({ error: 'Identifiants invalides' }, { status: 401 });
@@ -49,3 +52,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
