@@ -357,16 +357,17 @@ export default function AppWrapper() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
-      <Signup 
-        currentPage={currentPage} 
-        user={user} 
-        notifications={notifications}
-        onNavigate={handleNavigate} 
-        onLogin={() => setShowAuthModal('login')} 
-        onSignup={() => setShowAuthModal('signup')} 
-        onLogout={handleLogout} 
-        onMarkRead={handleMarkNotificationRead}
-      />
+<Navbar
+  currentPage={currentPage}
+  user={user}
+  notifications={notifications}
+  onNavigate={handleNavigate}
+  onLogin={() => setShowAuthModal('login')}
+  onSignup={() => setShowAuthModal('signup')}
+  onLogout={handleLogout}
+  onMarkRead={handleMarkNotificationRead}
+/>
+
       <main className="flex-grow pt-16">
         <Suspense fallback={
           <div className="flex items-center justify-center min-h-[60vh]">
