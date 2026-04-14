@@ -23,7 +23,7 @@ const About: React.FC = () => {
           <span className="text-4xl mb-6 block">💡</span>
           <h2 className="font-heading text-2xl font-bold mb-4">La Vision</h2>
           <p className="opacity-90 leading-relaxed">
-            Bâtir la plus grande communauté d'innovation sociale mondiale en favorisant les ponts entre les organisations et les expertises de leurs membres.
+            Bâtir la plus grande communauté d'innovation sociale africaine en favorisant les ponts entre les départements et les expertises des étudiants de Senghor.
           </p>
         </div>
       </div>

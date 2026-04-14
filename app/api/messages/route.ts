@@ -13,8 +13,12 @@ export async function GET(req: Request) {
       [uid]
     );
     const messages = result.rows.map(m => ({
-      id: m.id, senderId: m.sender_id, receiverId: m.receiver_id,
-      content: m.content, timestamp: m.created_at, isRead: m.is_read || false,
+      id: m.id,
+      senderId: m.sender_id,
+      receiverId: m.receiver_id,
+      content: m.content,
+      timestamp: m.created_at,
+      isRead: m.is_read || false,
     }));
     return NextResponse.json(messages);
   } catch (error) {
@@ -27,16 +31,16 @@ export async function POST(req: Request) {
   try {
     const data = await req.json();
     const result = await query(
-      `INSERT INTO messages (sender_id, receiver_id, content) VALUES ($1, $2, $3) RETURNING id`,
+      `INSERT INTO messages (sender_id, receiver_id, content)
+       VALUES ($1, $2, $3) RETURNING id`,
       [data.senderId, data.receiverId, data.content]
     );
 
+    // Fetch sender name for notification
     const senderResult = await query('SELECT first_name, last_name FROM users WHERE uid = $1', [data.senderId]);
-    const senderCount = senderResult?.rowCount ?? 0;
-    const senderName = senderCount > 0
-      ? `${senderResult.rows[0].first_name} ${senderResult.rows[0].last_name}`
-      : 'Quelqu\'un';
+    const senderName = senderResult.rowCount > 0 ? `${senderResult.rows[0].first_name} ${senderResult.rows[0].last_name}` : 'Quelqu\'un';
 
+    // Send push notification to receiver
     await sendPushNotification(data.receiverId, {
       title: `Nouveau message de ${senderName}`,
       body: data.content.length > 50 ? data.content.substring(0, 47) + '...' : data.content,
