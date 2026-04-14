@@ -26,7 +26,7 @@ export default function Footer() {
 
   const openLegal = (type: 'mentions' | 'privacy' | 'cgu' | 'loi') => {
     let title = '';
-    let content = null;
+    let content: React.ReactNode = null;
 
     if (type === 'privacy') {
       title = 'Politique de Confidentialité';
