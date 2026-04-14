@@ -140,6 +140,48 @@ export default function Footer() {
       );
     }
 
+    } else if (type === 'loi') {
+      title = "Loi des Conditions d'Échange";
+      content = (
+        <div className="space-y-4 text-sm text-slate-600 leading-relaxed">
+          <section>
+            <h3 className="font-bold text-slate-900 mb-2">1. Objet de la Loi</h3>
+            <p>La présente Loi encadre les échanges de services, de compétences et de temps entre les utilisateurs du site Bourse du Temps. Elle définit les droits, obligations et responsabilités de chaque participant afin de garantir un environnement sûr, équitable et respectueux.</p>
+          </section>
+          <section>
+            <h3 className="font-bold text-slate-900 mb-2">2. Nature des Échanges</h3>
+            <p><strong>Gratuité :</strong> Les échanges sont non commerciaux. Aucun paiement financier ne peut être exigé ou proposé.</p>
+            <p><strong>Réciprocité :</strong> Un service rendu peut être compensé par un autre service ou un temps équivalent, selon les modalités convenues entre les utilisateurs.</p>
+            <p><strong>Liberté :</strong> Les utilisateurs sont libres de choisir leurs partenaires, de définir les modalités de l'échange, et de refuser un échange sans justification.</p>
+          </section>
+          <section>
+            <h3 className="font-bold text-slate-900 mb-2">3. Engagements des Utilisateurs</h3>
+            <p>Chaque utilisateur s'engage à adopter un comportement respectueux et bienveillant, à fournir des informations sincères sur ses compétences et sa disponibilité, et à ne pas proposer de services illégaux ou dangereux.</p>
+          </section>
+          <section>
+            <h3 className="font-bold text-slate-900 mb-2">4. Responsabilités</h3>
+            <p>Le site Bourse du Temps n'intervient pas dans les échanges et ne garantit pas la qualité des services. Les utilisateurs sont seuls responsables des engagements qu'ils prennent et des conséquences de leurs actions.</p>
+          </section>
+          <section>
+            <h3 className="font-bold text-slate-900 mb-2">5. Confidentialité</h3>
+            <p>Les échanges doivent respecter la vie privée de chacun. Aucune donnée personnelle obtenue dans le cadre d'un échange ne peut être divulguée, vendue ou utilisée à des fins commerciales.</p>
+          </section>
+          <section>
+            <h3 className="font-bold text-slate-900 mb-2">6. Interdictions</h3>
+            <p>Il est strictement interdit de proposer des services illégaux, d'exiger une rémunération financière, d'usurper l'identité d'un tiers, ou de harceler un autre utilisateur.</p>
+          </section>
+          <section>
+            <h3 className="font-bold text-slate-900 mb-2">7. Annulation et Litiges</h3>
+            <p>Un utilisateur peut annuler un échange en prévenant l'autre partie dans un délai raisonnable. En cas de désaccord, une résolution amiable est encouragée. Le site n'intervient pas dans les conflits.</p>
+          </section>
+          <section>
+            <h3 className="font-bold text-slate-900 mb-2">8. Acceptation</h3>
+            <p>L'utilisation du site implique l'acceptation pleine et entière de la présente Loi des Conditions d'Échange.</p>
+          </section>
+        </div>
+      );
+    }
+
     setLegalModal({ isOpen: true, title, content });
   };
 
