@@ -9,7 +9,7 @@ import LegalModal from './LegalModal';
 export default function Footer() {
   const router = useRouter();
   const [year, setYear] = React.useState(new Date().getFullYear());
-  const [legalModal, setLegalModal] = useState<{ isOpen: boolean; title: string; content: React.ReactNode }>({
+  const [legalModal, setLegalModal] = useState<{ isOpen: boolean; title: string; content: React.ReactNode | null }>({
     isOpen: false,
     title: '',
     content: null
@@ -24,7 +24,7 @@ export default function Footer() {
     else router.push(`/${page}`);
   };
 
-  const openLegal = (type: 'mentions' | 'privacy' | 'cgu') => {
+  const openLegal = (type: 'mentions' | 'privacy' | 'cgu' | 'loi') => {
     let title = '';
     let content = null;
 
@@ -224,6 +224,7 @@ export default function Footer() {
             <button onClick={() => openLegal('mentions')} className="text-slate-500 hover:text-slate-300 text-xs font-medium transition-colors">Mentions Légales</button>
             <button onClick={() => openLegal('privacy')} className="text-slate-500 hover:text-slate-300 text-xs font-medium transition-colors">Confidentialité</button>
             <button onClick={() => openLegal('cgu')} className="text-slate-500 hover:text-slate-300 text-xs font-medium transition-colors">CGU</button>
+            <button onClick={() => openLegal('loi')} className="text-slate-500 hover:text-orange-400 text-xs font-medium transition-colors">⚖️ Loi des Échanges</button>
           </div>
         </div>
       </div>
