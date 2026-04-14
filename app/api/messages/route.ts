@@ -12,7 +12,10 @@ export async function GET(req: Request) {
       'SELECT * FROM messages WHERE sender_id = $1 OR receiver_id = $1 ORDER BY created_at ASC',
       [uid]
     );
-    const messages = result.rows.map(m => ({
+
+    const rows = result?.rows ?? [];
+
+    const messages = rows.map(m => ({
       id: m.id,
       senderId: m.sender_id,
       receiverId: m.receiver_id,
@@ -20,6 +23,7 @@ export async function GET(req: Request) {
       timestamp: m.created_at,
       isRead: m.is_read || false,
     }));
+
     return NextResponse.json(messages);
   } catch (error) {
     console.error('Error fetching messages:', error);
@@ -30,26 +34,40 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const data = await req.json();
+
     const result = await query(
       `INSERT INTO messages (sender_id, receiver_id, content)
        VALUES ($1, $2, $3) RETURNING id`,
       [data.senderId, data.receiverId, data.content]
     );
 
+    const newId = result?.rows?.[0]?.id ?? null;
+
     // Fetch sender name for notification
-    const senderResult = await query('SELECT first_name, last_name FROM users WHERE uid = $1', [data.senderId]);
-    const senderName = senderResult.rowCount > 0 ? `${senderResult.rows[0].first_name} ${senderResult.rows[0].last_name}` : 'Quelqu\'un';
+    const senderResult = await query(
+      'SELECT first_name, last_name FROM users WHERE uid = $1',
+      [data.senderId]
+    );
+
+    const senderName =
+      senderResult?.rowCount && senderResult.rowCount > 0
+        ? `${senderResult.rows[0].first_name} ${senderResult.rows[0].last_name}`
+        : "Quelqu'un";
 
     // Send push notification to receiver
     await sendPushNotification(data.receiverId, {
       title: `Nouveau message de ${senderName}`,
-      body: data.content.length > 50 ? data.content.substring(0, 47) + '...' : data.content,
-      url: '/profile?chat=' + data.senderId
+      body:
+        data.content.length > 50
+          ? data.content.substring(0, 47) + '...'
+          : data.content,
+      url: '/profile?chat=' + data.senderId,
     });
 
-    return NextResponse.json({ id: result.rows[0].id });
+    return NextResponse.json({ id: newId });
   } catch (error) {
     console.error('Error creating message:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
