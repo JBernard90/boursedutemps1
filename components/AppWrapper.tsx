@@ -357,7 +357,7 @@ export default function AppWrapper() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
-      Signup 
+      <Signup 
         currentPage={currentPage} 
         user={user} 
         notifications={notifications}
