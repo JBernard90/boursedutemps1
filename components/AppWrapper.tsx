@@ -204,12 +204,11 @@ export default function AppWrapper() {
     setShowAuthModal(null);
   };
 
-  const handleLogout = async () => {
-    localStorage.removeItem('token');
-    await auth.signOut();
-    setUser(null);
-    setCurrentPage('home');
-  };
+ const handleLogout = async () => {
+  await supabase.auth.signOut();
+  setUser(null);
+  setCurrentPage('home');
+};
 
   const handleTransaction = async (item: Service | Request, negotiatedAmount: number, type: 'service' | 'request') => {
     if (!user) { setShowAuthModal('login'); return; }
@@ -358,7 +357,7 @@ export default function AppWrapper() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
-      <Navbar 
+      Signup 
         currentPage={currentPage} 
         user={user} 
         notifications={notifications}
