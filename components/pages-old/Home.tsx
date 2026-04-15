@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -29,15 +28,20 @@ const Home: React.FC<HomeProps> = ({ navigate, blogs, testimonials, stats }) => 
 
         <div className="relative z-10 max-w-5xl mx-auto text-center animate-in fade-in slide-in-from-bottom-6 duration-700">
           <div className="inline-block px-4 py-1.5 mb-8 rounded-full bg-blue-50 border border-blue-100">
-          
+            {/* Ici tu avais "Université Senghor". On laisse la balise vide ou on met un texte neutre */}
+            <span className="text-xs font-bold text-blue-600 uppercase tracking-[0.2em]">
+              Plateforme solidaire
+            </span>
+          </div>
+
           <h1 className="font-heading text-5xl md:text-8xl font-bold text-slate-900 mb-8 leading-tight uppercase tracking-tighter">
             BOURSE DU TEMPS
           </h1>
-          
+
           <p className="text-xl text-slate-600 mb-12 max-w-2xl mx-auto font-medium leading-relaxed">
             Échangez vos talents, apprenez gratuitement et construisez l'avenir au sein de notre banque de temps solidaire.
           </p>
-          
+
           <div className="flex items-center justify-center mb-16">
             <button 
               onClick={() => navigate('services')}
@@ -73,7 +77,7 @@ const Home: React.FC<HomeProps> = ({ navigate, blogs, testimonials, stats }) => 
         </div>
       </section>
 
-      {/* BANDEAU ACTUALITÉS (Transformé en Carrousel) */}
+      {/* BANDEAU ACTUALITÉS */}
       <div className="bg-slate-50 py-16 border-y border-slate-100 shadow-inner">
         <div className="max-w-7xl mx-auto px-6 mb-10 flex flex-col md:flex-row justify-between items-end gap-4">
           <div>
