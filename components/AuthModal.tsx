@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -16,7 +15,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   
-  // Form State
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -32,24 +30,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
   const [avatar, setAvatar] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
 
-  // Verification State
-  const [uid, setUid] = useState<string | null>(null);
-  const [isEmailSent, setIsEmailSent] = useState(false);
-  const [isSmsSent, setIsSmsSent] = useState(false);
   const [emailCode, setEmailCode] = useState('');
-  const [smsCode, setSmsCode] = useState('');
   const [isEmailVerified, setIsEmailVerified] = useState(false);
-  const [isSmsVerified, setIsSmsVerified] = useState(false);
   
   const ALLOWED_DOMAIN = '@etu-usenghor.org';
 
-  const handleSendCodes = async () => {
+  const handleSendCode = async () => {
     if (!email.endsWith(ALLOWED_DOMAIN)) {
       alert(`Seules les adresses email se terminant par ${ALLOWED_DOMAIN} sont autorisées.`);
-      return;
-    }
-    if (!whatsapp || !/^\+[1-9]\d{1,14}$/.test(whatsapp)) {
-      alert("Format de téléphone invalide. Utilisez le format international (ex: +221...)");
       return;
     }
     setLoading(true);
@@ -57,17 +45,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
       const res = await fetch('/api/verify/init', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, phone: whatsapp })
+        body: JSON.stringify({ email })
       });
 
       const data = await res.json();
       if (res.ok) {
-        setIsEmailSent(true);
-        setIsSmsSent(true);
-        setStep(2); // Move to verification step
-        alert('Codes envoyés ! Veuillez vérifier votre email et SMS.');
+        setStep(2);
+        alert('Code envoyé ! Veuillez vérifier votre email.');
       } else {
-        throw new Error(data.error || 'Erreur lors de l\'envoi des codes');
+        throw new Error(data.error || "Erreur lors de l'envoi du code");
       }
     } catch (e: any) {
       alert(e.message);
@@ -76,22 +62,21 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
     }
   };
 
-  const verifyCodes = async () => {
+  const verifyCode = async () => {
     setLoading(true);
     try {
       const res = await fetch('/api/verify/check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, phone: whatsapp, emailCode, phoneCode: smsCode })
+        body: JSON.stringify({ email, emailCode })
       });
       if (res.ok) {
         setIsEmailVerified(true);
-        setIsSmsVerified(true);
-        setStep(3); // Move to Basic Info
-        alert('Codes vérifiés avec succès !');
+        setStep(3);
+        alert('Email vérifié avec succès !');
       } else {
         const data = await res.json();
-        alert(data.error || 'Codes incorrects.');
+        alert(data.error || 'Code incorrect.');
       }
     } catch (e) {
       alert('Erreur lors de la vérification.');
@@ -105,21 +90,19 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
     if (!avatar) { alert('Photo requise'); return; }
     setLoading(true);
     try {
-      // Create user and profile in one go
       const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email,
-          phone: whatsapp,
           emailCode,
-          phoneCode: smsCode,
           password,
           firstName,
           lastName,
           department,
           gender,
           country,
+          whatsapp,
           offeredSkills: offeredSkills.split(',').map(s => s.trim()).filter(s => s),
           requestedSkills: requestedSkills.split(',').map(s => s.trim()).filter(s => s),
           availability,
@@ -130,16 +113,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
       });
 
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Erreur lors de l\'inscription');
-      }
+      if (!res.ok) throw new Error(data.error || "Erreur lors de l'inscription");
 
-      // Sign in on client side
       localStorage.setItem('token', data.token);
       const userRes = await fetch('/api/auth/me', { headers: { Authorization: `Bearer ${data.token}` } });
       const userData = await userRes.json();
       onAuth(userData);
-      
       alert("Inscription réussie !");
       onClose();
     } catch (error: any) {
@@ -185,7 +164,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      
       localStorage.setItem('token', data.token);
       onAuth(data.user);
       onClose();
@@ -217,11 +195,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
             {mode === 'login' ? 'Entrez vos identifiants' : `Étape ${step} sur 4`}
           </p>
           {mode === 'signup' && step === 1 && (
-            <button 
-              type="button" 
-              onClick={fillForTest}
-              className="mt-4 text-[10px] font-bold text-blue-600 uppercase tracking-widest hover:underline"
-            >
+            <button type="button" onClick={fillForTest} className="mt-4 text-[10px] font-bold text-blue-600 uppercase tracking-widest hover:underline">
               Remplir automatiquement (Test)
             </button>
           )}
@@ -244,39 +218,28 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Email Institutionnel</label>
                     <input required type="email" placeholder="votre-email@etu-usenghor.org" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none" value={email} onChange={e => setEmail(e.target.value)} />
                   </div>
-
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Numéro WhatsApp</label>
-                    <input required placeholder="Ex: +221 77..." className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} />
+                    <input required placeholder="Ex: +509 32 27 4422" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} />
                   </div>
-
-                  <button type="button" onClick={handleSendCodes} disabled={loading} className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-lg disabled:opacity-50">
-                    {loading ? 'Envoi...' : "Recevoir les codes"}
+                  <button type="button" onClick={handleSendCode} disabled={loading} className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-lg disabled:opacity-50">
+                    {loading ? 'Envoi...' : 'Recevoir le code par email'}
                   </button>
                 </div>
               )}
 
               {step === 2 && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                  <div className="space-y-4">
-                    <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
-                      <p className="text-xs text-blue-800 font-medium">Un code a été envoyé à <strong>{email}</strong> et par SMS au <strong>{whatsapp}</strong>.</p>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Code Email (6 chiffres)</label>
-                      <input placeholder="Code Email" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none font-mono text-center tracking-widest text-xl" value={emailCode} onChange={e => setEmailCode(e.target.value)} />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Code SMS (6 chiffres)</label>
-                      <input placeholder="Code SMS" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none font-mono text-center tracking-widest text-xl" value={smsCode} onChange={e => setSmsCode(e.target.value)} />
-                    </div>
+                  <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
+                    <p className="text-xs text-blue-800 font-medium">Un code a été envoyé à <strong>{email}</strong>.</p>
                   </div>
-
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Code Email (6 chiffres)</label>
+                    <input placeholder="Code Email" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none font-mono text-center tracking-widest text-xl" value={emailCode} onChange={e => setEmailCode(e.target.value)} />
+                  </div>
                   <div className="flex gap-4 pt-4">
                     <button type="button" onClick={prevStep} className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-200">Retour</button>
-                    <button type="button" onClick={verifyCodes} disabled={loading || emailCode.length < 6 || smsCode.length < 6} className="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-lg disabled:opacity-50">
+                    <button type="button" onClick={verifyCode} disabled={loading || emailCode.length < 6} className="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-lg disabled:opacity-50">
                       {loading ? 'Vérification...' : 'Vérifier'}
                     </button>
                   </div>
@@ -296,6 +259,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
                     </select>
                     <input required placeholder="Pays d'origine" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none" value={country} onChange={e => setCountry(e.target.value)} />
                   </div>
+
                   <select className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none" value={department} onChange={e => setDepartment(e.target.value)}>
                     <option>Management</option>
                     <option>Culture</option>
@@ -314,14 +278,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
                     <div className="flex flex-col items-center gap-4">
                       <div className="w-24 h-24 rounded-full bg-slate-100 overflow-hidden flex items-center justify-center border-4 border-blue-50 shadow-inner relative">
                         {avatar ? (
-                          <Image 
-                            src={avatar} 
-                            alt="Avatar preview" 
-                            fill 
-                            className="object-cover" 
-                            unoptimized={avatar.startsWith('data:')}
-                            sizes="96px"
-                          />
+                          <Image src={avatar} alt="Avatar preview" fill className="object-cover" unoptimized={avatar.startsWith('data:')} sizes="96px" />
                         ) : (
                           <span className="text-3xl grayscale">👤</span>
                         )}
@@ -369,10 +326,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
 
         <p className="text-center mt-8 text-sm font-medium text-slate-400">
           {mode === 'login' ? "Nouveau membre ?" : "Déjà inscrit ?"} 
-          <button 
-            onClick={() => { onSwitch(mode === 'login' ? 'signup' : 'login'); setStep(1); }}
-            className="text-blue-600 font-bold ml-1 hover:underline"
-          >
+          <button onClick={() => { onSwitch(mode === 'login' ? 'signup' : 'login'); setStep(1); }} className="text-blue-600 font-bold ml-1 hover:underline">
             {mode === 'login' ? "Créer un compte" : "Se connecter"}
           </button>
         </p>
