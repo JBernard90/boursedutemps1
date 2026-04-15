@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import Image from 'next/image';
-import { User, ForumTopic, MediaItem } from '../../types';
+import { User, ForumTopic, MediaItem } from '../types';
 import { Edit2, Trash2, MessageCircle, Heart, Share2, Video } from 'lucide-react';
 
 interface ForumProps {
@@ -28,6 +28,7 @@ const Forum: React.FC<ForumProps> = ({ user, topics, onAdd }) => {
     if (!user) return alert('Connectez-vous pour démarrer un live');
     const roomName = `bdt-${user.uid}-${Date.now()}`;
     setLiveRoomName(roomName);
+    window.open(`https://meet.jit.si/${roomName}`, '_blank');
   };
 
   const handleDelete = async (id: string) => {
@@ -74,18 +75,26 @@ const Forum: React.FC<ForumProps> = ({ user, topics, onAdd }) => {
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-12">
-      {/* Live Jitsi */}
+      {/* Live en cours - lien de partage */}
       {liveRoomName && (
-        <div className="fixed inset-0 z-[200] bg-slate-900 flex flex-col">
-          <div className="flex justify-between items-center px-6 py-4 bg-slate-800">
-            <span className="text-white font-bold flex items-center gap-2"><span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span> Live en cours</span>
-            <button onClick={() => setLiveRoomName(null)} className="text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl font-bold text-sm transition">Terminer le live</button>
-          </div>
-          <iframe
-            src={`https://meet.jit.si/${liveRoomName}`}
-            allow="camera; microphone; fullscreen; display-capture"
-            className="flex-grow w-full border-0"
-          />
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4">
+          <span className="flex items-center gap-2 font-bold"><span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span> Live en cours</span>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(`https://meet.jit.si/${liveRoomName}`);
+              alert('Lien copié ! Partagez-le avec vos participants.');
+            }}
+            className="bg-white text-slate-900 px-4 py-2 rounded-xl font-bold text-sm hover:bg-slate-100 transition"
+          >
+            📋 Copier le lien
+          </button>
+          <button
+            onClick={() => window.open(`https://meet.jit.si/${liveRoomName}`, '_blank')}
+            className="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-blue-700 transition"
+          >
+            Rejoindre
+          </button>
+          <button onClick={() => setLiveRoomName(null)} className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl font-bold text-sm transition">Terminer</button>
         </div>
       )}
 
