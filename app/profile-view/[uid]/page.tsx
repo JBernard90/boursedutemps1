@@ -18,11 +18,11 @@ export default function ProfileViewRoute() {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const authHeader = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
-
   useEffect(() => {
     if (!viewingUserId) return;
+
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const authHeader = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
 
     const fetchData = async () => {
       try {
@@ -45,11 +45,16 @@ export default function ProfileViewRoute() {
     fetchData();
   }, [viewingUserId]);
 
+  const getAuthHeader = () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+  };
+
   const handleSendConnection = async (targetUid: string) => {
     if (!currentUser) return;
     const res = await fetch('/api/connections', {
       method: 'POST',
-      headers: authHeader,
+      headers: getAuthHeader(),
       body: JSON.stringify({ senderId: currentUser.uid, receiverId: targetUid, status: 'sent' })
     });
     if (res.ok) {
@@ -61,7 +66,7 @@ export default function ProfileViewRoute() {
   const handleUpdateConnection = async (connectionId: string, status: 'accepted' | 'refused' | 'cancelled') => {
     await fetch(`/api/connections/${connectionId}`, {
       method: 'PATCH',
-      headers: authHeader,
+      headers: getAuthHeader(),
       body: JSON.stringify({ status })
     });
     setConnections(prev => prev.map(c => c.id === connectionId ? { ...c, status } : c));
