@@ -207,8 +207,10 @@ export default function AppWrapper() {
     setShowAuthModal(null);
   };
 
- const handleLogout = async () => {
-  await supabase.auth.signOut();
+const handleLogout = async () => {
+  if (supabase) {
+    await supabase.auth.signOut();
+  }
   setUser(null);
   setCurrentPage('home');
 };
