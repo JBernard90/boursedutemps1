@@ -138,8 +138,6 @@ export default function Footer() {
           </section>
         </div>
       );
-    }
-
     } else if (type === 'loi') {
       title = "Loi des Conditions d'Échange";
       content = (
