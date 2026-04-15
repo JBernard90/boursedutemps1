@@ -258,7 +258,7 @@ export default function Footer() {
 
         <div className="pt-10 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6">
           <p className="text-slate-500 text-xs font-medium">
-            © {year} Bourse du Temps - Université Senghor. Tous droits réservés.
+            © {year} Bourse du Temps. Tous droits réservés.
           </p>
           <div className="flex gap-8">
             <button onClick={() => openLegal('mentions')} className="text-slate-500 hover:text-slate-300 text-xs font-medium transition-colors">Mentions Légales</button>
