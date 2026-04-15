@@ -14,7 +14,7 @@ interface AuthModalProps {
 const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }) => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -32,12 +32,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
 
   const [emailCode, setEmailCode] = useState('');
   const [isEmailVerified, setIsEmailVerified] = useState(false);
-  
+
   const ALLOWED_DOMAIN = '@etu-usenghor.org';
 
+  // ── Envoi OTP (login + signup) ──────────────────────────────────────────────
   const handleSendCode = async () => {
     if (!email.endsWith(ALLOWED_DOMAIN)) {
-      alert(`Seules les adresses email se terminant par ${ALLOWED_DOMAIN} sont autorisées.`);
+      alert(`Seules les adresses se terminant par ${ALLOWED_DOMAIN} sont autorisées.`);
       return;
     }
     setLoading(true);
@@ -45,13 +46,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
       const res = await fetch('/api/verify/init', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ email }),
       });
-
       const data = await res.json();
       if (res.ok) {
         setStep(2);
-        alert('Code envoyé ! Veuillez vérifier votre email.');
+        alert('Code envoyé ! Vérifiez votre email.');
       } else {
         throw new Error(data.error || "Erreur lors de l'envoi du code");
       }
@@ -62,31 +62,63 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
     }
   };
 
+  // ── Vérification OTP (login + signup) ──────────────────────────────────────
   const verifyCode = async () => {
     setLoading(true);
     try {
       const res = await fetch('/api/verify/check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, emailCode })
+        body: JSON.stringify({ email, emailCode }),
       });
       if (res.ok) {
         setIsEmailVerified(true);
-        setStep(3);
+        setStep(3); // login → mot de passe | signup → profil
         alert('Email vérifié avec succès !');
       } else {
         const data = await res.json();
         alert(data.error || 'Code incorrect.');
       }
-    } catch (e) {
+    } catch {
       alert('Erreur lors de la vérification.');
     } finally {
       setLoading(false);
     }
   };
 
+  // ── Connexion (seulement après OTP vérifié) ─────────────────────────────────
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isEmailVerified) {
+      alert("Veuillez d'abord vérifier votre email avec le code OTP.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, emailCode }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      localStorage.setItem('token', data.token);
+      onAuth(data.user);
+      onClose();
+    } catch (error: any) {
+      alert('Erreur de connexion : ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Inscription finale (seulement après OTP vérifié) ────────────────────────
   const handleRegisterAndProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isEmailVerified) {
+      alert('La vérification email OTP est requise.');
+      return;
+    }
     if (!avatar) { alert('Photo requise'); return; }
     setLoading(true);
     try {
@@ -103,23 +135,23 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
           gender,
           country,
           whatsapp,
-          offeredSkills: offeredSkills.split(',').map(s => s.trim()).filter(s => s),
-          requestedSkills: requestedSkills.split(',').map(s => s.trim()).filter(s => s),
+          offeredSkills: offeredSkills.split(',').map(s => s.trim()).filter(Boolean),
+          requestedSkills: requestedSkills.split(',').map(s => s.trim()).filter(Boolean),
           availability,
-          languages: languages.split(',').map(l => l.trim()).filter(l => l),
+          languages: languages.split(',').map(l => l.trim()).filter(Boolean),
           avatar,
-          termsAccepted: true
-        })
+          termsAccepted: true,
+        }),
       });
-
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erreur lors de l'inscription");
-
       localStorage.setItem('token', data.token);
-      const userRes = await fetch('/api/auth/me', { headers: { Authorization: `Bearer ${data.token}` } });
+      const userRes = await fetch('/api/auth/me', {
+        headers: { Authorization: `Bearer ${data.token}` },
+      });
       const userData = await userRes.json();
       onAuth(userData);
-      alert("Inscription réussie !");
+      alert('Inscription réussie !');
       onClose();
     } catch (error: any) {
       alert(error.message);
@@ -128,6 +160,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
     }
   };
 
+  // ── Remplissage test — NE saute plus l'OTP ──────────────────────────────────
   const fillForTest = () => {
     setEmail('test@etu-usenghor.org');
     setPassword('password123');
@@ -141,7 +174,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
     setLanguages('Français, Anglais');
     setAvatar('https://picsum.photos/seed/test/200/200');
     setTermsAccepted(true);
-    setStep(2);
+    // ⚠️ PAS de setStep(2) — l'OTP reste obligatoire même en mode test
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -153,113 +186,243 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
     }
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      localStorage.setItem('token', data.token);
-      onAuth(data.user);
-      onClose();
-    } catch (error: any) {
-      alert("Erreur de connexion : " + error.message);
-    } finally {
-      setLoading(false);
-    }
+  // Reset complet au changement de mode
+  const handleSwitchMode = (newMode: 'login' | 'signup') => {
+    onSwitch(newMode);
+    setStep(1);
+    setEmail('');
+    setPassword('');
+    setEmailCode('');
+    setIsEmailVerified(false);
   };
 
   const nextStep = () => setStep(s => s + 1);
   const prevStep = () => setStep(s => s - 1);
 
+  const totalSteps = mode === 'login' ? 3 : 4;
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={onClose}></div>
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={onClose} />
       <div className="relative bg-white w-full max-w-2xl rounded-[2.5rem] p-8 md:p-12 shadow-2xl overflow-y-auto max-h-[90vh] animate-in zoom-in duration-300">
+
+        {/* Bouton fermer */}
         <button onClick={onClose} className="absolute top-6 right-6 text-slate-300 hover:text-slate-600 transition">
           <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
 
+        {/* En-tête */}
         <div className="text-center mb-8">
           <h2 className="font-heading text-3xl font-bold text-slate-800 uppercase tracking-tight">
             {mode === 'login' ? 'Connexion' : 'Bourse du Temps - Inscription'}
           </h2>
-          <p className="text-slate-500 mt-2 text-sm">
-            {mode === 'login' ? 'Entrez vos identifiants' : `Étape ${step} sur 4`}
-          </p>
+          <p className="text-slate-500 mt-2 text-sm">Étape {step} sur {totalSteps}</p>
           {mode === 'signup' && step === 1 && (
-            <button type="button" onClick={fillForTest} className="mt-4 text-[10px] font-bold text-blue-600 uppercase tracking-widest hover:underline">
+            <button
+              type="button"
+              onClick={fillForTest}
+              className="mt-4 text-[10px] font-bold text-blue-600 uppercase tracking-widest hover:underline"
+            >
               Remplir automatiquement (Test)
             </button>
           )}
         </div>
 
         <div className="space-y-6">
-          {mode === 'login' ? (
-            <form onSubmit={handleLogin} className="space-y-4">
-              <input required type="email" placeholder="Email institutionnel" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500" value={email} onChange={e => setEmail(e.target.value)} />
-              <input required type="password" placeholder="Mot de passe" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500" value={password} onChange={e => setPassword(e.target.value)} />
-              <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-blue-700 transition shadow-xl shadow-blue-200 disabled:opacity-50">
-                {loading ? 'Connexion...' : 'Se Connecter'}
-              </button>
-            </form>
-          ) : (
+
+          {/* ══════════════════════ MODE LOGIN ══════════════════════ */}
+          {mode === 'login' && (
             <>
+              {/* LOGIN — Étape 1 : Email → envoi OTP */}
               {step === 1 && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Email Institutionnel</label>
-                    <input required type="email" placeholder="votre-email@etu-usenghor.org" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none" value={email} onChange={e => setEmail(e.target.value)} />
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                      Email Institutionnel
+                    </label>
+                    <input
+                      required
+                      type="email"
+                      placeholder="votre-email@etu-usenghor.org"
+                      className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                    />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Numéro WhatsApp</label>
-                    <input required placeholder="Ex: +509 32 27 4422" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} />
-                  </div>
-                  <button type="button" onClick={handleSendCode} disabled={loading} className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-lg disabled:opacity-50">
+                  <button
+                    type="button"
+                    onClick={handleSendCode}
+                    disabled={loading || !email}
+                    className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-blue-700 transition shadow-xl shadow-blue-200 disabled:opacity-50"
+                  >
                     {loading ? 'Envoi...' : 'Recevoir le code par email'}
                   </button>
                 </div>
               )}
 
+              {/* LOGIN — Étape 2 : Saisie OTP */}
               {step === 2 && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                   <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
-                    <p className="text-xs text-blue-800 font-medium">Un code a été envoyé à <strong>{email}</strong>.</p>
+                    <p className="text-xs text-blue-800 font-medium">
+                      Un code a été envoyé à <strong>{email}</strong>.
+                    </p>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Code Email (6 chiffres)</label>
-                    <input placeholder="Code Email" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none font-mono text-center tracking-widest text-xl" value={emailCode} onChange={e => setEmailCode(e.target.value)} />
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                      Code Email (6 chiffres)
+                    </label>
+                    <input
+                      placeholder="● ● ● ● ● ●"
+                      maxLength={6}
+                      className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none font-mono text-center tracking-widest text-xl"
+                      value={emailCode}
+                      onChange={e => setEmailCode(e.target.value.replace(/\D/g, ''))}
+                    />
                   </div>
-                  <div className="flex gap-4 pt-4">
-                    <button type="button" onClick={prevStep} className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-200">Retour</button>
-                    <button type="button" onClick={verifyCode} disabled={loading || emailCode.length < 6} className="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-lg disabled:opacity-50">
+                  <div className="flex gap-4 pt-2">
+                    <button type="button" onClick={prevStep} className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-200">
+                      Retour
+                    </button>
+                    <button
+                      type="button"
+                      onClick={verifyCode}
+                      disabled={loading || emailCode.length < 6}
+                      className="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-lg disabled:opacity-50"
+                    >
                       {loading ? 'Vérification...' : 'Vérifier'}
                     </button>
                   </div>
                 </div>
               )}
 
+              {/* LOGIN — Étape 3 : Mot de passe (seulement si OTP validé) */}
+              {step === 3 && (
+                <form onSubmit={handleLogin} className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                  <div className="bg-green-50 p-4 rounded-2xl border border-green-100">
+                    <p className="text-xs text-green-800 font-medium">
+                      ✅ Email <strong>{email}</strong> vérifié.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                      Mot de passe
+                    </label>
+                    <input
+                      required
+                      type="password"
+                      placeholder="Mot de passe"
+                      className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex gap-4">
+                    <button type="button" onClick={prevStep} className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-200">
+                      Retour
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-blue-700 transition shadow-xl shadow-blue-200 disabled:opacity-50"
+                    >
+                      {loading ? 'Connexion...' : 'Se Connecter'}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </>
+          )}
+
+          {/* ══════════════════════ MODE SIGNUP ══════════════════════ */}
+          {mode === 'signup' && (
+            <>
+              {/* SIGNUP — Étape 1 : Email + WhatsApp → envoi OTP */}
+              {step === 1 && (
+                <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Email Institutionnel</label>
+                    <input
+                      required
+                      type="email"
+                      placeholder="votre-email@etu-usenghor.org"
+                      className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Numéro WhatsApp</label>
+                    <input
+                      required
+                      placeholder="Ex: +509 32 27 4422"
+                      className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none"
+                      value={whatsapp}
+                      onChange={e => setWhatsapp(e.target.value)}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSendCode}
+                    disabled={loading}
+                    className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-lg disabled:opacity-50"
+                  >
+                    {loading ? 'Envoi...' : 'Recevoir le code par email'}
+                  </button>
+                </div>
+              )}
+
+              {/* SIGNUP — Étape 2 : Saisie OTP */}
+              {step === 2 && (
+                <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                  <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
+                    <p className="text-xs text-blue-800 font-medium">
+                      Un code a été envoyé à <strong>{email}</strong>.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Code Email (6 chiffres)</label>
+                    <input
+                      placeholder="● ● ● ● ● ●"
+                      maxLength={6}
+                      className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none font-mono text-center tracking-widest text-xl"
+                      value={emailCode}
+                      onChange={e => setEmailCode(e.target.value.replace(/\D/g, ''))}
+                    />
+                  </div>
+                  <div className="flex gap-4 pt-2">
+                    <button type="button" onClick={prevStep} className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-200">Retour</button>
+                    <button
+                      type="button"
+                      onClick={verifyCode}
+                      disabled={loading || emailCode.length < 6}
+                      className="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-lg disabled:opacity-50"
+                    >
+                      {loading ? 'Vérification...' : 'Vérifier'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* SIGNUP — Étape 3 : Informations personnelles */}
               {step === 3 && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                  <div className="bg-green-50 p-3 rounded-2xl border border-green-100">
+                    <p className="text-xs text-green-800 font-medium">✅ Email vérifié</p>
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <input required placeholder="Prénom" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none" value={firstName} onChange={e => setFirstName(e.target.value)} />
                     <input required placeholder="Nom" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none" value={lastName} onChange={e => setLastName(e.target.value)} />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <select className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none" value={gender} onChange={e => setGender(e.target.value as any)}>
+                    <select className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none" value={gender} onChange={e => setGender(e.target.value as 'Homme' | 'Femme')}>
                       <option value="Homme">Homme</option>
                       <option value="Femme">Femme</option>
                     </select>
                     <input required placeholder="Pays d'origine" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none" value={country} onChange={e => setCountry(e.target.value)} />
                   </div>
-
                   <select className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none" value={department} onChange={e => setDepartment(e.target.value)}>
                     <option>Management</option>
                     <option>Culture</option>
@@ -271,6 +434,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
                 </div>
               )}
 
+              {/* SIGNUP — Étape 4 : Compétences + Photo */}
               {step === 4 && (
                 <form onSubmit={handleRegisterAndProfile} className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                   <div className="text-center">
@@ -286,7 +450,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
                       <input type="file" accept="image/*" onChange={handleFileChange} className="text-xs text-slate-500 cursor-pointer" required />
                     </div>
                   </div>
-
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Compétences Offertes</label>
@@ -305,7 +468,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
                     <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Langues</label>
                     <input required placeholder="Français, Wolof, Anglais..." className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none" value={languages} onChange={e => setLanguages(e.target.value)} />
                   </div>
-                  
                   <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100">
                     <label className="flex items-start gap-4 cursor-pointer">
                       <input type="checkbox" required className="mt-1 w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)} />
@@ -314,8 +476,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
                       </span>
                     </label>
                   </div>
-
-                  <button type="submit" disabled={loading || !avatar || !termsAccepted} className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-xl shadow-blue-200 disabled:opacity-50">
+                  <button
+                    type="submit"
+                    disabled={loading || !avatar || !termsAccepted}
+                    className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-xl shadow-blue-200 disabled:opacity-50"
+                  >
                     {loading ? 'Finalisation...' : 'Terminer'}
                   </button>
                 </form>
@@ -324,10 +489,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
           )}
         </div>
 
+        {/* Basculer login ↔ signup */}
         <p className="text-center mt-8 text-sm font-medium text-slate-400">
-          {mode === 'login' ? "Nouveau membre ?" : "Déjà inscrit ?"} 
-          <button onClick={() => { onSwitch(mode === 'login' ? 'signup' : 'login'); setStep(1); }} className="text-blue-600 font-bold ml-1 hover:underline">
-            {mode === 'login' ? "Créer un compte" : "Se connecter"}
+          {mode === 'login' ? 'Nouveau membre ?' : 'Déjà inscrit ?'}
+          <button
+            onClick={() => handleSwitchMode(mode === 'login' ? 'signup' : 'login')}
+            className="text-blue-600 font-bold ml-1 hover:underline"
+          >
+            {mode === 'login' ? 'Créer un compte' : 'Se connecter'}
           </button>
         </p>
       </div>
