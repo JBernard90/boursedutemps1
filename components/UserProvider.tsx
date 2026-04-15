@@ -23,28 +23,28 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   // 🔵 Supabase Auth Listener
   useEffect(() => {
-    const {
-      data: authListener
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.access_token) {
-        localStorage.setItem("token", session.access_token);
+    const { data: authListener } = supabase!.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.access_token) {
+          localStorage.setItem("token", session.access_token);
 
-        const res = await fetch("/api/auth/me", {
-          headers: { Authorization: `Bearer ${session.access_token}` }
-        });
+          const res = await fetch("/api/auth/me", {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          });
 
-        const data = await res.json();
-        if (!data.error) setUser(data);
-      } else {
-        localStorage.removeItem("token");
-        setUser(null);
+          const data = await res.json();
+          if (!data.error) setUser(data);
+        } else {
+          localStorage.removeItem("token");
+          setUser(null);
+        }
+
+        setIsAuthReady(true);
       }
-
-      setIsAuthReady(true);
-    });
+    );
 
     return () => {
-      authListener.subscription.unsubscribe();
+      authListener?.subscription.unsubscribe();
     };
   }, []);
 
@@ -78,7 +78,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   // 🔴 LOGOUT — VERSION SUPABASE
   const logout = async () => {
-    await supabase.auth.signOut();
+    await supabase!.auth.signOut();
     localStorage.removeItem("token");
     setUser(null);
     window.location.href = "/login";
@@ -100,4 +100,3 @@ export function useUser() {
   }
   return context;
 }
-
