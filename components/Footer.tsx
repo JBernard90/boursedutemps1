@@ -97,7 +97,7 @@ export default function Footer() {
         </div>
       );
     } else if (type === 'cgu') {
-      title = 'Conditions Générales d’Utilisation';
+      title = "Conditions Générales d'Utilisation";
       content = (
         <div className="space-y-4">
           <section>
