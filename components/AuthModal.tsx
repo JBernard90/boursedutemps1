@@ -87,12 +87,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
   };
 
   // ── Connexion (seulement après OTP vérifié) ─────────────────────────────────
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isEmailVerified) {
-      alert("Veuillez d'abord vérifier votre email avec le code OTP.");
-      return;
-    }
+  const handleLogin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setLoading(true);
     try {
       const res = await fetch('/api/login', {
@@ -199,7 +195,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
   const nextStep = () => setStep(s => s + 1);
   const prevStep = () => setStep(s => s - 1);
 
-  const totalSteps = mode === 'login' ? 3 : 4;
+  const totalSteps = mode === 'login' ? 2 : 4;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -235,9 +231,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
           {/* ══════════════════════ MODE LOGIN ══════════════════════ */}
           {mode === 'login' && (
             <>
-              {/* LOGIN — Étape 1 : Email → envoi OTP */}
+              {/* LOGIN — Étape 1 : Email + Password → envoi OTP */}
               {step === 1 && (
-                <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                <form onSubmit={e => { e.preventDefault(); handleSendCode(); }} className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">
                       Email Institutionnel
@@ -251,18 +247,30 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
                       onChange={e => setEmail(e.target.value)}
                     />
                   </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                      Mot de passe
+                    </label>
+                    <input
+                      required
+                      type="password"
+                      placeholder="Mot de passe"
+                      className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                    />
+                  </div>
                   <button
-                    type="button"
-                    onClick={handleSendCode}
-                    disabled={loading || !email}
+                    type="submit"
+                    disabled={loading || !email || !password}
                     className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-blue-700 transition shadow-xl shadow-blue-200 disabled:opacity-50"
                   >
                     {loading ? 'Envoi...' : 'Recevoir le code par email'}
                   </button>
-                </div>
+                </form>
               )}
 
-              {/* LOGIN — Étape 2 : Saisie OTP */}
+              {/* LOGIN — Étape 2 : Saisie OTP → connexion */}
               {step === 2 && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                   <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
@@ -288,50 +296,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
                     </button>
                     <button
                       type="button"
-                      onClick={verifyCode}
+                      onClick={handleLogin as any}
                       disabled={loading || emailCode.length < 6}
                       className="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-lg disabled:opacity-50"
-                    >
-                      {loading ? 'Vérification...' : 'Vérifier'}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* LOGIN — Étape 3 : Mot de passe (seulement si OTP validé) */}
-              {step === 3 && (
-                <form onSubmit={handleLogin} className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                  <div className="bg-green-50 p-4 rounded-2xl border border-green-100">
-                    <p className="text-xs text-green-800 font-medium">
-                      ✅ Email <strong>{email}</strong> vérifié.
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                      Mot de passe
-                    </label>
-                    <input
-                      required
-                      type="password"
-                      placeholder="Mot de passe"
-                      className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex gap-4">
-                    <button type="button" onClick={prevStep} className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-200">
-                      Retour
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-blue-700 transition shadow-xl shadow-blue-200 disabled:opacity-50"
                     >
                       {loading ? 'Connexion...' : 'Se Connecter'}
                     </button>
                   </div>
-                </form>
+                </div>
               )}
             </>
           )}
