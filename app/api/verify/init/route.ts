@@ -1,25 +1,35 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { query } from '@/db';
+import crypto from 'crypto';
+import { sendOtpEmail } from '@/lib/email';
 
 export async function POST(req: Request) {
+  const { email } = await req.json();
+
+  if (!email) {
+    return NextResponse.json({ error: 'Email requis' }, { status: 400 });
+  }
+
+  // Générer code 6 chiffres
+  const code = crypto.randomInt(100000, 999999).toString();
+  
   try {
-    const { email } = await req.json();
+    // Supprimer anciens codes pour cet email
+    await query('DELETE FROM otps WHERE identifier = $1', [email]);
+    
+    // Insérer nouveau code (valide 10 minutes)
+    await query(
+      'INSERT INTO otps (identifier, code, expires_at) VALUES ($1, $2, NOW() + interval $3)',
+      [email, code, '10 minutes']
+    );
 
-    const { error } = await supabaseAdmin.auth.signInWithOtp({
-      email,
-      options: {
-        shouldCreateUser: true, // autorise la création d'utilisateur via OTP
-      },
-    });
-
-    if (error) {
-      console.error('OTP init error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
+    // Envoyer email
+    await sendOtpEmail(email, code);
+    console.log(`📧 OTP généré pour ${email}: ${code}`);
+    
     return NextResponse.json({ success: true });
-  } catch (e: any) {
-    console.error('Server error:', e);
-    return NextResponse.json({ error: 'Erreur interne serveur' }, { status: 500 });
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

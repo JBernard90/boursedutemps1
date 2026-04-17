@@ -1,38 +1,27 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { query } from '@/db';
 
 export async function POST(req: Request) {
+  const { email, emailCode } = await req.json();
+
+  if (!email || !emailCode) {
+    return NextResponse.json({ error: 'Email et code requis' }, { status: 400 });
+  }
+
   try {
-    const { email, code } = await req.json();
-
-    if (!email || !code) {
-      return NextResponse.json(
-        { error: 'Email et code requis' },
-        { status: 400 }
-      );
-    }
-
-    const { data, error } = await supabaseAdmin.auth.verifyOtp({
-      email,
-      token: code,
-      type: 'email', // IMPORTANT : correspond à signInWithOtp
-    });
-
-    if (error) {
-      console.error('OTP verify error:', error);
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-
-    return NextResponse.json({
-      success: true,
-      user: data.user,
-      session: data.session,
-    });
-  } catch (e: any) {
-    console.error('Server error:', e);
-    return NextResponse.json(
-      { error: 'Erreur interne serveur' },
-      { status: 500 }
+    const result = await query(
+      'SELECT * FROM otps WHERE identifier = $1 AND code = $2 AND expires_at > NOW()',
+      [email, emailCode]
     );
+
+    if (result.rowCount && result.rowCount > 0) {
+      // On garde l'OTP en base pour que login/register puissent le vérifier aussi
+      return NextResponse.json({ success: true, verified: true });
+    } else {
+      return NextResponse.json({ error: 'Code invalide ou expiré' }, { status: 400 });
+    }
+  } catch (error) {
+    console.error('Error checking verification:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
