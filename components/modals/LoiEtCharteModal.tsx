@@ -120,7 +120,6 @@ L’utilisation du site implique l’acceptation pleine et entière de la prése
 
         <hr className="my-8 border-slate-300" />
 
-        {/* SECTION 2 : CHARTE ÉTHIQUE */}
         <h2 className="text-2xl font-bold mb-6 text-center">
           CHARTE ÉTHIQUE – BOURSE DU TEMPS
         </h2>
@@ -215,3 +214,11 @@ Tout manquement peut entraîner une suspension ou une exclusion de la plateforme
 
         <button
           onClick={handleClose}
+          className="mt-6 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        >
+          Fermer
+        </button>
+      </div>
+    </div>
+  );
+}
