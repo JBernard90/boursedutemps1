@@ -8,7 +8,7 @@ export async function POST(req: Request) {
 
   try {
     const result = await query('SELECT * FROM users WHERE email = $1', [email]);
-    if (result.rowCount === 0) {
+    if ((result.rowCount ?? 0) === 0) {
       return NextResponse.json({ error: 'Identifiants invalides' }, { status: 401 });
     }
 

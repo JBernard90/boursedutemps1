@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     // In a real app, you might want multiple subscriptions per user (different devices)
     const existing = await query('SELECT id FROM push_subscriptions WHERE user_id = $1', [uid]);
     
-    if (existing.rowCount > 0) {
+    if ((existing.rowCount ?? 0) > 0) {
       await query(
         'UPDATE push_subscriptions SET subscription = $1 WHERE user_id = $2',
         [JSON.stringify(subscription), uid]

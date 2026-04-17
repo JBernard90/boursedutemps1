@@ -38,7 +38,7 @@ export async function POST(req: Request) {
 
     // Fetch sender name
     const senderResult = await query('SELECT first_name, last_name FROM users WHERE uid = $1', [data.senderId]);
-    const senderName = senderResult.rowCount > 0 ? `${senderResult.rows[0].first_name} ${senderResult.rows[0].last_name}` : 'Un membre';
+    const senderName = (senderResult.rowCount ?? 0) > 0 ? `${senderResult.rows[0].first_name} ${senderResult.rows[0].last_name}` : 'Un membre';
 
     // Send push notification to receiver
     await sendPushNotification(data.receiverId, {

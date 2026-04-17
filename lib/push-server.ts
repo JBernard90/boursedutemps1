@@ -3,17 +3,24 @@ import { query } from '@/db';
 
 const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 const privateVapidKey = process.env.VAPID_PRIVATE_KEY;
-const vapidEmail = process.env.VAPID_EMAIL || 'mailto:example@yourdomain.com';
+let vapidSubject = process.env.VAPID_EMAIL || 'mailto:example@yourdomain.com';
+if (vapidSubject && !vapidSubject.startsWith('mailto:') && !vapidSubject.startsWith('http')) {
+  vapidSubject = `mailto:${vapidSubject}`;
+}
 
 if (publicVapidKey && privateVapidKey) {
-  webpush.setVapidDetails(vapidEmail, publicVapidKey, privateVapidKey);
+  try {
+    webpush.setVapidDetails(vapidSubject, publicVapidKey, privateVapidKey);
+  } catch (error) {
+    console.error('Error setting VAPID details:', error);
+  }
 }
 
 export async function sendPushNotification(userId: string, payload: { title: string; body: string; url?: string }) {
   try {
     const result = await query('SELECT subscription FROM push_subscriptions WHERE user_id = $1', [userId]);
     
-    if (result.rowCount === 0) {
+    if ((result.rowCount ?? 0) === 0) {
       console.log(`No push subscription found for user ${userId}`);
       return;
     }

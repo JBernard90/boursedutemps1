@@ -14,7 +14,7 @@ export async function POST(req: Request) {
 
   // Check if user exists
   const existing = await query('SELECT * FROM users WHERE email = $1', [data.email]);
-  if (existing.rowCount! > 0) {
+  if ((existing.rowCount ?? 0) > 0) {
     return NextResponse.json({ error: 'Cet email est déjà utilisé' }, { status: 400 });
   }
 

@@ -9,7 +9,7 @@ export async function GET(req: Request) {
   }
 
   const result = await query('SELECT * FROM users WHERE uid = $1', [uid]);
-  if (result.rowCount === 0) {
+  if ((result.rowCount ?? 0) === 0) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
