@@ -5,6 +5,7 @@ import PageLayout from '@/components/PageLayout';
 import Profile from '@/components/pages-old/Profile';
 import { useUser } from '@/components/UserProvider';
 import { useParams } from 'next/navigation';
+import { onSnapshot, collection, db, query, orderBy, getDoc, doc } from '@/api';
 import { User, Transaction, Connection, ChatMessage } from '@/types';
 
 export default function ProfileViewRoute() {
@@ -21,56 +22,38 @@ export default function ProfileViewRoute() {
   useEffect(() => {
     if (!viewingUserId) return;
 
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    const authHeader = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
-
-    const fetchData = async () => {
-      try {
-        const [userRes, usersRes, connectionsRes, transactionsRes] = await Promise.all([
-          fetch(`/api/users/${viewingUserId}`),
-          fetch('/api/users'),
-          fetch('/api/connections', { headers: authHeader }),
-          fetch('/api/transactions', { headers: authHeader }),
-        ]);
-
-        if (userRes.ok) setTargetUser(await userRes.json());
-        if (usersRes.ok) setAllUsers(await usersRes.json());
-        if (connectionsRes.ok) setConnections(await connectionsRes.json());
-        if (transactionsRes.ok) setTransactions(await transactionsRes.json());
-      } catch (err) {
-        console.error('Error fetching profile data:', err);
+    const fetchTarget = async () => {
+      const docRef = doc(db, 'users', viewingUserId);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        setTargetUser(docSnap.data() as User);
       }
     };
+    fetchTarget();
 
-    fetchData();
+    const unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
+      setAllUsers(snapshot.docs.map(doc => doc.data() as User));
+    });
+
+    const unsubConnections = onSnapshot(collection(db, 'connections'), (snapshot) => {
+      setConnections(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Connection)));
+    });
+
+    const unsubTransactions = onSnapshot(query(collection(db, 'transactions'), orderBy('createdAt', 'desc')), (snapshot) => {
+      setTransactions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction)));
+    });
+
+    const unsubMessages = onSnapshot(query(collection(db, 'messages'), orderBy('createdAt', 'asc')), (snapshot) => {
+      setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChatMessage)));
+    });
+
+    return () => {
+      unsubUsers();
+      unsubConnections();
+      unsubTransactions();
+      unsubMessages();
+    };
   }, [viewingUserId]);
-
-  const getAuthHeader = () => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
-  };
-
-  const handleSendConnection = async (targetUid: string) => {
-    if (!currentUser) return;
-    const res = await fetch('/api/connections', {
-      method: 'POST',
-      headers: getAuthHeader(),
-      body: JSON.stringify({ senderId: currentUser.uid, receiverId: targetUid, status: 'sent' })
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setConnections(prev => [...prev, { id: data.id, senderId: currentUser.uid, receiverId: targetUid, status: 'sent', createdAt: new Date().toISOString() } as Connection]);
-    }
-  };
-
-  const handleUpdateConnection = async (connectionId: string, status: 'accepted' | 'refused' | 'cancelled') => {
-    await fetch(`/api/connections/${connectionId}`, {
-      method: 'PATCH',
-      headers: getAuthHeader(),
-      body: JSON.stringify({ status })
-    });
-    setConnections(prev => prev.map(c => c.id === connectionId ? { ...c, status } : c));
-  };
 
   if (!targetUser) {
     return (
@@ -86,15 +69,15 @@ export default function ProfileViewRoute() {
     <PageLayout>
       <Profile 
         user={targetUser} 
-        currentUser={currentUser || undefined}
+        currentUser={currentUser || undefined} 
         allUsers={allUsers} 
         transactions={transactions} 
         connections={connections} 
         messages={messages} 
         onUpdate={() => {}} 
-        onSendConnection={handleSendConnection}
-        onUpdateConnection={handleUpdateConnection}
-        onSendMessage={async () => {}} 
+        onSendConnection={async (uid) => {}} 
+        onUpdateConnection={async (id, s) => {}} 
+        onSendMessage={async (uid, c) => {}} 
         onUpdateMessages={setMessages} 
         readOnly 
       />

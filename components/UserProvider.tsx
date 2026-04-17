@@ -23,7 +23,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   // 🔵 Supabase Auth Listener
   useEffect(() => {
-    const { data: authListener } = supabase!.auth.onAuthStateChange(
+    if (!supabase) {
+      console.warn("Supabase client is not initialized. Please check your environment variables.");
+      setIsAuthReady(true);
+      return;
+    }
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (session?.access_token) {
           localStorage.setItem("token", session.access_token);
@@ -78,7 +84,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   // 🔴 LOGOUT — VERSION SUPABASE
   const logout = async () => {
-    await supabase!.auth.signOut();
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
     localStorage.removeItem("token");
     setUser(null);
     window.location.href = "/login";

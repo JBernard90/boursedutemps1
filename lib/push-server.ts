@@ -1,9 +1,9 @@
 import webpush from 'web-push';
 import { query } from '@/db';
 
-const publicVapidKey ="BOOjzEAlzHiAsL2VzMlaRP502Vn3CcRiEGtdv1q-Jc_-TTm_Xicq8aKyXkhEevQVChZN5sRqho2bpq2aDEv2Q6I";
-const privateVapidKey ="nl8SUcBVxSIewjgo_3YNAHf1Z0vDf6cbYfXtXevzE0I";
-const vapidEmail ='mailto:jeanbernardpierrelouis@gmail.com';
+const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+const privateVapidKey = process.env.VAPID_PRIVATE_KEY;
+const vapidEmail = process.env.VAPID_EMAIL || 'mailto:example@yourdomain.com';
 
 if (publicVapidKey && privateVapidKey) {
   webpush.setVapidDetails(vapidEmail, publicVapidKey, privateVapidKey);

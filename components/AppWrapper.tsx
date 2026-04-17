@@ -1,21 +1,18 @@
 "use client";
 
-"use client";
-
 import React, { useState, useEffect, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { auth, db, onAuthStateChanged, collection, onSnapshot, query, where, orderBy, doc, getDoc, setDoc, updateDoc, addDoc, serverTimestamp } from '../api';
 import { Page, User, Service, Request, BlogPost, Testimonial, ForumTopic, Transaction, Connection, ChatMessage, Notification } from '../types';
 import Navbar from './Navbar';
 import AuthModal from './AuthModal';
-import { supabase } from '@/lib/supabaseClient';
 
 // Lazy load pages from components/pages-old using next/dynamic
 const Home = dynamic(() => import('./pages-old/Home'), { ssr: false });
 const About = dynamic(() => import('./pages-old/About'), { ssr: false });
-const Members = dynamic(() => import('./pages-old/Members'), { ssr: false });
 const ServicesPage = dynamic(() => import('./pages-old/ServicesPage'), { ssr: false });
 const RequestsPage = dynamic(() => import('./pages-old/RequestsPage'), { ssr: false });
+const Members = dynamic(() => import('./pages-old/Members'), { ssr: false });
 const Forum = dynamic(() => import('./pages-old/Forum'), { ssr: false });
 const Blog = dynamic(() => import('./pages-old/Blog'), { ssr: false });
 const Testimonials = dynamic(() => import('./pages-old/Testimonials'), { ssr: false });
@@ -207,13 +204,12 @@ export default function AppWrapper() {
     setShowAuthModal(null);
   };
 
-const handleLogout = async () => {
-  if (supabase) {
-    await supabase.auth.signOut();
-  }
-  setUser(null);
-  setCurrentPage('home');
-};
+  const handleLogout = async () => {
+    localStorage.removeItem('token');
+    await auth.signOut();
+    setUser(null);
+    setCurrentPage('home');
+  };
 
   const handleTransaction = async (item: Service | Request, negotiatedAmount: number, type: 'service' | 'request') => {
     if (!user) { setShowAuthModal('login'); return; }
@@ -362,17 +358,16 @@ const handleLogout = async () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
-<Navbar
-  currentPage={currentPage}
-  user={user}
-  notifications={notifications}
-  onNavigate={handleNavigate}
-  onLogin={() => setShowAuthModal('login')}
-  onSignup={() => setShowAuthModal('signup')}
-  onLogout={handleLogout}
-  onMarkRead={handleMarkNotificationRead}
-/>
-
+      <Navbar 
+        currentPage={currentPage} 
+        user={user} 
+        notifications={notifications}
+        onNavigate={handleNavigate} 
+        onLogin={() => setShowAuthModal('login')} 
+        onSignup={() => setShowAuthModal('signup')} 
+        onLogout={handleLogout} 
+        onMarkRead={handleMarkNotificationRead}
+      />
       <main className="flex-grow pt-16">
         <Suspense fallback={
           <div className="flex items-center justify-center min-h-[60vh]">
