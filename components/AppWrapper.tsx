@@ -220,7 +220,7 @@ export default function AppWrapper() {
     const buyer = users.find(u => u.uid === buyerId);
     const provider = users.find(u => u.uid === providerId);
 
-    if (!buyer || buyer.credits < negotiatedAmount) {
+    if (!buyer || (buyer.credits ?? 0) < negotiatedAmount) {
       alert("Erreur : Crédits insuffisants.");
       return;
     }
