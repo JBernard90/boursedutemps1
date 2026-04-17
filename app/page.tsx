@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import PageLayout from '@/components/PageLayout';
 import Home from '@/components/pages-old/Home';
 import { BlogPost, Testimonial } from '@/types';
-import { onSnapshot, collection, db, query, orderBy } from '@/lib/api-client';
+import { subscribeToCollection } from '@/lib/api-client';
 import { useRouter } from 'next/navigation';
 
 export default function HomePage() {
@@ -28,12 +28,12 @@ export default function HomePage() {
     const storedVisitors = localStorage.getItem('bdt_visitors');
     const visitorCount = storedVisitors ? parseInt(storedVisitors) : 0;
     
-    const unsubBlogs = onSnapshot(query(collection(db, 'blogs'), orderBy('createdAt', 'desc')), (snapshot) => {
-      setBlogs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPost)));
+    const unsubBlogs = subscribeToCollection('blogs', (data) => {
+      setBlogs(data as BlogPost[]);
     });
 
-    const unsubTestimonials = onSnapshot(query(collection(db, 'testimonials'), orderBy('createdAt', 'desc')), (snapshot) => {
-      setTestimonials(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Testimonial)));
+    const unsubTestimonials = subscribeToCollection('testimonials', (data) => {
+      setTestimonials(data as Testimonial[]);
     });
 
     // For other stats, we'd need more snapshots or a dedicated API

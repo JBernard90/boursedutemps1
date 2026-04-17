@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { User, Service } from '../../types';
 import { Edit2, Trash2 } from 'lucide-react';
-import { db, doc, updateDoc, deleteDoc, addDoc, collection } from '@/lib/api-client';
+import { deleteRecord, updateRecord, createRecord, createTimestamp } from '@/lib/api-client';
 
 interface ServicesPageProps {
   user: User | null;
@@ -29,7 +29,7 @@ const ServicesPage: React.FC<ServicesPageProps> = ({ user, services, onUpdate, o
 
   const handleDelete = async (id: string) => {
     if (!confirm("Supprimer définitivement ce service ?")) return;
-    await deleteDoc(doc(db, 'services', id));
+    await deleteRecord(`services/${id}`);
   };
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -45,13 +45,13 @@ const ServicesPage: React.FC<ServicesPageProps> = ({ user, services, onUpdate, o
     };
 
     if (editingService) {
-      await updateDoc(doc(db, 'services', editingService.id), serviceData);
+      await updateRecord(`services/${editingService.id}`, serviceData);
     } else {
-      await addDoc(collection(db, 'services'), {
+      await createRecord('services', {
         ...serviceData,
         userId: user.uid,
         userName: `${user.firstName} ${user.lastName}`,
-        createdAt: new Date().toISOString()
+        createdAt: createTimestamp()
       });
     }
 

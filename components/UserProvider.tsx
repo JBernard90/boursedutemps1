@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, Notification } from "@/types";
 import { supabase } from "@/lib/supabaseClient";
-import { onSnapshot, collection, db, query, where, orderBy } from "@/lib/api-client";
+import { subscribeToCollection, filterBy, sortBy } from "@/lib/api-client";
 import { registerServiceWorker, subscribeUserToPush } from "@/lib/push";
 
 interface UserContextType {
@@ -21,7 +21,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isAuthReady, setIsAuthReady] = useState(false);
 
-  // 🔵 Supabase Auth Listener
+  // 🔵 Auth Listener (Supabase)
   useEffect(() => {
     if (!supabase) {
       console.warn("Supabase client is not initialized. Please check your environment variables.");
@@ -54,23 +54,15 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // 🔵 Notifications Firestore Listener
+  // 🔵 Real-time Notifications Listener
   useEffect(() => {
     if (user) {
-      const unsub = onSnapshot(
-        query(
-          collection(db, "notifications"),
-          where("userId", "==", user.uid),
-          orderBy("createdAt", "desc")
-        ),
-        (snapshot) => {
-          setNotifications(
-            snapshot.docs.map(
-              (doc) => ({ id: doc.id, ...doc.data() } as Notification)
-            )
-          );
-        }
-      );
+      const unsub = subscribeToCollection('notifications', (data) => {
+        setNotifications(data as Notification[]);
+      }, [
+        filterBy("userId", "==", user.uid),
+        sortBy("createdAt", "desc")
+      ]);
 
       registerServiceWorker().then(() => {
         subscribeUserToPush();

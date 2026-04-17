@@ -1,10 +1,8 @@
-export const serverTimestamp = () => new Date().toISOString();
+export const createTimestamp = () => new Date().toISOString();
 
-export const collection = (db: any, path: string) => path;
-export const doc = (db: any, path: string, id: string) => `${path}/${id}`;
-export const query = (col: string, ...args: any[]) => ({ col, args });
-export const where = (field: string, op: string, value: any) => ({ type: 'where', field, op, value });
-export const orderBy = (field: string, dir: string) => ({ type: 'orderBy', field, dir });
+// Internal helpers to build query parameters
+export const filterBy = (field: string, op: string, value: any) => ({ type: 'where', field, op, value });
+export const sortBy = (field: string, dir: string) => ({ type: 'orderBy', field, dir });
 
 const API_BASE = '/api';
 
@@ -45,69 +43,79 @@ const request = async (url: string, options: RequestInit = {}) => {
   return res.text();
 };
 
-export const getDoc = async (path: string) => {
+/**
+ * Fetch a single document by its resource path (e.g. "users/123")
+ */
+export const fetchRecord = async (path: string) => {
   try {
     const data = await request(`/${path}`);
-    return { exists: () => true, data: () => data, id: path.split('/').pop() };
+    return { success: true, data: data, id: path.split('/').pop() };
   } catch (e) {
-    return { exists: () => false, data: () => null, id: path.split('/').pop() };
+    return { success: false, data: null, id: path.split('/').pop() };
   }
 };
 
-export const getDocs = async (q: any) => {
-  let url = `/${q.col || q}`;
-  // Simple query string builder could be added here if needed
+/**
+ * Fetch a list of records from a collection
+ */
+export const fetchCollection = async (collection: string, queryObj?: any) => {
+  let url = `/${collection}`;
+  // In the future, queryObj (where/orderBy) could be appended as query params
   const data = await request(url);
   return {
-    docs: data.map((d: any) => ({ id: d.id || d.uid, data: () => d }))
+    items: data.map((d: any) => ({ id: d.id || d.uid, ...d }))
   };
 };
 
-export const setDoc = async (path: string, data: any) => {
-  await request(`/${path}`, {
-    method: 'PUT',
-    body: JSON.stringify(data)
-  });
-};
-
-export const addDoc = async (col: string, data: any) => {
-  const res = await request(`/${col}`, {
+/**
+ * Create a new record in a collection
+ */
+export const createRecord = async (collection: string, data: any) => {
+  const res = await request(`/${collection}`, {
     method: 'POST',
     body: JSON.stringify(data)
   });
   return { id: res.id };
 };
 
-export const updateDoc = async (path: string, data: any) => {
+/**
+ * Update an existing record
+ */
+export const updateRecord = async (path: string, data: any) => {
   await request(`/${path}`, {
     method: 'PATCH',
     body: JSON.stringify(data)
   });
 };
 
-export const deleteDoc = async (path: string) => {
+/**
+ * Delete a record
+ */
+export const deleteRecord = async (path: string) => {
   await request(`/${path}`, {
     method: 'DELETE'
   });
 };
 
-export const onSnapshot = (q: any, callback: (snapshot: any) => void, errorCallback?: (error: any) => void) => {
+/**
+ * Real-time listener (polling implementation)
+ */
+export const subscribeToCollection = (collection: string, callback: (data: any) => void, queryParams?: any) => {
   let isCancelled = false;
   
   const fetchSnapshot = async () => {
     if (isCancelled) return;
     try {
-      const snapshot = await getDocs(q);
-      if (!isCancelled) callback(snapshot);
+      const result = await fetchCollection(collection, queryParams);
+      if (!isCancelled) callback(result.items);
     } catch (e) {
-      console.error(`[onSnapshot Error] ${q.col || q}:`, e);
-      if (!isCancelled && errorCallback) errorCallback(e);
+      console.error(`[API Sync Error] ${collection}:`, e);
     }
   };
 
   if (typeof window !== 'undefined') {
     fetchSnapshot();
-    const interval = setInterval(fetchSnapshot, 5000); // Poll every 5 seconds
+    const interval = setInterval(fetchSnapshot, 5000); // Polling simulation
 
     return () => {
       isCancelled = true;
@@ -117,30 +125,35 @@ export const onSnapshot = (q: any, callback: (snapshot: any) => void, errorCallb
   return () => { isCancelled = true; };
 };
 
-export const db = {};
-export const auth = {
+export const apiAuth = {
   signOut: async () => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token');
     }
+  },
+  getCurrentUser: async () => {
+    const token = getToken();
+    if (!token) return null;
+    try {
+      const user = await request('/auth/me');
+      return { uid: user.uid, email: user.email, ...user };
+    } catch (e) {
+      localStorage.removeItem('token');
+      return null;
+    }
   }
 };
 
-export const onAuthStateChanged = (authObj: any, callback: (user: any) => void) => {
+export const listenToAuth = (callback: (user: any) => void) => {
   if (typeof window === 'undefined') {
     callback(null);
     return () => {};
   }
-  const token = getToken();
-  if (token) {
-    request('/auth/me')
-      .then(user => callback({ uid: user.uid, email: user.email }))
-      .catch(() => {
-        localStorage.removeItem('token');
-        callback(null);
-      });
-  } else {
-    callback(null);
-  }
+  
+  const check = () => {
+    apiAuth.getCurrentUser().then(callback);
+  };
+
+  check();
   return () => {};
 };

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import PageLayout from '@/components/PageLayout';
 import Forum from '@/components/pages-old/Forum';
 import { ForumTopic } from '@/types';
-import { onSnapshot, collection, db, query, orderBy } from '@/lib/api-client';
+import { subscribeToCollection } from '@/lib/api-client';
 import { useUser } from '@/components/UserProvider';
 
 export default function ForumRoute() {
@@ -14,8 +14,8 @@ export default function ForumRoute() {
 
   useEffect(() => {
     setMounted(true);
-    const unsub = onSnapshot(query(collection(db, 'forumTopics'), orderBy('createdAt', 'desc')), (snapshot) => {
-      setTopics(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ForumTopic)));
+    const unsub = subscribeToCollection('forumTopics', (data) => {
+      setTopics(data as ForumTopic[]);
     });
     return () => unsub();
   }, []);

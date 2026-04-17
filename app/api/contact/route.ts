@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
 import { sendEmail } from '@/lib/email';
+import { createClient } from '@supabase/supabase-js';
+
+// Client serveur pour Supabase
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+);
 
 export async function POST(req: Request) {
   try {
@@ -12,30 +18,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Tous les champs sont obligatoires' }, { status: 400 });
     }
 
-    // 2. Enregistrement dans Supabase (si configuré)
-    if (supabase) {
-      const { error: dbError } = await supabase
-        .from('contact_requests')
-        .insert([
-          {
-            full_name: fullName,
-            email: email,
-            whatsapp: whatsapp,
-            organization: organization,
-            subject: subject,
-            message: message,
-            status: 'pending'
-          }
-        ]);
-      
-      if (dbError) {
-        console.error('Erreur Supabase:', dbError);
-        // On continue quand même pour l'envoi d'email si l'insertion échoue? 
-        // Généralement oui, mais on log l'erreur.
-      }
-    }
-
-    // 3. Email à l'administrateur
+    // 2. Email à l'administrateur
     const adminEmail = "jeanbernardpierrelouis@gmail.com";
     await sendEmail({
       to: adminEmail,
@@ -54,6 +37,23 @@ export async function POST(req: Request) {
         </div>
       `
     });
+
+    // 3. Sauvegarde dans Supabase (optionnel - désactivé si on ne veut plus de doublons mais l'utilisateur veut garder supabase)
+    // On le remet puisque l'utilisateur veut "garder supabase"
+    try {
+      await supabase.from('contact_requests').insert([{
+        full_name: fullName,
+        email,
+        whatsapp,
+        organization,
+        subject,
+        message,
+        created_at: new Date().toISOString()
+      }]);
+    } catch (dbError) {
+      console.error('Erreur Supabase Contact:', dbError);
+      // On ne bloque pas la réponse si c'est juste l'insertion qui échoue
+    }
 
     // 4. Email de confirmation à l'utilisateur
     await sendEmail({

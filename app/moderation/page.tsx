@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import PageLayout from '@/components/PageLayout';
 import Moderation from '@/components/pages-old/Moderation';
 import { User, Service, Request } from '@/types';
-import { onSnapshot, collection, db, query, orderBy } from '@/lib/api-client';
+import { subscribeToCollection } from '@/lib/api-client';
 import { useUser } from '@/components/UserProvider';
 import { useRouter } from 'next/navigation';
 
@@ -21,16 +21,16 @@ export default function ModerationRoute() {
       return;
     }
 
-    const unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
-      setUsers(snapshot.docs.map(doc => doc.data() as User));
+    const unsubUsers = subscribeToCollection('users', (data) => {
+      setUsers(data as User[]);
     });
 
-    const unsubServices = onSnapshot(query(collection(db, 'services'), orderBy('createdAt', 'desc')), (snapshot) => {
-      setServices(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Service)));
+    const unsubServices = subscribeToCollection('services', (data) => {
+      setServices(data as Service[]);
     });
 
-    const unsubRequests = onSnapshot(query(collection(db, 'requests'), orderBy('createdAt', 'desc')), (snapshot) => {
-      setRequests(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Request)));
+    const unsubRequests = subscribeToCollection('requests', (data) => {
+      setRequests(data as Request[]);
     });
 
     return () => {

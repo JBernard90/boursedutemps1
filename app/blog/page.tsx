@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import PageLayout from '@/components/PageLayout';
 import Blog from '@/components/pages-old/Blog';
 import { BlogPost } from '@/types';
-import { onSnapshot, collection, db, query, orderBy } from '@/lib/api-client';
+import { subscribeToCollection } from '@/lib/api-client';
 import { useUser } from '@/components/UserProvider';
 
 export default function BlogRoute() {
@@ -14,8 +14,8 @@ export default function BlogRoute() {
 
   useEffect(() => {
     setMounted(true);
-    const unsub = onSnapshot(query(collection(db, 'blogs'), orderBy('createdAt', 'desc')), (snapshot) => {
-      setBlogs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPost)));
+    const unsub = subscribeToCollection('blogs', (data) => {
+      setBlogs(data as BlogPost[]);
     });
     return () => unsub();
   }, []);

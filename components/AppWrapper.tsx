@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import dynamic from 'next/dynamic';
-import { auth, db, onAuthStateChanged, collection, onSnapshot, query, where, orderBy, doc, getDoc, setDoc, updateDoc, addDoc, serverTimestamp } from '@/lib/api-client';
+import { apiAuth, listenToAuth, subscribeToCollection, fetchRecord, updateRecord, createRecord, createTimestamp, sortBy, filterBy } from '@/lib/api-client';
 import { Page, User, Service, Request, BlogPost, Testimonial, ForumTopic, Transaction, Connection, ChatMessage, Notification } from '../types';
 import Navbar from './Navbar';
 import AuthModal from './AuthModal';
@@ -64,18 +64,18 @@ export default function AppWrapper() {
     const collectionName = type === 'service' ? 'services' : 'requests';
     const updateData: any = { 
       status: newStatus,
-      updatedAt: serverTimestamp()
+      updatedAt: createTimestamp()
     };
     if (newStatus === 'accepted' && partnerId) {
       if (type === 'service') {
         updateData.acceptedBy = partnerId;
-        updateData.acceptedAt = serverTimestamp();
+        updateData.acceptedAt = createTimestamp();
       } else {
         updateData.fulfilledBy = partnerId;
-        updateData.fulfilledAt = serverTimestamp();
+        updateData.fulfilledAt = createTimestamp();
       }
     }
-    await updateDoc(doc(db, collectionName, id), updateData);
+    await updateRecord(`${collectionName}/${id}`, updateData);
     
     if (newStatus === 'accepted' && partnerId) {
       const partner = users.find(u => u.uid === partnerId);
@@ -92,38 +92,34 @@ export default function AppWrapper() {
     let unsubTransactions = () => {};
     let unsubMessages = () => {};
 
-    const unsubscribeAuth = onAuthStateChanged(auth, async (authUser) => {
+    const unsubscribeAuth = listenToAuth(async (authUser) => {
       if (authUser) {
-        const userDoc = await getDoc(doc(db, 'users', authUser.uid));
-        if (userDoc.exists()) {
-          setUser(userDoc.data() as User);
+        const userResult = await fetchRecord(`users/${authUser.uid}`);
+        if (userResult.success) {
+          setUser(userResult.data as User);
         }
         
         // Subscribe to protected collections only when authenticated
-        unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
-          setUsers(snapshot.docs.map(doc => doc.data() as User));
-        }, (error) => console.error("Users snapshot error:", error));
+        unsubUsers = subscribeToCollection('users', (data) => {
+          setUsers(data as User[]);
+        });
 
-        unsubConnections = onSnapshot(collection(db, 'connections'), (snapshot) => {
-          setConnections(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Connection)));
-        }, (error) => console.error("Connections snapshot error:", error));
+        unsubConnections = subscribeToCollection('connections', (data) => {
+          setConnections(data as Connection[]);
+        });
 
-        unsubTransactions = onSnapshot(query(collection(db, 'transactions'), orderBy('createdAt', 'desc')), (snapshot) => {
-          setTransactions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction)));
-        }, (error) => console.error("Transactions snapshot error:", error));
+        unsubTransactions = subscribeToCollection('transactions', (data) => {
+          setTransactions(data as Transaction[]);
+        });
 
-        unsubMessages = onSnapshot(query(collection(db, 'messages'), orderBy('createdAt', 'asc')), (snapshot) => {
-          setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChatMessage)));
-        }, (error) => console.error("Messages snapshot error:", error));
+        unsubMessages = subscribeToCollection('messages', (data) => {
+          setMessages(data as ChatMessage[]);
+        });
 
         // Notifications listener
-        const unsubNotifications = onSnapshot(
-          query(collection(db, 'notifications'), where('userId', '==', authUser.uid), orderBy('createdAt', 'desc')),
-          (snapshot) => {
-            setNotifications(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification)));
-          },
-          (error) => console.error("Notifications snapshot error:", error)
-        );
+        const unsubNotifications = subscribeToCollection('notifications', (data) => {
+          setNotifications(data as Notification[]);
+        });
 
         return () => {
           unsubNotifications();
@@ -147,25 +143,25 @@ export default function AppWrapper() {
     });
 
     // Public collections
-    const unsubServices = onSnapshot(query(collection(db, 'services'), orderBy('createdAt', 'desc')), (snapshot) => {
-      setServices(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Service)));
-    }, (error) => console.error("Services snapshot error:", error));
+    const unsubServices = subscribeToCollection('services', (data) => {
+      setServices(data as Service[]);
+    });
 
-    const unsubRequests = onSnapshot(query(collection(db, 'requests'), orderBy('createdAt', 'desc')), (snapshot) => {
-      setRequests(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Request)));
-    }, (error) => console.error("Requests snapshot error:", error));
+    const unsubRequests = subscribeToCollection('requests', (data) => {
+      setRequests(data as Request[]);
+    });
 
-    const unsubBlogs = onSnapshot(query(collection(db, 'blogs'), orderBy('createdAt', 'desc')), (snapshot) => {
-      setBlogs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPost)));
-    }, (error) => console.error("Blogs snapshot error:", error));
+    const unsubBlogs = subscribeToCollection('blogs', (data) => {
+      setBlogs(data as BlogPost[]);
+    });
 
-    const unsubTestimonials = onSnapshot(query(collection(db, 'testimonials'), orderBy('createdAt', 'desc')), (snapshot) => {
-      setTestimonials(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Testimonial)));
-    }, (error) => console.error("Testimonials snapshot error:", error));
+    const unsubTestimonials = subscribeToCollection('testimonials', (data) => {
+      setTestimonials(data as Testimonial[]);
+    });
 
-    const unsubForum = onSnapshot(query(collection(db, 'forumTopics'), orderBy('createdAt', 'desc')), (snapshot) => {
-      setForumTopics(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ForumTopic)));
-    }, (error) => console.error("Forum snapshot error:", error));
+    const unsubForum = subscribeToCollection('forumTopics', (data) => {
+      setForumTopics(data as ForumTopic[]);
+    });
 
     return () => {
       unsubscribeAuth();
@@ -179,7 +175,7 @@ export default function AppWrapper() {
 
   const triggerNotification = async (targetUserId: string, type: 'request' | 'offer' | 'message' | 'connection' | 'transaction', content: string, fromName: string) => {
     try {
-      await addDoc(collection(db, 'notifications'), {
+      await createRecord('notifications', {
         userId: targetUserId,
         type,
         content,
@@ -194,7 +190,7 @@ export default function AppWrapper() {
 
   const handleMarkNotificationRead = async (notificationId: string) => {
     try {
-      await updateDoc(doc(db, 'notifications', notificationId), { isRead: true });
+      await updateRecord(`notifications/${notificationId}`, { isRead: true });
     } catch (e) {
       console.error("Error marking notification as read:", e);
     }
@@ -209,6 +205,7 @@ const handleLogout = async () => {
   if (supabase) {
     await supabase.auth.signOut();
   }
+  localStorage.removeItem("token");
   setUser(null);
   setCurrentPage('home');
 };
@@ -228,10 +225,10 @@ const handleLogout = async () => {
     }
 
     try {
-      await updateDoc(doc(db, 'users', buyerId), { credits: buyer.credits - negotiatedAmount });
-      await updateDoc(doc(db, 'users', providerId), { credits: (provider?.credits || 0) + negotiatedAmount });
+      await updateRecord(`users/${buyerId}`, { credits: buyer.credits - negotiatedAmount });
+      await updateRecord(`users/${providerId}`, { credits: (provider?.credits || 0) + negotiatedAmount });
 
-      await addDoc(collection(db, 'transactions'), {
+      await createRecord('transactions', {
         fromId: buyerId,
         toId: providerId,
         amount: negotiatedAmount,
@@ -251,7 +248,7 @@ const handleLogout = async () => {
   const handleSendConnection = async (targetUid: string) => {
     if (!user) { setShowAuthModal('login'); return; }
     try {
-      await addDoc(collection(db, 'connections'), {
+      await createRecord('connections', {
         senderId: user.uid,
         receiverId: targetUid,
         status: 'sent',
@@ -267,7 +264,7 @@ const handleLogout = async () => {
 
   const handleUpdateConnection = async (connectionId: string, newStatus: 'accepted' | 'refused' | 'cancelled') => {
     try {
-      await updateDoc(doc(db, 'connections', connectionId), {
+      await updateRecord(`connections/${connectionId}`, {
         status: newStatus,
         updatedAt: new Date().toISOString()
       });
@@ -290,7 +287,7 @@ const handleLogout = async () => {
   const handleSendMessage = async (receiverId: string, content: string) => {
     if (!user) return;
     try {
-      await addDoc(collection(db, 'messages'), {
+      await createRecord('messages', {
         senderId: user.uid,
         receiverId,
         content,
@@ -309,7 +306,7 @@ const handleLogout = async () => {
   const handleUpdateUser = async (updatedUser: User) => {
     setUser(updatedUser);
     try {
-      await updateDoc(doc(db, 'users', updatedUser.uid), { ...updatedUser });
+      await updateRecord(`users/${updatedUser.uid}`, { ...updatedUser });
     } catch (error) {
       console.error("Error updating user:", error);
     }
@@ -317,16 +314,16 @@ const handleLogout = async () => {
 
   const handleDeactivateAccount = async () => {
     if (!user) return;
-    await updateDoc(doc(db, 'users', user.uid), { status: 'deactivated' });
-    await auth.signOut();
+    await updateRecord(`users/${user.uid}`, { status: 'deactivated' });
+    await apiAuth.signOut();
     setUser(null);
     setCurrentPage('home');
   };
 
   const handleDeleteAccount = async () => {
     if (!user) return;
-    await updateDoc(doc(db, 'users', user.uid), { status: 'deleted' });
-    await auth.signOut();
+    await updateRecord(`users/${user.uid}`, { status: 'deleted' });
+    await apiAuth.signOut();
     setUser(null);
     setCurrentPage('home');
   };

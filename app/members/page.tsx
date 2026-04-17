@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import PageLayout from '@/components/PageLayout';
 import Members from '@/components/pages-old/Members';
 import { User } from '@/types';
-import { onSnapshot, collection, db } from '@/lib/api-client';
+import { subscribeToCollection } from '@/lib/api-client';
 import { useRouter } from 'next/navigation';
 
 export default function MembersRoute() {
@@ -12,8 +12,8 @@ export default function MembersRoute() {
   const router = useRouter();
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'users'), (snapshot) => {
-      setUsers(snapshot.docs.map(doc => doc.data() as User));
+    const unsub = subscribeToCollection('users', (data) => {
+      setUsers(data as User[]);
     });
     return () => unsub();
   }, []);
