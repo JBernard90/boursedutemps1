@@ -9,13 +9,17 @@ export async function POST(req: Request) {
   }
 
   try {
+    // Supprimer d'abord les OTP expirés pour cet email
+    await query('DELETE FROM otps WHERE identifier = $1 AND expires_at <= NOW()', [email]);
+
+    // Vérifier si l'OTP est valide
     const result = await query(
       'SELECT * FROM otps WHERE identifier = $1 AND code = $2 AND expires_at > NOW()',
       [email, emailCode]
     );
 
     if (result.rowCount && result.rowCount > 0) {
-      // On garde l'OTP en base pour que login/register puissent le vérifier aussi
+      // On garde l'OTP valide en base pour que login/register puissent le vérifier aussi
       return NextResponse.json({ success: true, verified: true });
     } else {
       return NextResponse.json({ error: 'Code invalide ou expiré' }, { status: 400 });

@@ -19,8 +19,9 @@ export async function POST(req: Request) {
     
     // Insérer nouveau code (valide 10 minutes)
     await query(
-      'INSERT INTO otps (identifier, code, expires_at) VALUES ($1, $2, NOW() + interval $3)',
-      [email, code, '10 minutes']
+      `INSERT INTO otps (identifier, code, expires_at) 
+       VALUES ($1, $2, NOW() + interval '10 minutes')`,
+      [email, code]
     );
 
     // Envoyer email
