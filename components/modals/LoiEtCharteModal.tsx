@@ -23,12 +23,10 @@ export default function LoiEtCharteModal({ onClose }: { onClose: () => void }) {
         className={`bg-white max-h-[90vh] overflow-y-auto rounded-lg shadow-xl p-6 w-full max-w-3xl text-slate-800 
                    transform transition-transform duration-300 ease-out ${isClosing ? "scale-95 opacity-0" : "scale-100 opacity-100"}`}
       >
-        {/* TITRE GLOBAL */}
         <h2 id="modal-title-loi" className="text-2xl font-bold mb-6 text-center">
           LOI DES CONDITIONS D’ÉCHANGE – BOURSE DU TEMPS
         </h2>
 
-        {/* SECTION 1 : LOI DE CONDITIONS D’ÉCHANGE */}
         <div className="space-y-4 text-sm leading-relaxed whitespace-pre-line">
 {`
 LOI DE CONDITIONS D’ÉCHANGE – BOURSE DU TEMPS
