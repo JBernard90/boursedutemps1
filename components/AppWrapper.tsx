@@ -224,9 +224,10 @@ export default function AppWrapper() {
       alert("Erreur : Crédits insuffisants.");
       return;
     }
-
     try {
-      await updateDoc(doc(db, 'users', buyerId), { credits: buyer.credits - negotiatedAmount });
+  await updateDoc(doc(db, 'users', buyerId), { 
+  credits: (buyer.credits ?? 0) - negotiatedAmount 
+});
       await updateDoc(doc(db, 'users', providerId), { credits: (provider?.credits || 0) + negotiatedAmount });
 
       await addDoc(collection(db, 'transactions'), {
