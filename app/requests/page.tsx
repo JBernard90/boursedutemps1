@@ -8,10 +8,12 @@ import { onSnapshot, collection, db, query, orderBy, updateDoc, doc, serverTimes
 import { useUser } from '@/components/UserProvider';
 
 export default function RequestsRoute() {
+  const [mounted, setMounted] = useState(false);
   const { user } = useUser();
   const [requests, setRequests] = useState<Request[]>([]);
 
   useEffect(() => {
+    setMounted(true);
     const unsub = onSnapshot(query(collection(db, 'requests'), orderBy('createdAt', 'desc')), (snapshot) => {
       setRequests(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Request)));
     });
@@ -30,6 +32,8 @@ export default function RequestsRoute() {
     }
     await updateDoc(doc(db, collectionName, id), updateData);
   };
+
+  if (!mounted) return null;
 
   return (
     <PageLayout>

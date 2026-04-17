@@ -1,7 +1,5 @@
 "use client";
 
-"use client";
-
 import React, { useState, useEffect, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { auth, db, onAuthStateChanged, collection, onSnapshot, query, where, orderBy, doc, getDoc, setDoc, updateDoc, addDoc, serverTimestamp } from '@/lib/api-client';

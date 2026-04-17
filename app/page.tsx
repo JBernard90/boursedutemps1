@@ -8,6 +8,7 @@ import { onSnapshot, collection, db, query, orderBy } from '@/lib/api-client';
 import { useRouter } from 'next/navigation';
 
 export default function HomePage() {
+  const [mounted, setMounted] = useState(false);
   // Force re-render to clear stale chunks
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
@@ -22,6 +23,7 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
+    setMounted(true);
     // Fetch stats (mocked for now or from DB if implemented)
     const storedVisitors = localStorage.getItem('bdt_visitors');
     const visitorCount = storedVisitors ? parseInt(storedVisitors) : 0;
@@ -42,6 +44,14 @@ export default function HomePage() {
       unsubTestimonials();
     };
   }, []);
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <PageLayout>

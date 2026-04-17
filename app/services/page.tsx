@@ -8,10 +8,12 @@ import { onSnapshot, collection, db, query, orderBy, updateDoc, doc, serverTimes
 import { useUser } from '@/components/UserProvider';
 
 export default function ServicesRoute() {
+  const [mounted, setMounted] = useState(false);
   const { user } = useUser();
   const [services, setServices] = useState<Service[]>([]);
 
   useEffect(() => {
+    setMounted(true);
     const unsub = onSnapshot(query(collection(db, 'services'), orderBy('createdAt', 'desc')), (snapshot) => {
       setServices(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Service)));
     });
@@ -37,6 +39,8 @@ export default function ServicesRoute() {
     // For brevity, I'll assume the logic is moved to a shared utility or kept here
     alert(`Transaction de ${negotiatedAmount} crédits pour ${item.title}`);
   };
+
+  if (!mounted) return null;
 
   return (
     <PageLayout>
