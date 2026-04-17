@@ -217,4 +217,3 @@ Tout manquement peut entraîner une suspension ou une exclusion de la plateforme
 
         <button
           onClick={handleClose}
-          className="mt-6 bg-blue-600 text-white px-4 py-
