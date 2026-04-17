@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { X, Send, CheckCircle2, Loader2, MessageSquare } from "lucide-react";
 
 interface ContactFormModalProps {

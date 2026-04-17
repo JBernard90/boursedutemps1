@@ -29,29 +29,40 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.access_token) {
+    // 🔵 Check initial session
+    if (supabase) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
           localStorage.setItem("token", session.access_token);
-
-          const res = await fetch("/api/auth/me", {
-            headers: { Authorization: `Bearer ${session.access_token}` },
-          });
-
-          const data = await res.json();
-          if (!data.error) setUser(data);
-        } else {
-          localStorage.removeItem("token");
-          setUser(null);
         }
+      });
 
-        setIsAuthReady(true);
-      }
-    );
+      const { data: authListener } = supabase.auth.onAuthStateChange(
+        async (event, session) => {
+          if (session?.access_token) {
+            localStorage.setItem("token", session.access_token);
 
-    return () => {
-      authListener?.subscription.unsubscribe();
-    };
+            const res = await fetch("/api/auth/me", {
+              headers: { Authorization: `Bearer ${session.access_token}` },
+            });
+
+            const data = await res.json();
+            if (!data.error) setUser(data);
+          } else {
+            localStorage.removeItem("token");
+            setUser(null);
+          }
+
+          setIsAuthReady(true);
+        }
+      );
+
+      return () => {
+        authListener?.subscription.unsubscribe();
+      };
+    } else {
+      setIsAuthReady(true);
+    }
   }, []);
 
   // 🔵 Real-time Notifications Listener

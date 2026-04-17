@@ -1,15 +1,10 @@
 import { NextResponse } from 'next/server';
 import { sendEmail } from '@/lib/email';
-import { createClient } from '@supabase/supabase-js';
-
-// Client serveur pour Supabase
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
+import { getSupabase } from '@/lib/supabaseClient';
 
 export async function POST(req: Request) {
   try {
+    const supabase = getSupabase();
     const body = await req.json();
     const { fullName, email, whatsapp, organization, subject, message } = body;
 
@@ -40,19 +35,23 @@ export async function POST(req: Request) {
 
     // 3. Sauvegarde dans Supabase (optionnel - désactivé si on ne veut plus de doublons mais l'utilisateur veut garder supabase)
     // On le remet puisque l'utilisateur veut "garder supabase"
-    try {
-      await supabase.from('contact_requests').insert([{
-        full_name: fullName,
-        email,
-        whatsapp,
-        organization,
-        subject,
-        message,
-        created_at: new Date().toISOString()
-      }]);
-    } catch (dbError) {
-      console.error('Erreur Supabase Contact:', dbError);
-      // On ne bloque pas la réponse si c'est juste l'insertion qui échoue
+    if (supabase) {
+      try {
+        await supabase.from('contact_requests').insert([{
+          full_name: fullName,
+          email,
+          whatsapp,
+          organization,
+          subject,
+          message,
+          created_at: new Date().toISOString()
+        }]);
+      } catch (dbError) {
+        console.error('Erreur Supabase Contact:', dbError);
+        // On ne bloque pas la réponse si c'est juste l'insertion qui échoue
+      }
+    } else {
+      console.warn('Supabase insertion skipped: Client not initialized');
     }
 
     // 4. Email de confirmation à l'utilisateur
