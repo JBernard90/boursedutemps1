@@ -31,6 +31,7 @@ export type Page =
   | 'blog'
   | 'testimonials'
   | 'profile'
+  | 'profile-view'
   | 'moderation';
 
 export interface MediaItem {
