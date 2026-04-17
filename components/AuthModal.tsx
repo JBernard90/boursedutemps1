@@ -68,26 +68,34 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
   // ─────────────────────────────────────────────────────────────
   // 2) Vérification OTP (login + signup)
   // ─────────────────────────────────────────────────────────────
-  const verifyCode = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/verify/check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code: emailCode }),
-      });
+const verifyCode = async () => {
+  setLoading(true);
+  try {
+    const res = await fetch('/api/verify/check', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, emailCode })
+    });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Code incorrect.');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Code incorrect.');
 
-      // LOGIN → connexion immédiate
-      if (mode === 'login') {
-        onAuth(data.user);
-        alert('Connexion réussie !');
-        onClose();
-        return;
-      }
+    // LOGIN → connexion immédiate
+    if (mode === 'login') {
+      onAuth(data.user);
+      alert('Connexion réussie !');
+      onClose();
+      return;
+    }
 
+    // SIGNUP → passer à l'étape 3
+    setStep(3);
+  } catch (e: any) {
+    alert(e.message);
+  } finally {
+    setLoading(false);
+  }
+};
       // SIGNUP → passer à l'étape 3
       setStep(3);
     } catch (e: any) {
