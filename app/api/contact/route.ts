@@ -1,12 +1,18 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
-import { sendOtpEmail } from '@/lib/email'; // ← remplacer sendEmail par sendOtpEmail
+import { createClient } from '@supabase/supabase-js';
+import { sendOtpEmail } from '@/lib/email';
+
+// Client Supabase côté serveur
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function POST(req: Request) {
   try {
     const { name, email, message } = await req.json();
 
-    // Enregistrer dans Supabase (table contact_requests)
+    // Enregistrer dans Supabase
     const { error } = await supabase.from('contact_requests').insert({
       name,
       email,
@@ -21,7 +27,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Envoyer l’email de notification
+    // Envoyer l’email de confirmation
     await sendOtpEmail({
       to: email,
       subject: 'Votre message a bien été reçu',
