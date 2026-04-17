@@ -27,12 +27,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Envoyer l’email de confirmation
-    await sendOtpEmail({
-      to: email,
-      subject: 'Votre message a bien été reçu',
-      text: `Bonjour ${name},\n\nNous avons bien reçu votre message :\n"${message}"\n\nNous vous répondrons dès que possible.`,
-    });
+    // Envoyer un email de confirmation via sendOtpEmail
+    await sendOtpEmail(email, "MESSAGE_RECU");
 
     return NextResponse.json(
       { success: true, message: 'Message envoyé avec succès.' },
