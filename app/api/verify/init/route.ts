@@ -10,17 +10,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Email requis' }, { status: 400 });
   }
 
-  // Générer code 6 chiffres
   const code = crypto.randomInt(100000, 999999).toString();
   
   try {
-    // Supprimer anciens codes pour cet email
+    // Supprimer anciens codes
     await query('DELETE FROM otps WHERE identifier = $1', [email]);
     
-    // Insérer nouveau code (valide 10 minutes)
+    // ✅ Syntaxe PostgreSQL correcte - interval hardcodé, pas paramétré
     await query(
-      'INSERT INTO otps (identifier, code, expires_at) VALUES ($1, $2, NOW() + interval $3)',
-      [email, code, '10 minutes']
+      "INSERT INTO otps (identifier, code, expires_at) VALUES ($1, $2, NOW() + INTERVAL '10 minutes')",
+      [email, code]
     );
 
     // Envoyer email
