@@ -3,8 +3,12 @@
 
 import React, { useState, useRef } from 'react';
 import Image from 'next/image';
-import { Testimonial, User, MediaItem } from '../../types';
+<<<<<<< HEAD
+import { Testimonial, User, MediaItem } from '@/types';
 import { db, doc, updateDoc, deleteDoc, addDoc, collection } from '../../api';
+=======
+import { Testimonial, User, MediaItem } from '@/types';
+>>>>>>> 06f02fc (fix: corriger import types dans Blog et Testimonials)
 import { Edit2, Trash2, MessageCircle, Heart, Share2 } from 'lucide-react';
 
 interface TestimonialsProps {
