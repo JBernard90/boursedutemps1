@@ -1,27 +1,28 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/db';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function POST(req: Request) {
-  const { email, phone, emailCode, phoneCode } = await req.json();
-
   try {
-    const emailResult = await query(
-      'SELECT * FROM otps WHERE identifier = $1 AND code = $2 AND expires_at > NOW()',
-      [email, emailCode]
-    );
-    
-    const phoneResult = await query(
-      'SELECT * FROM otps WHERE identifier = $1 AND code = $2 AND expires_at > NOW()',
-      [phone, phoneCode]
-    );
+    const { email, code } = await req.json();
 
-    if ((emailResult.rowCount ?? 0) > 0 && (phoneResult.rowCount ?? 0) > 0) {
-      return NextResponse.json({ success: true });
-    } else {
-      return NextResponse.json({ error: 'Codes invalides ou expirés' }, { status: 400 });
+    const { data, error } = await supabaseAdmin.auth.verifyOtp({
+      email,
+      token: code,
+      type: 'email',
+    });
+
+    if (error) {
+      console.error('OTP verify error:', error);
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
-  } catch (error) {
-    console.error('Error checking verification:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+
+    return NextResponse.json({
+      success: true,
+      user: data.user,
+      session: data.session,
+    });
+  } catch (e: any) {
+    console.error('Server error:', e);
+    return NextResponse.json({ error: 'Erreur interne serveur' }, { status: 500 });
   }
 }

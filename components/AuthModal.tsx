@@ -15,8 +15,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
+  // Champs communs
   const [email, setEmail] = useState('');
+  const [emailCode, setEmailCode] = useState('');
   const [password, setPassword] = useState('');
+
+  // Champs signup
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [department, setDepartment] = useState('Management');
@@ -30,17 +34,17 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
   const [avatar, setAvatar] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
 
-  const [emailCode, setEmailCode] = useState('');
-  const [isEmailVerified, setIsEmailVerified] = useState(false);
-
   const ALLOWED_DOMAIN = '@etu-usenghor.org';
 
-  // ── Envoi OTP (login + signup) ──────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────
+  // 1) Envoi OTP (login + signup)
+  // ─────────────────────────────────────────────────────────────
   const handleSendCode = async () => {
     if (!email.endsWith(ALLOWED_DOMAIN)) {
       alert(`Seules les adresses se terminant par ${ALLOWED_DOMAIN} sont autorisées.`);
       return;
     }
+
     setLoading(true);
     try {
       const res = await fetch('/api/verify/init', {
@@ -48,13 +52,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
+
       const data = await res.json();
-      if (res.ok) {
-        setStep(2);
-        alert('Code envoyé ! Vérifiez votre email.');
-      } else {
-        throw new Error(data.error || "Erreur lors de l'envoi du code");
-      }
+      if (!res.ok) throw new Error(data.error || "Erreur lors de l'envoi du code");
+
+      setStep(2);
+      alert('Code envoyé ! Vérifiez votre email.');
     } catch (e: any) {
       alert(e.message);
     } finally {
@@ -62,68 +65,56 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
     }
   };
 
-  // ── Vérification OTP (login + signup) ──────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────
+  // 2) Vérification OTP (login + signup)
+  // ─────────────────────────────────────────────────────────────
   const verifyCode = async () => {
     setLoading(true);
     try {
       const res = await fetch('/api/verify/check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, emailCode }),
+        body: JSON.stringify({ email, code: emailCode }),
       });
-      if (res.ok) {
-        setIsEmailVerified(true);
-        setStep(3); // login → mot de passe | signup → profil
-        alert('Email vérifié avec succès !');
-      } else {
-        const data = await res.json();
-        alert(data.error || 'Code incorrect.');
-      }
-    } catch {
-      alert('Erreur lors de la vérification.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  // ── Connexion (seulement après OTP vérifié) ─────────────────────────────────
-  const handleLogin = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    setLoading(true);
-    try {
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, emailCode }),
-      });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      localStorage.setItem('token', data.token);
-      onAuth(data.user);
-      onClose();
-    } catch (error: any) {
-      alert('Erreur de connexion : ' + error.message);
+      if (!res.ok) throw new Error(data.error || 'Code incorrect.');
+
+      // LOGIN → connexion immédiate
+      if (mode === 'login') {
+        onAuth(data.user);
+        alert('Connexion réussie !');
+        onClose();
+        return;
+      }
+
+      // SIGNUP → passer à l'étape 3
+      setStep(3);
+    } catch (e: any) {
+      alert(e.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // ── Inscription finale (seulement après OTP vérifié) ────────────────────────
+  // ─────────────────────────────────────────────────────────────
+  // 3) Sauvegarde du profil (signup étape 4)
+  // ─────────────────────────────────────────────────────────────
   const handleRegisterAndProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isEmailVerified) {
-      alert('La vérification email OTP est requise.');
+
+    if (!avatar) {
+      alert('Photo requise');
       return;
     }
-    if (!avatar) { alert('Photo requise'); return; }
+
     setLoading(true);
     try {
-      const res = await fetch('/api/register', {
+      const res = await fetch('/api/profil', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email,
-          emailCode,
           password,
           firstName,
           lastName,
@@ -136,27 +127,25 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
           availability,
           languages: languages.split(',').map(l => l.trim()).filter(Boolean),
           avatar,
-          termsAccepted: true,
         }),
       });
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erreur lors de l'inscription");
-      localStorage.setItem('token', data.token);
-      const userRes = await fetch('/api/auth/me', {
-        headers: { Authorization: `Bearer ${data.token}` },
-      });
-      const userData = await userRes.json();
-      onAuth(userData);
+
+      onAuth(data.user);
       alert('Inscription réussie !');
       onClose();
-    } catch (error: any) {
-      alert(error.message);
+    } catch (e: any) {
+      alert(e.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // ── Remplissage test — NE saute plus l'OTP ──────────────────────────────────
+  // ─────────────────────────────────────────────────────────────
+  // Helpers
+  // ─────────────────────────────────────────────────────────────
   const fillForTest = () => {
     setEmail('test@etu-usenghor.org');
     setPassword('password123');
@@ -170,7 +159,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
     setLanguages('Français, Anglais');
     setAvatar('https://picsum.photos/seed/test/200/200');
     setTermsAccepted(true);
-    // ⚠️ PAS de setStep(2) — l'OTP reste obligatoire même en mode test
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -182,28 +170,25 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
     }
   };
 
-  // Reset complet au changement de mode
   const handleSwitchMode = (newMode: 'login' | 'signup') => {
     onSwitch(newMode);
     setStep(1);
     setEmail('');
     setPassword('');
     setEmailCode('');
-    setIsEmailVerified(false);
   };
 
-  const nextStep = () => setStep(s => s + 1);
-  const prevStep = () => setStep(s => s - 1);
-
   const totalSteps = mode === 'login' ? 2 : 4;
-
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={onClose} />
       <div className="relative bg-white w-full max-w-2xl rounded-[2.5rem] p-8 md:p-12 shadow-2xl overflow-y-auto max-h-[90vh] animate-in zoom-in duration-300">
 
         {/* Bouton fermer */}
-        <button onClick={onClose} className="absolute top-6 right-6 text-slate-300 hover:text-slate-600 transition">
+        <button
+          onClick={onClose}
+          className="absolute top-6 right-6 text-slate-300 hover:text-slate-600 transition"
+        >
           <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
@@ -214,7 +199,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
           <h2 className="font-heading text-3xl font-bold text-slate-800 uppercase tracking-tight">
             {mode === 'login' ? 'Connexion' : 'Bourse du Temps - Inscription'}
           </h2>
-          <p className="text-slate-500 mt-2 text-sm">Étape {step} sur {totalSteps}</p>
+
+          <p className="text-slate-500 mt-2 text-sm">
+            Étape {step} sur {totalSteps}
+          </p>
+
           {mode === 'signup' && step === 1 && (
             <button
               type="button"
@@ -233,7 +222,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
             <>
               {/* LOGIN — Étape 1 : Email + Password → envoi OTP */}
               {step === 1 && (
-                <form onSubmit={e => { e.preventDefault(); handleSendCode(); }} className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                <form
+                  onSubmit={e => {
+                    e.preventDefault();
+                    handleSendCode();
+                  }}
+                  className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300"
+                >
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">
                       Email Institutionnel
@@ -247,6 +242,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
                       onChange={e => setEmail(e.target.value)}
                     />
                   </div>
+
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">
                       Mot de passe
@@ -260,6 +256,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
                       onChange={e => setPassword(e.target.value)}
                     />
                   </div>
+
                   <button
                     type="submit"
                     disabled={loading || !email || !password}
@@ -278,6 +275,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
                       Un code a été envoyé à <strong>{email}</strong>.
                     </p>
                   </div>
+
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">
                       Code Email (6 chiffres)
@@ -290,13 +288,19 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
                       onChange={e => setEmailCode(e.target.value.replace(/\D/g, ''))}
                     />
                   </div>
+
                   <div className="flex gap-4 pt-2">
-                    <button type="button" onClick={prevStep} className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-200">
-                      Retour
-                    </button>
                     <button
                       type="button"
-                      onClick={handleLogin as any}
+                      onClick={() => setStep(1)}
+                      className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-200"
+                    >
+                      Retour
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={verifyCode}
                       disabled={loading || emailCode.length < 6}
                       className="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-lg disabled:opacity-50"
                     >
@@ -307,7 +311,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
               )}
             </>
           )}
-
           {/* ══════════════════════ MODE SIGNUP ══════════════════════ */}
           {mode === 'signup' && (
             <>
@@ -315,7 +318,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
               {step === 1 && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Email Institutionnel</label>
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                      Email Institutionnel
+                    </label>
                     <input
                       required
                       type="email"
@@ -325,8 +330,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
                       onChange={e => setEmail(e.target.value)}
                     />
                   </div>
+
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Numéro WhatsApp</label>
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                      Numéro WhatsApp
+                    </label>
                     <input
                       required
                       placeholder="Ex: +509 32 27 4422"
@@ -335,6 +343,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
                       onChange={e => setWhatsapp(e.target.value)}
                     />
                   </div>
+
                   <button
                     type="button"
                     onClick={handleSendCode}
@@ -354,8 +363,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
                       Un code a été envoyé à <strong>{email}</strong>.
                     </p>
                   </div>
+
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Code Email (6 chiffres)</label>
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                      Code Email (6 chiffres)
+                    </label>
                     <input
                       placeholder="● ● ● ● ● ●"
                       maxLength={6}
@@ -364,8 +376,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
                       onChange={e => setEmailCode(e.target.value.replace(/\D/g, ''))}
                     />
                   </div>
+
                   <div className="flex gap-4 pt-2">
-                    <button type="button" onClick={prevStep} className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-200">Retour</button>
+                    <button
+                      type="button"
+                      onClick={() => setStep(1)}
+                      className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-200"
+                    >
+                      Retour
+                    </button>
+
                     <button
                       type="button"
                       onClick={verifyCode}
@@ -378,76 +398,182 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
                 </div>
               )}
 
-              {/* SIGNUP — Étape 3 : Informations personnelles */}
+              {/* SIGNUP — Étape 3 : Informations personnelles + Mot de passe */}
               {step === 3 && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-                  <div className="bg-green-50 p-3 rounded-2xl border border-green-100">
-                    <p className="text-xs text-green-800 font-medium">✅ Email vérifié</p>
-                  </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <input required placeholder="Prénom" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none" value={firstName} onChange={e => setFirstName(e.target.value)} />
-                    <input required placeholder="Nom" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none" value={lastName} onChange={e => setLastName(e.target.value)} />
+                    <input
+                      required
+                      placeholder="Prénom"
+                      className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none"
+                      value={firstName}
+                      onChange={e => setFirstName(e.target.value)}
+                    />
+                    <input
+                      required
+                      placeholder="Nom"
+                      className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none"
+                      value={lastName}
+                      onChange={e => setLastName(e.target.value)}
+                    />
                   </div>
+
                   <div className="grid grid-cols-2 gap-4">
-                    <select className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none" value={gender} onChange={e => setGender(e.target.value as 'Homme' | 'Femme')}>
+                    <select
+                      className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none"
+                      value={gender}
+                      onChange={e => setGender(e.target.value as 'Homme' | 'Femme')}
+                    >
                       <option value="Homme">Homme</option>
                       <option value="Femme">Femme</option>
                     </select>
-                    <input required placeholder="Pays d'origine" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none" value={country} onChange={e => setCountry(e.target.value)} />
+
+                    <input
+                      required
+                      placeholder="Pays d'origine"
+                      className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none"
+                      value={country}
+                      onChange={e => setCountry(e.target.value)}
+                    />
                   </div>
-                  <select className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none" value={department} onChange={e => setDepartment(e.target.value)}>
+
+                  <select
+                    className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none"
+                    value={department}
+                    onChange={e => setDepartment(e.target.value)}
+                  >
                     <option>Management</option>
                     <option>Culture</option>
                     <option>Environnement</option>
                     <option>Santé</option>
                   </select>
-                  <input required type="password" placeholder="Mot de passe" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none" value={password} onChange={e => setPassword(e.target.value)} />
-                  <button type="button" onClick={nextStep} className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold">Suivant</button>
+
+                  <input
+                    required
+                    type="password"
+                    placeholder="Mot de passe"
+                    className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setStep(4)}
+                    className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold"
+                  >
+                    Suivant
+                  </button>
                 </div>
               )}
 
               {/* SIGNUP — Étape 4 : Compétences + Photo */}
               {step === 4 && (
-                <form onSubmit={handleRegisterAndProfile} className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                <form
+                  onSubmit={handleRegisterAndProfile}
+                  className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300"
+                >
                   <div className="text-center">
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Photo de Profil (OBLIGATOIRE)</label>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">
+                      Photo de Profil (OBLIGATOIRE)
+                    </label>
+
                     <div className="flex flex-col items-center gap-4">
                       <div className="w-24 h-24 rounded-full bg-slate-100 overflow-hidden flex items-center justify-center border-4 border-blue-50 shadow-inner relative">
                         {avatar ? (
-                          <Image src={avatar} alt="Avatar preview" fill className="object-cover" unoptimized={avatar.startsWith('data:')} sizes="96px" />
+                          <Image
+                            src={avatar}
+                            alt="Avatar preview"
+                            fill
+                            className="object-cover"
+                            unoptimized={avatar.startsWith('data:')}
+                            sizes="96px"
+                          />
                         ) : (
                           <span className="text-3xl grayscale">👤</span>
                         )}
                       </div>
-                      <input type="file" accept="image/*" onChange={handleFileChange} className="text-xs text-slate-500 cursor-pointer" required />
+
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="text-xs text-slate-500 cursor-pointer"
+                        required
+                      />
                     </div>
                   </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Compétences Offertes</label>
-                      <input required placeholder="Excel, Marketing, Musique..." className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none" value={offeredSkills} onChange={e => setOfferedSkills(e.target.value)} />
+                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
+                        Compétences Offertes
+                      </label>
+                      <input
+                        required
+                        placeholder="Excel, Marketing, Musique..."
+                        className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none"
+                        value={offeredSkills}
+                        onChange={e => setOfferedSkills(e.target.value)}
+                      />
                     </div>
+
                     <div>
-                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Compétences Recherchées</label>
-                      <input required placeholder="Anglais, Piano, Yoga..." className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none" value={requestedSkills} onChange={e => setRequestedSkills(e.target.value)} />
+                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
+                        Compétences Recherchées
+                      </label>
+                      <input
+                        required
+                        placeholder="Anglais, Piano, Yoga..."
+                        className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none"
+                        value={requestedSkills}
+                        onChange={e => setRequestedSkills(e.target.value)}
+                      />
                     </div>
                   </div>
+
                   <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Disponibilité</label>
-                    <input required placeholder="Ex: Soirs et weekends..." className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none" value={availability} onChange={e => setAvailability(e.target.value)} />
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
+                      Disponibilité
+                    </label>
+                    <input
+                      required
+                      placeholder="Ex: Soirs et weekends..."
+                      className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none"
+                      value={availability}
+                      onChange={e => setAvailability(e.target.value)}
+                    />
                   </div>
+
                   <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Langues</label>
-                    <input required placeholder="Français, Wolof, Anglais..." className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none" value={languages} onChange={e => setLanguages(e.target.value)} />
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
+                      Langues
+                    </label>
+                    <input
+                      required
+                      placeholder="Français, Wolof, Anglais..."
+                      className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none"
+                      value={languages}
+                      onChange={e => setLanguages(e.target.value)}
+                    />
                   </div>
+
                   <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100">
                     <label className="flex items-start gap-4 cursor-pointer">
-                      <input type="checkbox" required className="mt-1 w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)} />
+                      <input
+                        type="checkbox"
+                        required
+                        className="mt-1 w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        checked={termsAccepted}
+                        onChange={e => setTermsAccepted(e.target.checked)}
+                      />
                       <span className="text-xs text-slate-500 leading-relaxed">
-                        J'accepte les <strong>conditions d'utilisation</strong>. Je confirme que mon profil sera <strong>visible par tous les membres</strong>.
+                        J'accepte les <strong>conditions d'utilisation</strong>. Je confirme que mon profil sera
+                        <strong> visible par tous les membres</strong>.
                       </span>
                     </label>
                   </div>
+
                   <button
                     type="submit"
                     disabled={loading || !avatar || !termsAccepted}
