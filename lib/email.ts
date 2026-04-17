@@ -28,3 +28,19 @@ export async function sendOtpEmail(email: string, code: string) {
     `,
   });
 }
+
+export async function sendContactConfirmationEmail(name: string, email: string) {
+  await transporter.sendMail({
+    from: `"Bourse du Temps" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: 'Message reçu - Bourse du Temps',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #2563eb;">Bourse du Temps</h2>
+        <p>Bonjour ${name},</p>
+        <p>Nous avons bien reçu votre message et nous vous répondrons dans les plus brefs délais.</p>
+        <p style="color: #6b7280; font-size: 12px;">Cet email a été envoyé automatiquement, merci de ne pas y répondre.</p>
+      </div>
+    `,
+  });
+}

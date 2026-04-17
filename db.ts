@@ -127,6 +127,11 @@ export const initDB = async () => {
         EXCEPTION
           WHEN duplicate_column THEN null;
         END;
+        BEGIN
+          ALTER TABLE messages ADD COLUMN is_read BOOLEAN DEFAULT false;
+        EXCEPTION
+          WHEN duplicate_column THEN null;
+        END;
       END $$;
 
       CREATE TABLE IF NOT EXISTS services (
@@ -246,6 +251,7 @@ export const initDB = async () => {
         sender_id VARCHAR(255) REFERENCES users(uid),
         receiver_id VARCHAR(255) REFERENCES users(uid),
         content TEXT NOT NULL,
+        is_read BOOLEAN DEFAULT false,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 

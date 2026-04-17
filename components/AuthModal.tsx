@@ -68,34 +68,33 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
   // ─────────────────────────────────────────────────────────────
   // 2) Vérification OTP (login + signup)
   // ─────────────────────────────────────────────────────────────
-const verifyCode = async () => {
-  setLoading(true);
-  try {
-    const res = await fetch('/api/verify/check', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, emailCode })
-    });
+  const verifyCode = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/verify/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, emailCode }),
+      });
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Code incorrect.');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Code incorrect.');
 
-    // LOGIN → connexion immédiate
-    if (mode === 'login') {
-      onAuth(data.user);
-      alert('Connexion réussie !');
-      onClose();
-      return;
-    }
+      if (mode === 'login') {
+        // LOGIN → appel /api/login avec le mot de passe + l'OTP déjà vérifié
+        const loginRes = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, emailCode }),
+        });
+        const loginData = await loginRes.json();
+        if (!loginRes.ok) throw new Error(loginData.error || 'Erreur de connexion.');
+        localStorage.setItem('token', loginData.token);
+        onAuth(loginData.user);
+        onClose();
+        return;
+      }
 
-    // SIGNUP → passer à l'étape 3
-    setStep(3);
-  } catch (e: any) {
-    alert(e.message);
-  } finally {
-    setLoading(false);
-  }
-};
       // SIGNUP → passer à l'étape 3
       setStep(3);
     } catch (e: any) {
@@ -104,6 +103,8 @@ const verifyCode = async () => {
       setLoading(false);
     }
   };
+
+  // 
 
   // ─────────────────────────────────────────────────────────────
   // 3) Sauvegarde du profil (signup étape 4)
@@ -123,6 +124,7 @@ const verifyCode = async () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email,
+          emailCode,
           password,
           firstName,
           lastName,

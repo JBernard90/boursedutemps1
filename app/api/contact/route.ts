@@ -1,34 +1,29 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { sendOtpEmail } from '@/lib/email';
-
-// Client Supabase côté serveur
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { sendContactConfirmationEmail } from '@/lib/email';
 
 export async function POST(req: Request) {
   try {
-    const { name, email, message } = await req.json();
+    const { fullName, name: _name, email, whatsapp, organization, subject, message } = await req.json();
+    const name = fullName || _name || '';
 
-    // Enregistrer dans Supabase
-    const { error } = await supabase.from('contact_requests').insert({
-      name,
-      email,
-      message,
-    });
-
-    if (error) {
-      console.error(error);
-      return NextResponse.json(
-        { error: 'Erreur lors de la sauvegarde du message.' },
-        { status: 500 }
-      );
+    // Enregistrer dans Supabase si configuré
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (supabaseUrl && serviceRoleKey) {
+      const supabase = createClient(supabaseUrl, serviceRoleKey);
+      const { error } = await supabase.from('contact_requests').insert({ full_name: name, email, whatsapp: whatsapp || null, organization: organization || null, subject: subject || '', message });
+      if (error) {
+        console.error(error);
+        return NextResponse.json(
+          { error: 'Erreur lors de la sauvegarde du message.' },
+          { status: 500 }
+        );
+      }
     }
 
-    // Envoyer un email de confirmation via sendOtpEmail
-    await sendOtpEmail(email, "MESSAGE_RECU");
+    // Envoyer un email de confirmation
+    await sendContactConfirmationEmail(name, email);
 
     return NextResponse.json(
       { success: true, message: 'Message envoyé avec succès.' },
