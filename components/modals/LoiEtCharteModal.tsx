@@ -2,17 +2,23 @@
 
 export default function LoiEtCharteModal({ onClose }: { onClose: () => void }) {
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white max-h-[90vh] overflow-y-auto rounded-lg shadow-xl p-6 w-full max-w-3xl text-slate-800">
-
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 
+                 transition-opacity duration-300 ease-out"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title-loi"
+    >
+      <div
+        className="bg-white max-h-[90vh] overflow-y-auto rounded-lg shadow-xl p-6 w-full max-w-3xl text-slate-800 
+                   transform transition-transform duration-300 ease-out scale-95 hover:scale-100"
+      >
         {/* TITRE GLOBAL */}
-        <h2 className="text-2xl font-bold mb-6 text-center">
+        <h2 id="modal-title-loi" className="text-2xl font-bold mb-6 text-center">
           LOI DES CONDITIONS D’ÉCHANGE – BOURSE DU TEMPS
         </h2>
 
-        {/* ================================
-            SECTION 1 : LOI DE CONDITIONS D’ÉCHANGE
-           ================================ */}
+        {/* SECTION 1 : LOI DE CONDITIONS D’ÉCHANGE */}
         <div className="space-y-4 text-sm leading-relaxed whitespace-pre-line">
           {`
 LOI DE CONDITIONS D’ÉCHANGE – BOURSE DU TEMPS
@@ -106,9 +112,7 @@ L’utilisation du site implique l’acceptation pleine et entière de la prése
 
         <hr className="my-8 border-slate-300" />
 
-        {/* ================================
-            SECTION 2 : CHARTE ÉTHIQUE
-           ================================ */}
+        {/* SECTION 2 : CHARTE ÉTHIQUE */}
         <h2 className="text-2xl font-bold mb-6 text-center">
           CHARTE ÉTHIQUE – BOURSE DU TEMPS
         </h2>
@@ -203,7 +207,7 @@ Tout manquement peut entraîner une suspension ou une exclusion de la plateforme
 
         <button
           onClick={onClose}
-          className="mt-6 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          className="mt-6 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
         >
           Fermer
         </button>

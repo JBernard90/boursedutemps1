@@ -2,10 +2,18 @@
 
 export default function PolitiqueConfidentialiteModal({ onClose }: { onClose: () => void }) {
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white max-h-[90vh] overflow-y-auto rounded-lg shadow-xl p-6 w-full max-w-3xl text-slate-800">
-
-        <h2 className="text-2xl font-bold mb-6 text-center">
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 
+                 transition-opacity duration-300 ease-out"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title-politique"
+    >
+      <div
+        className="bg-white max-h-[90vh] overflow-y-auto rounded-lg shadow-xl p-6 w-full max-w-3xl text-slate-800 
+                   transform transition-transform duration-300 ease-out scale-95 hover:scale-100"
+      >
+        <h2 id="modal-title-politique" className="text-2xl font-bold mb-6 text-center">
           POLITIQUE DE CONFIDENTIALITÉ – BOURSE DU TEMPS
         </h2>
 
@@ -138,7 +146,7 @@ Les présentes CGU sont soumises au droit des pays concernés et aux règlements
 
         <button
           onClick={onClose}
-          className="mt-6 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          className="mt-6 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
         >
           Fermer
         </button>
