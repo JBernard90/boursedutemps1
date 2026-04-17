@@ -7,7 +7,6 @@ export async function POST(req: Request) {
 
     const {
       email,
-      password,
       firstName,
       lastName,
       department,
@@ -22,20 +21,26 @@ export async function POST(req: Request) {
     } = body;
 
     // ───────────────────────────────────────────────
-    // 1) Créer l'utilisateur dans Supabase Auth
+    // 1) Récupérer l'utilisateur déjà créé via OTP
     // ───────────────────────────────────────────────
-    const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true, // car OTP déjà validé
-    });
+    const { data: existingUser, error: fetchError } =
+      await supabaseAdmin.auth.admin.listUsers();
 
-    if (authError) {
-      console.error(authError);
-      return NextResponse.json({ error: authError.message }, { status: 400 });
+    if (fetchError) {
+      console.error(fetchError);
+      return NextResponse.json({ error: fetchError.message }, { status: 400 });
     }
 
-    const userId = authUser.user.id;
+    const user = existingUser.users.find((u) => u.email === email);
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Utilisateur introuvable après OTP" },
+        { status: 400 }
+      );
+    }
+
+    const userId = user.id;
 
     // ───────────────────────────────────────────────
     // 2) Insérer le profil dans la table "profiles"

@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     const { error } = await supabaseAdmin.auth.signInWithOtp({
       email,
       options: {
-        shouldCreateUser: false, // on ne crée pas d'utilisateur ici
+        shouldCreateUser: true, // autorise la création d'utilisateur via OTP
       },
     });
 

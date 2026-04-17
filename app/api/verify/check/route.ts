@@ -5,10 +5,17 @@ export async function POST(req: Request) {
   try {
     const { email, code } = await req.json();
 
+    if (!email || !code) {
+      return NextResponse.json(
+        { error: 'Email et code requis' },
+        { status: 400 }
+      );
+    }
+
     const { data, error } = await supabaseAdmin.auth.verifyOtp({
       email,
       token: code,
-      type: 'email',
+      type: 'email', // IMPORTANT : correspond à signInWithOtp
     });
 
     if (error) {
@@ -23,6 +30,9 @@ export async function POST(req: Request) {
     });
   } catch (e: any) {
     console.error('Server error:', e);
-    return NextResponse.json({ error: 'Erreur interne serveur' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Erreur interne serveur' },
+      { status: 500 }
+    );
   }
 }
