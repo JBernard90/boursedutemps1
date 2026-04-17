@@ -255,7 +255,7 @@ export const initDB = async () => {
         subscription JSONB NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
-      DO $ 
+      DO $$ 
       BEGIN 
         BEGIN
           ALTER TABLE connections DROP COLUMN id;
