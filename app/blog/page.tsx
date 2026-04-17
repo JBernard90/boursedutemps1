@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import PageLayout from '@/components/PageLayout';
 import Blog from '@/components/pages-old/Blog';
 import { BlogPost } from '@/types';
-import { onSnapshot, collection, db, query, orderBy } from '@/api';
+import { onSnapshot, collection, db, query, orderBy } from '@/lib/api-client';
 import { useUser } from '@/components/UserProvider';
 
 export default function BlogRoute() {

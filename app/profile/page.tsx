@@ -5,7 +5,7 @@ import PageLayout from '@/components/PageLayout';
 import Profile from '@/components/pages-old/Profile';
 import { useUser } from '@/components/UserProvider';
 import { useSearchParams } from 'next/navigation';
-import { onSnapshot, collection, db, query, orderBy, where, updateDoc, doc, addDoc } from '@/api';
+import { onSnapshot, collection, db, query, orderBy, where, updateDoc, doc, addDoc } from '@/lib/api-client';
 import { User, Transaction, Connection, ChatMessage } from '@/types';
 
 function ProfileContent() {

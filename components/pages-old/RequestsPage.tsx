@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { User, Request } from '../../types';
 import { Edit2, Trash2 } from 'lucide-react';
-import { db, doc, updateDoc, deleteDoc, addDoc, collection } from '../../api';
+import { db, doc, updateDoc, deleteDoc, addDoc, collection } from '@/lib/api-client';
 
 interface RequestsPageProps {
   user: User | null;

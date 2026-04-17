@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getUserIdFromRequest } from '@/lib/auth';
-import { query, initDB } from '@/db';
+import { query, initDB } from '@/lib/db';
 
 export async function GET(req: Request) {
   const uid = getUserIdFromRequest(req);

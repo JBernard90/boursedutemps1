@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import PageLayout from '@/components/PageLayout';
 import Home from '@/components/pages-old/Home';
 import { BlogPost, Testimonial } from '@/types';
-import { onSnapshot, collection, db, query, orderBy } from '@/api';
+import { onSnapshot, collection, db, query, orderBy } from '@/lib/api-client';
 import { useRouter } from 'next/navigation';
 
 export default function HomePage() {

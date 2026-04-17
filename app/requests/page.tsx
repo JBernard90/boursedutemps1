@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import PageLayout from '@/components/PageLayout';
 import RequestsPage from '@/components/pages-old/RequestsPage';
 import { Request } from '@/types';
-import { onSnapshot, collection, db, query, orderBy, updateDoc, doc, serverTimestamp } from '@/api';
+import { onSnapshot, collection, db, query, orderBy, updateDoc, doc, serverTimestamp } from '@/lib/api-client';
 import { useUser } from '@/components/UserProvider';
 
 export default function RequestsRoute() {

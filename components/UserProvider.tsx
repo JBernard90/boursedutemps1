@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, Notification } from "@/types";
 import { supabase } from "@/lib/supabaseClient";
-import { onSnapshot, collection, db, query, where, orderBy } from "@/api";
+import { onSnapshot, collection, db, query, where, orderBy } from "@/lib/api-client";
 import { registerServiceWorker, subscribeUserToPush } from "@/lib/push";
 
 interface UserContextType {

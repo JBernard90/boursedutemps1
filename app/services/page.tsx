@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import PageLayout from '@/components/PageLayout';
 import ServicesPage from '@/components/pages-old/ServicesPage';
 import { Service } from '@/types';
-import { onSnapshot, collection, db, query, orderBy, updateDoc, doc, serverTimestamp, addDoc } from '@/api';
+import { onSnapshot, collection, db, query, orderBy, updateDoc, doc, serverTimestamp, addDoc } from '@/lib/api-client';
 import { useUser } from '@/components/UserProvider';
 
 export default function ServicesRoute() {

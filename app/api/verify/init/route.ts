@@ -1,28 +1,36 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/db';
+import { query } from '@/lib/db';
+import crypto from 'crypto';
+import { sendOtpEmail } from '@/lib/email';
 
 export async function POST(req: Request) {
-  const { email, phone } = await req.json();
-  
-  // Mock code generation
-  const code = '123456';
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+  const { email } = await req.json();
 
+  if (!email) {
+    return NextResponse.json({ error: 'Email requis' }, { status: 400 });
+  }
+
+  // Générer code 6 chiffres
+  const code = crypto.randomInt(100000, 999999).toString();
+  
   try {
-    await query(
-      'INSERT INTO otps (identifier, code, expires_at) VALUES ($1, $2, $3)',
-      [email, code, expiresAt]
-    );
-    await query(
-      'INSERT INTO otps (identifier, code, expires_at) VALUES ($1, $2, $3)',
-      [phone, code, expiresAt]
-    );
+    // Supprimer anciens codes pour cet email
+    await query('DELETE FROM otps WHERE identifier = $1', [email]);
     
-    console.log(`[MOCK VERIFY] Codes for ${email} and ${phone}: ${code}`);
+    // Insérer nouveau code (valide 10 minutes)
+    await query(
+      `INSERT INTO otps (identifier, code, expires_at) 
+       VALUES ($1, $2, NOW() + interval '10 minutes')`,
+      [email, code]
+    );
+
+    // Envoyer email
+    await sendOtpEmail(email, code);
+    console.log(`📧 OTP généré pour ${email}: ${code}`);
     
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error initializing verification:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

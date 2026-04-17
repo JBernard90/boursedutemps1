@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import PageLayout from '@/components/PageLayout';
 import Moderation from '@/components/pages-old/Moderation';
 import { User, Service, Request } from '@/types';
-import { onSnapshot, collection, db, query, orderBy } from '@/api';
+import { onSnapshot, collection, db, query, orderBy } from '@/lib/api-client';
 import { useUser } from '@/components/UserProvider';
 import { useRouter } from 'next/navigation';
 

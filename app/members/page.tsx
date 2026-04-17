@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import PageLayout from '@/components/PageLayout';
 import Members from '@/components/pages-old/Members';
 import { User } from '@/types';
-import { onSnapshot, collection, db } from '@/api';
+import { onSnapshot, collection, db } from '@/lib/api-client';
 import { useRouter } from 'next/navigation';
 
 export default function MembersRoute() {

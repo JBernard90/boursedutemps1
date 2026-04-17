@@ -10,6 +10,15 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+export async function sendEmail({ to, subject, html }: { to: string; subject: string; html: string }) {
+  await transporter.sendMail({
+    from: `"Bourse du Temps" <${process.env.EMAIL_USER}>`,
+    to,
+    subject,
+    html,
+  });
+}
+
 export async function sendOtpEmail(email: string, code: string) {
   await transporter.sendMail({
     from: `"Bourse du Temps" <${process.env.EMAIL_USER}>`,
