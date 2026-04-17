@@ -1,17 +1,27 @@
 "use client";
+import { useState } from "react";
 
 export default function PolitiqueConfidentialiteModal({ onClose }: { onClose: () => void }) {
+  const [isClosing, setIsClosing] = useState(false);
+
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+    }, 300); // durée identique à l’animation
+  };
+
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 
-                 transition-opacity duration-300 ease-out"
+      className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 
+                 transition-opacity duration-300 ease-out ${isClosing ? "opacity-0" : "opacity-100"}`}
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title-politique"
     >
       <div
-        className="bg-white max-h-[90vh] overflow-y-auto rounded-lg shadow-xl p-6 w-full max-w-3xl text-slate-800 
-                   transform transition-transform duration-300 ease-out scale-95 hover:scale-100"
+        className={`bg-white max-h-[90vh] overflow-y-auto rounded-lg shadow-xl p-6 w-full max-w-3xl text-slate-800 
+                   transform transition-transform duration-300 ease-out ${isClosing ? "scale-95 opacity-0" : "scale-100 opacity-100"}`}
       >
         <h2 id="modal-title-politique" className="text-2xl font-bold mb-6 text-center">
           POLITIQUE DE CONFIDENTIALITÉ – BOURSE DU TEMPS
@@ -19,7 +29,7 @@ export default function PolitiqueConfidentialiteModal({ onClose }: { onClose: ()
 
         {/* Texte complet */}
         <div className="space-y-4 text-sm leading-relaxed whitespace-pre-line">
-          {`
+{`
 POLITIQUE DE CONFIDENTIALITÉ – Bourse du Temps
 1. Introduction
 Le site Bourse du Temps (https://boursedutemps.vercel.app/) accorde une grande importance à la protection de vos données personnelles.
@@ -141,11 +151,11 @@ La version en vigueur est celle affichée sur le site.
 
 9. Droit applicable
 Les présentes CGU sont soumises au droit des pays concernés et aux règlements de nos organisations partenaires.
-          `}
+`}
         </div>
 
         <button
-          onClick={onClose}
+          onClick={handleClose}
           className="mt-6 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
         >
           Fermer

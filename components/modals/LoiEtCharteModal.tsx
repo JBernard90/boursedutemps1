@@ -1,17 +1,27 @@
 "use client";
+import { useState } from "react";
 
 export default function LoiEtCharteModal({ onClose }: { onClose: () => void }) {
+  const [isClosing, setIsClosing] = useState(false);
+
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+    }, 300); // durée identique à l’animation
+  };
+
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 
-                 transition-opacity duration-300 ease-out"
+      className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 
+                 transition-opacity duration-300 ease-out ${isClosing ? "opacity-0" : "opacity-100"}`}
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title-loi"
     >
       <div
-        className="bg-white max-h-[90vh] overflow-y-auto rounded-lg shadow-xl p-6 w-full max-w-3xl text-slate-800 
-                   transform transition-transform duration-300 ease-out scale-95 hover:scale-100"
+        className={`bg-white max-h-[90vh] overflow-y-auto rounded-lg shadow-xl p-6 w-full max-w-3xl text-slate-800 
+                   transform transition-transform duration-300 ease-out ${isClosing ? "scale-95 opacity-0" : "scale-100 opacity-100"}`}
       >
         {/* TITRE GLOBAL */}
         <h2 id="modal-title-loi" className="text-2xl font-bold mb-6 text-center">
@@ -20,7 +30,7 @@ export default function LoiEtCharteModal({ onClose }: { onClose: () => void }) {
 
         {/* SECTION 1 : LOI DE CONDITIONS D’ÉCHANGE */}
         <div className="space-y-4 text-sm leading-relaxed whitespace-pre-line">
-          {`
+{`
 LOI DE CONDITIONS D’ÉCHANGE – BOURSE DU TEMPS
 1. Objet de la Loi
 La présente Loi de Conditions d’Échange a pour objectif d’encadrer les échanges de services, de compétences et de temps entre les utilisateurs du site Bourse du Temps (https://boursedutemps.vercel.app).
@@ -107,7 +117,7 @@ La version en vigueur est celle publiée sur le site.
 
 11. Acceptation
 L’utilisation du site implique l’acceptation pleine et entière de la présente Loi de Conditions d’Échange.
-          `}
+`}
         </div>
 
         <hr className="my-8 border-slate-300" />
@@ -118,7 +128,7 @@ L’utilisation du site implique l’acceptation pleine et entière de la prése
         </h2>
 
         <div className="space-y-4 text-sm leading-relaxed whitespace-pre-line">
-          {`
+{`
 Préambule
 La communauté Bourse du Temps repose sur un principe simple : chacun possède du temps, des talents et des compétences qui peuvent bénéficier aux autres.
 Cette Charte Éthique établit les valeurs fondamentales qui guident les échanges entre les membres.
@@ -202,16 +212,9 @@ enrichissant pour tous
 11. Acceptation de la Charte
 L’utilisation du site implique l’acceptation pleine et entière de la présente Charte Éthique.
 Tout manquement peut entraîner une suspension ou une exclusion de la plateforme.
-          `}
+`}
         </div>
 
         <button
-          onClick={onClose}
-          className="mt-6 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
-        >
-          Fermer
-        </button>
-      </div>
-    </div>
-  );
-}
+          onClick={handleClose}
+          className="mt-6 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 focus:outline-none focus:ring
