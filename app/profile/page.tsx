@@ -5,7 +5,7 @@ import PageLayout from '@/components/PageLayout';
 import Profile from '@/components/pages-old/Profile';
 import { useUser } from '@/components/UserProvider';
 import { useSearchParams } from 'next/navigation';
-import { subscribeToCollection } from '@/lib/api-client';
+import { onSnapshot, collection, db, query, orderBy, where, updateDoc, doc, addDoc } from '@/api';
 import { User, Transaction, Connection, ChatMessage } from '@/types';
 
 function ProfileContent() {
@@ -21,20 +21,20 @@ function ProfileContent() {
   useEffect(() => {
     if (!user) return;
 
-    const unsubUsers = subscribeToCollection('users', (data) => {
-      setAllUsers(data as User[]);
+    const unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
+      setAllUsers(snapshot.docs.map(doc => doc.data() as User));
     });
 
-    const unsubConnections = subscribeToCollection('connections', (data) => {
-      setConnections(data as Connection[]);
+    const unsubConnections = onSnapshot(collection(db, 'connections'), (snapshot) => {
+      setConnections(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Connection)));
     });
 
-    const unsubTransactions = subscribeToCollection('transactions', (data) => {
-      setTransactions(data as Transaction[]);
+    const unsubTransactions = onSnapshot(query(collection(db, 'transactions'), orderBy('createdAt', 'desc')), (snapshot) => {
+      setTransactions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction)));
     });
 
-    const unsubMessages = subscribeToCollection('messages', (data) => {
-      setMessages(data as ChatMessage[]);
+    const unsubMessages = onSnapshot(query(collection(db, 'messages'), orderBy('createdAt', 'asc')), (snapshot) => {
+      setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChatMessage)));
     });
 
     return () => {

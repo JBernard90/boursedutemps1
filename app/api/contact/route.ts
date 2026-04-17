@@ -1,19 +1,41 @@
 import { NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabaseClient';
 import { sendEmail } from '@/lib/email';
-import { getSupabase } from '@/lib/supabaseClient';
 
 export async function POST(req: Request) {
   try {
-    const supabase = getSupabase();
     const body = await req.json();
     const { fullName, email, whatsapp, organization, subject, message } = body;
 
     // 1. Validation de base
-    if (!fullName || !email || !whatsapp || !organization || !subject || !message) {
-      return NextResponse.json({ error: 'Tous les champs sont obligatoires' }, { status: 400 });
+    if (!fullName || !email || !subject || !message) {
+      return NextResponse.json({ error: 'Champs obligatoires manquants' }, { status: 400 });
     }
 
-    // 2. Email à l'administrateur
+    // 2. Enregistrement dans Supabase (si configuré)
+    if (supabase) {
+      const { error: dbError } = await supabase
+        .from('contact_requests')
+        .insert([
+          {
+            full_name: fullName,
+            email: email,
+            whatsapp: whatsapp,
+            organization: organization,
+            subject: subject,
+            message: message,
+            status: 'pending'
+          }
+        ]);
+      
+      if (dbError) {
+        console.error('Erreur Supabase:', dbError);
+        // On continue quand même pour l'envoi d'email si l'insertion échoue? 
+        // Généralement oui, mais on log l'erreur.
+      }
+    }
+
+    // 3. Email à l'administrateur
     const adminEmail = "jeanbernardpierrelouis@gmail.com";
     await sendEmail({
       to: adminEmail,
@@ -32,27 +54,6 @@ export async function POST(req: Request) {
         </div>
       `
     });
-
-    // 3. Sauvegarde dans Supabase (optionnel - désactivé si on ne veut plus de doublons mais l'utilisateur veut garder supabase)
-    // On le remet puisque l'utilisateur veut "garder supabase"
-    if (supabase) {
-      try {
-        await supabase.from('contact_requests').insert([{
-          full_name: fullName,
-          email,
-          whatsapp,
-          organization,
-          subject,
-          message,
-          created_at: new Date().toISOString()
-        }]);
-      } catch (dbError) {
-        console.error('Erreur Supabase Contact:', dbError);
-        // On ne bloque pas la réponse si c'est juste l'insertion qui échoue
-      }
-    } else {
-      console.warn('Supabase insertion skipped: Client not initialized');
-    }
 
     // 4. Email de confirmation à l'utilisateur
     await sendEmail({

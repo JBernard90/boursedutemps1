@@ -4,11 +4,10 @@ import React, { useState, useEffect } from 'react';
 import PageLayout from '@/components/PageLayout';
 import Home from '@/components/pages-old/Home';
 import { BlogPost, Testimonial } from '@/types';
-import { subscribeToCollection } from '@/lib/api-client';
+import { onSnapshot, collection, db, query, orderBy } from '@/api';
 import { useRouter } from 'next/navigation';
 
 export default function HomePage() {
-  const [mounted, setMounted] = useState(false);
   // Force re-render to clear stale chunks
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
@@ -23,17 +22,16 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    setMounted(true);
     // Fetch stats (mocked for now or from DB if implemented)
     const storedVisitors = localStorage.getItem('bdt_visitors');
     const visitorCount = storedVisitors ? parseInt(storedVisitors) : 0;
     
-    const unsubBlogs = subscribeToCollection('blogs', (data) => {
-      setBlogs(data as BlogPost[]);
+    const unsubBlogs = onSnapshot(query(collection(db, 'blogs'), orderBy('createdAt', 'desc')), (snapshot) => {
+      setBlogs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPost)));
     });
 
-    const unsubTestimonials = subscribeToCollection('testimonials', (data) => {
-      setTestimonials(data as Testimonial[]);
+    const unsubTestimonials = onSnapshot(query(collection(db, 'testimonials'), orderBy('createdAt', 'desc')), (snapshot) => {
+      setTestimonials(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Testimonial)));
     });
 
     // For other stats, we'd need more snapshots or a dedicated API
@@ -44,14 +42,6 @@ export default function HomePage() {
       unsubTestimonials();
     };
   }, []);
-
-  if (!mounted) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
 
   return (
     <PageLayout>

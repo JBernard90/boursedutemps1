@@ -4,18 +4,16 @@ import React, { useState, useEffect } from 'react';
 import PageLayout from '@/components/PageLayout';
 import ServicesPage from '@/components/pages-old/ServicesPage';
 import { Service } from '@/types';
-import { subscribeToCollection, updateRecord, createTimestamp } from '@/lib/api-client';
+import { onSnapshot, collection, db, query, orderBy, updateDoc, doc, serverTimestamp, addDoc } from '@/api';
 import { useUser } from '@/components/UserProvider';
 
 export default function ServicesRoute() {
-  const [mounted, setMounted] = useState(false);
   const { user } = useUser();
   const [services, setServices] = useState<Service[]>([]);
 
   useEffect(() => {
-    setMounted(true);
-    const unsub = subscribeToCollection('services', (data) => {
-      setServices(data as Service[]);
+    const unsub = onSnapshot(query(collection(db, 'services'), orderBy('createdAt', 'desc')), (snapshot) => {
+      setServices(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Service)));
     });
     return () => unsub();
   }, []);
@@ -24,13 +22,13 @@ export default function ServicesRoute() {
     const collectionName = type === 'service' ? 'services' : 'requests';
     const updateData: any = { 
       status: newStatus,
-      updatedAt: createTimestamp()
+      updatedAt: serverTimestamp()
     };
     if (newStatus === 'accepted' && partnerId) {
       updateData.acceptedBy = partnerId;
-      updateData.acceptedAt = createTimestamp();
+      updateData.acceptedAt = serverTimestamp();
     }
-    await updateRecord(`${collectionName}/${id}`, updateData);
+    await updateDoc(doc(db, collectionName, id), updateData);
   };
 
   const handleTransaction = async (item: Service, negotiatedAmount: number) => {
@@ -39,8 +37,6 @@ export default function ServicesRoute() {
     // For brevity, I'll assume the logic is moved to a shared utility or kept here
     alert(`Transaction de ${negotiatedAmount} crédits pour ${item.title}`);
   };
-
-  if (!mounted) return null;
 
   return (
     <PageLayout>

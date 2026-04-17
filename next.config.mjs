@@ -1,7 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  transpilePackages: ["framer-motion", "motion"],
+  experimental: {
+    serverExternalPackages: ['pg', 'bcryptjs', 'jsonwebtoken'],
+  },
   images: {
     remotePatterns: [
       {

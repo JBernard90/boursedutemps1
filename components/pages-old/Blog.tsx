@@ -3,7 +3,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import { BlogPost, User, MediaItem, BlogComment } from '@/types';
+import { BlogPost, User, MediaItem, BlogComment } from '../../types';
 import { Edit2, Trash2, MessageCircle, Heart, Share2, ExternalLink } from 'lucide-react';
 import { db, doc, updateDoc, deleteDoc, addDoc, collection } from '../../api';
 

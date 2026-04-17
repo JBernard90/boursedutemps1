@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, Notification } from "@/types";
 import { supabase } from "@/lib/supabaseClient";
-import { subscribeToCollection, filterBy, sortBy } from "@/lib/api-client";
+import { onSnapshot, collection, db, query, where, orderBy } from "@/api";
 import { registerServiceWorker, subscribeUserToPush } from "@/lib/push";
 
 interface UserContextType {
@@ -21,7 +21,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isAuthReady, setIsAuthReady] = useState(false);
 
-  // 🔵 Auth Listener (Supabase)
+  // 🔵 Supabase Auth Listener
   useEffect(() => {
     if (!supabase) {
       console.warn("Supabase client is not initialized. Please check your environment variables.");
@@ -29,51 +29,48 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // 🔵 Check initial session
-    if (supabase) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.access_token) {
           localStorage.setItem("token", session.access_token);
+
+          const res = await fetch("/api/auth/me", {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          });
+
+          const data = await res.json();
+          if (!data.error) setUser(data);
+        } else {
+          localStorage.removeItem("token");
+          setUser(null);
         }
-      });
 
-      const { data: authListener } = supabase.auth.onAuthStateChange(
-        async (event, session) => {
-          if (session?.access_token) {
-            localStorage.setItem("token", session.access_token);
+        setIsAuthReady(true);
+      }
+    );
 
-            const res = await fetch("/api/auth/me", {
-              headers: { Authorization: `Bearer ${session.access_token}` },
-            });
-
-            const data = await res.json();
-            if (!data.error) setUser(data);
-          } else {
-            localStorage.removeItem("token");
-            setUser(null);
-          }
-
-          setIsAuthReady(true);
-        }
-      );
-
-      return () => {
-        authListener?.subscription.unsubscribe();
-      };
-    } else {
-      setIsAuthReady(true);
-    }
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
   }, []);
 
-  // 🔵 Real-time Notifications Listener
+  // 🔵 Notifications Firestore Listener
   useEffect(() => {
     if (user) {
-      const unsub = subscribeToCollection('notifications', (data) => {
-        setNotifications(data as Notification[]);
-      }, [
-        filterBy("userId", "==", user.uid),
-        sortBy("createdAt", "desc")
-      ]);
+      const unsub = onSnapshot(
+        query(
+          collection(db, "notifications"),
+          where("userId", "==", user.uid),
+          orderBy("createdAt", "desc")
+        ),
+        (snapshot) => {
+          setNotifications(
+            snapshot.docs.map(
+              (doc) => ({ id: doc.id, ...doc.data() } as Notification)
+            )
+          );
+        }
+      );
 
       registerServiceWorker().then(() => {
         subscribeUserToPush();
