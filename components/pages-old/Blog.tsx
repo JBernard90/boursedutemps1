@@ -247,7 +247,7 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
                 </div>
                 {user && (user.uid === blog.authorId || user.role === 'admin') && (
                   <div className="flex gap-2">
-                    <button onClick={() => { setEditingPost(blog); setNewTitle(blog.title); setNewContent(blog.content); setNewCategory(blog.category); if (blog.media.length > 0) { setMediaData(blog.media[0].url); setMediaType(blog.media[0].type); } setShowAdd(true); }} className="p-2 text-slate-400 hover:text-blue-600 transition">
+                    <button onClick={() => { setEditingPost(blog); setNewTitle(blog.title); setNewContent(blog.content ?? ''); setNewCategory(blog.category ?? ''); if (blog.media.length > 0) { setMediaData(blog.media[0].url); setMediaType(blog.media[0].type); } setShowAdd(true); }} className="p-2 text-slate-400 hover:text-blue-600 transition">
                       <Edit2 size={18} />
                     </button>
                     <button onClick={() => handleDelete(blog.id)} className="p-2 text-slate-400 hover:text-red-600 transition">

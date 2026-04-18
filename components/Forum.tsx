@@ -45,7 +45,7 @@ const Forum: React.FC<ForumProps> = ({ user, topics, onAdd }) => {
     } else {
       const res = await fetch('/api/forumTopics', { method: 'POST', headers: authHeader, body: JSON.stringify({ ...postData, likes: [], shares: 0, comments: [], createdAt: new Date().toISOString() }) });
       const data = await res.json();
-      onAdd({ ...postData, id: data.id, likes: [],  dislikes: [], shares: 0,   reposts: 0, comments: [], createdAt: new Date().toISOString() } as ForumTopic);
+      onAdd({ ...postData, id: data.id, likes: [], shares: 0, comments: [], createdAt: new Date().toISOString() } as ForumTopic);
     }
     setShowAdd(false); setEditingPost(null); setNewTitle(''); setNewMsg(''); setExternalLink('');
   };
@@ -121,7 +121,7 @@ const Forum: React.FC<ForumProps> = ({ user, topics, onAdd }) => {
           <div key={topic.id} className="bg-white p-8 rounded-[2rem] border border-slate-100 hover:border-blue-200 transition group relative">
             {user && (user.uid === topic.authorId || user.role === 'admin') && (
               <div className="absolute top-4 right-4 flex gap-2">
-                <button onClick={() => { setEditingPost(topic); setNewTitle(topic.title); setNewMsg(topic.message); setExternalLink(topic.externalLink || ''); setShowAdd(true); }} className="p-2 text-slate-400 hover:text-blue-600 transition bg-white/80 backdrop-blur-sm rounded-full"><Edit2 size={16} /></button>
+                <button onClick={() => { setEditingPost(topic); setNewTitle(topic.title); setNewMsg(topic.message ?? ''); setExternalLink(topic.externalLink || ''); setShowAdd(true); }} className="p-2 text-slate-400 hover:text-blue-600 transition bg-white/80 backdrop-blur-sm rounded-full"><Edit2 size={16} /></button>
                 <button onClick={() => handleDelete(topic.id)} className="p-2 text-slate-400 hover:text-red-600 transition bg-white/80 backdrop-blur-sm rounded-full"><Trash2 size={16} /></button>
               </div>
             )}

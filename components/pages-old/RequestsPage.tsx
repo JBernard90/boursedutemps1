@@ -85,7 +85,7 @@ const RequestsPage: React.FC<RequestsPageProps> = ({ user, requests, onUpdate, o
 
   const filtered = requests.filter(r => 
     r.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    r.category.toLowerCase().includes(searchTerm.toLowerCase())
+    (r.category ?? '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -246,7 +246,7 @@ const RequestsPage: React.FC<RequestsPageProps> = ({ user, requests, onUpdate, o
                 <div className="flex gap-2">
                   {user && user.uid === r.userId ? (
                     <>
-                      <button onClick={() => { setEditingRequest(r); setNewTitle(r.title); setNewDesc(r.description); setNewOffer(r.creditOffer); setNewCat(r.category); setShowAdd(true); }} className="p-2 text-slate-400 hover:text-blue-600 transition">
+                      <button onClick={() => { setEditingRequest(r); setNewTitle(r.title); setNewDesc(r.description); setNewOffer(r.creditOffer); setNewCat(r.category ?? 'Éducation'); setShowAdd(true); }} className="p-2 text-slate-400 hover:text-blue-600 transition">
                         <Edit2 size={16} />
                       </button>
                       <button onClick={() => handleDelete(r.id)} className="p-2 text-slate-400 hover:text-red-600 transition">
