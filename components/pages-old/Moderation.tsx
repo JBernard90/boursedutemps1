@@ -78,7 +78,7 @@ const Moderation: React.FC<ModerationProps> = ({ users, onUpdateUsers, services,
                   <td className="px-8 py-4 text-xs text-slate-500">{u.email}</td>
                   <td className="px-8 py-4">
                     <span className={`px-2 py-1 rounded-lg text-[10px] font-bold ${u.role === 'admin' ? 'bg-red-50 text-red-500' : u.role === 'moderator' ? 'bg-purple-50 text-purple-500' : 'bg-slate-50 text-slate-500'}`}>
-                      {u.role.toUpperCase()}
+                      {(u.role ?? 'user').toUpperCase()}
                     </span>
                   </td>
                   <td className="px-8 py-4">
