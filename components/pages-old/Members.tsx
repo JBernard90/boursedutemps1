@@ -103,7 +103,7 @@ const Members: React.FC<MembersProps> = ({ users, onViewProfile, onContact }) =>
             <div className="w-24 h-24 rounded-full overflow-hidden mx-auto mb-4 border-4 border-slate-50 group-hover:border-blue-100 transition relative">
               {u.avatar ? (
                 <Image 
-                  src={u.avatar} 
+                  src={u.avatar ?? ''} 
                   alt={`${u.firstName}`} 
                   fill 
                   className="object-cover" 

@@ -100,13 +100,13 @@ const Profile: React.FC<ProfileProps> = ({
         <div className="h-48 bg-slate-900 p-8 flex items-end justify-between relative group">
           {isEditing ? (
             editedUser.coverPhoto ? (
-              <Image src={editedUser.coverPhoto} fill className="absolute inset-0 object-cover opacity-80" alt="Cover" unoptimized={editedUser.coverPhoto.startsWith('data:')} />
+              <Image src={editedUser.coverPhoto ?? ''} fill className="absolute inset-0 object-cover opacity-80" alt="Cover" unoptimized={(editedUser.coverPhoto ?? '').startsWith('data:')} />
             ) : (
               <div className="absolute inset-0 bg-gradient-to-r from-blue-900 to-indigo-900 opacity-80"></div>
             )
           ) : (
             user.coverPhoto ? (
-              <Image src={user.coverPhoto} fill className="absolute inset-0 object-cover opacity-80" alt="Cover" unoptimized={user.coverPhoto.startsWith('data:')} />
+              <Image src={user.coverPhoto ?? ''} fill className="absolute inset-0 object-cover opacity-80" alt="Cover" unoptimized={(user.coverPhoto ?? '').startsWith('data:')} />
             ) : (
               <div className="absolute inset-0 bg-gradient-to-r from-blue-900 to-indigo-900 opacity-80"></div>
             )
@@ -127,7 +127,7 @@ const Profile: React.FC<ProfileProps> = ({
               <div className="w-full h-full rounded-2xl bg-slate-100 flex items-center justify-center overflow-hidden relative">
                 {user.avatar ? (
                   <Image 
-                    src={user.avatar} 
+                    src={user.avatar ?? ''} 
                     alt="Avatar" 
                     fill 
                     className="object-cover" 
@@ -443,7 +443,7 @@ const Profile: React.FC<ProfileProps> = ({
                           <div className="flex items-center gap-3">
                             <div className="relative w-10 h-10">
                               <Image 
-                                src={sender.avatar} 
+                                src={sender.avatar ?? ''} 
                                 alt="Avatar" 
                                 fill 
                                 className="rounded-full object-cover" 
@@ -477,7 +477,7 @@ const Profile: React.FC<ProfileProps> = ({
                         <div key={conn.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
                           <div className="relative w-10 h-10">
                             <Image 
-                              src={partner.avatar} 
+                              src={partner.avatar ?? ''} 
                               alt="Avatar" 
                               fill 
                               className="rounded-full object-cover" 
@@ -512,7 +512,7 @@ const Profile: React.FC<ProfileProps> = ({
                       >
                         <div className="relative w-10 h-10">
                           <Image 
-                            src={partner.avatar} 
+                            src={partner.avatar ?? ''} 
                             alt="Avatar" 
                             fill 
                             className="rounded-full object-cover" 
