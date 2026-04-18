@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import PageLayout from '@/components/PageLayout';
-import Forum from '@/components/pages-old/Forum';
+import Forum from '@/components/Forum';
 import { ForumTopic } from '@/types';
 import { onSnapshot, collection, db, query, orderBy } from '@/api';
 import { useUser } from '@/components/UserProvider';
