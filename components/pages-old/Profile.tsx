@@ -262,7 +262,7 @@ const Profile: React.FC<ProfileProps> = ({
                       <section>
                         <h3 className="font-heading text-lg font-bold text-slate-800 mb-4">Je propose</h3>
                         <div className="flex flex-wrap gap-2">
-                          {user.offeredSkills?.length > 0 ? user.offeredSkills.map((s, i) => (
+                          {(user.offeredSkills?.length ?? 0) > 0 ? user.offeredSkills!.map((s, i) => (
                             <span key={i} className="bg-green-50 text-green-600 px-4 py-1.5 rounded-xl text-xs font-bold border border-green-100">{s}</span>
                           )) : <span className="text-slate-400 text-sm italic">Aucune compétence listée</span>}
                         </div>
@@ -270,7 +270,7 @@ const Profile: React.FC<ProfileProps> = ({
                       <section>
                         <h3 className="font-heading text-lg font-bold text-slate-800 mb-4">Je recherche</h3>
                         <div className="flex flex-wrap gap-2">
-                          {user.requestedSkills?.length > 0 ? user.requestedSkills.map((s, i) => (
+                          {(user.requestedSkills?.length ?? 0) > 0 ? user.requestedSkills!.map((s, i) => (
                             <span key={i} className="bg-orange-50 text-orange-600 px-4 py-1.5 rounded-xl text-xs font-bold border border-orange-100">{s}</span>
                           )) : <span className="text-slate-400 text-sm italic">Aucune demande listée</span>}
                         </div>
