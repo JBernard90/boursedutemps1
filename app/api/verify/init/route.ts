@@ -11,21 +11,19 @@ export async function POST(req: Request) {
   }
 
   const code = crypto.randomInt(100000, 999999).toString();
-  
+
   try {
-    // Supprimer anciens codes
     await query('DELETE FROM otps WHERE identifier = $1', [email]);
-    
-    // ✅ Syntaxe PostgreSQL correcte - interval hardcodé, pas paramétré
+
+    // FIX: INTERVAL ne peut pas être un paramètre $N en PostgreSQL
     await query(
       "INSERT INTO otps (identifier, code, expires_at) VALUES ($1, $2, NOW() + INTERVAL '10 minutes')",
       [email, code]
     );
 
-    // Envoyer email
     await sendOtpEmail(email, code);
     console.log(`📧 OTP généré pour ${email}: ${code}`);
-    
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error:', error);
