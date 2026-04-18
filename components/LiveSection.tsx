@@ -78,7 +78,14 @@ export default function LiveSection({ user }: LiveSectionProps) {
           hostAvatar: user.avatar,
         }),
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        let errMsg = 'Erreur lors de la création du live';
+        try {
+          const errData = await res.json();
+          errMsg = errData.error || errMsg;
+        } catch {}
+        throw new Error(errMsg);
+      }
       const session = await res.json();
       setSessions(prev => [session, ...prev]);
       setActiveSession(session);
