@@ -107,7 +107,7 @@ const Members: React.FC<MembersProps> = ({ users, onViewProfile, onContact }) =>
                   alt={`${u.firstName}`} 
                   fill 
                   className="object-cover" 
-                  unoptimized={u.avatar.startsWith('data:')} 
+                  unoptimized={(u.avatar ?? '').startsWith('data:')} 
                   sizes="96px"
                   quality={80}
                 />

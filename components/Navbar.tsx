@@ -213,7 +213,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, user, notifications, onNav
                         alt="User avatar" 
                         fill 
                         className="object-cover" 
-                        unoptimized={user.avatar.startsWith('data:')}
+                        unoptimized={(user.avatar ?? '').startsWith('data:')}
                         sizes="28px"
                         quality={80}
                       />

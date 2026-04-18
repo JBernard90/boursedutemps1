@@ -131,7 +131,7 @@ const Profile: React.FC<ProfileProps> = ({
                     alt="Avatar" 
                     fill 
                     className="object-cover" 
-                    unoptimized={user.avatar.startsWith('data:')} 
+                    unoptimized={(user.avatar ?? '').startsWith('data:')} 
                     sizes="128px"
                     priority
                   />
@@ -447,7 +447,7 @@ const Profile: React.FC<ProfileProps> = ({
                                 alt="Avatar" 
                                 fill 
                                 className="rounded-full object-cover" 
-                                unoptimized={sender.avatar.startsWith('data:')} 
+                                unoptimized={(sender.avatar ?? '').startsWith('data:')} 
                                 sizes="40px"
                               />
                             </div>
@@ -481,7 +481,7 @@ const Profile: React.FC<ProfileProps> = ({
                               alt="Avatar" 
                               fill 
                               className="rounded-full object-cover" 
-                              unoptimized={partner.avatar.startsWith('data:')} 
+                              unoptimized={(partner.avatar ?? '').startsWith('data:')} 
                               sizes="40px"
                             />
                           </div>
@@ -516,7 +516,7 @@ const Profile: React.FC<ProfileProps> = ({
                             alt="Avatar" 
                             fill 
                             className="rounded-full object-cover" 
-                            unoptimized={partner.avatar.startsWith('data:')} 
+                            unoptimized={(partner.avatar ?? '').startsWith('data:')} 
                             sizes="40px"
                           />
                         </div>
