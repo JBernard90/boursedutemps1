@@ -246,6 +246,19 @@ export const initDB = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
+      CREATE TABLE IF NOT EXISTS live_sessions (
+        id SERIAL PRIMARY KEY,
+        room_name VARCHAR(255) UNIQUE NOT NULL,
+        room_url VARCHAR(500) NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        type VARCHAR(50) DEFAULT 'webinaire',
+        host_id VARCHAR(255) REFERENCES users(uid),
+        host_name VARCHAR(255),
+        host_avatar VARCHAR(255),
+        participant_count INT DEFAULT 0,
+        started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
       CREATE TABLE IF NOT EXISTS messages (
         id SERIAL PRIMARY KEY,
         sender_id VARCHAR(255) REFERENCES users(uid),

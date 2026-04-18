@@ -4,6 +4,8 @@ import React, { useState, useRef } from 'react';
 import Image from 'next/image';
 import { User, ForumTopic, MediaItem } from '../types';
 import { Edit2, Trash2, MessageCircle, Heart, Share2, Video } from 'lucide-react';
+import RichTextEditor from './RichTextEditor';
+import LiveSection from './LiveSection';
 
 interface ForumProps {
   user: User | null;
@@ -19,16 +21,10 @@ const Forum: React.FC<ForumProps> = ({ user, topics, onAdd }) => {
   const [externalLink, setExternalLink] = useState('');
   const [activeCommentPost, setActiveCommentPost] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
-  const [liveRoomName, setLiveRoomName] = useState<string | null>(null);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const authHeader = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
 
-  const startLive = () => {
-    if (!user) return alert('Connectez-vous pour démarrer un live');
-    const roomName = `bdt-${user.uid}-${Date.now()}`;
-    setLiveRoomName(roomName);
-  };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Supprimer définitivement ce sujet ?")) return;
@@ -106,7 +102,7 @@ const Forum: React.FC<ForumProps> = ({ user, topics, onAdd }) => {
           <h2 className="font-heading text-xl font-bold mb-6">{editingPost ? 'Modifier le sujet' : 'Lancer une discussion'}</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <input required placeholder="Titre du sujet" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500 transition" value={newTitle} onChange={e => setNewTitle(e.target.value)} />
-            <textarea required placeholder="Votre message..." className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500 transition min-h-[150px]" value={newMsg} onChange={e => setNewMsg(e.target.value)} />
+            <RichTextEditor value={newMsg} onChange={setNewMsg} placeholder="Votre message..." maxLength={6000} />
             <input type="url" placeholder="Lien externe (optionnel)" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500 transition" value={externalLink} onChange={e => setExternalLink(e.target.value)} />
             <div className="flex gap-4 pt-4">
               <button type="submit" className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold">{editingPost ? 'Mettre à jour' : 'Publier'}</button>
@@ -115,6 +111,8 @@ const Forum: React.FC<ForumProps> = ({ user, topics, onAdd }) => {
           </form>
         </div>
       )}
+
+      <LiveSection user={user} />
 
       <div className="space-y-6">
         {topics.length > 0 ? topics.map(topic => (
