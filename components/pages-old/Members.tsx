@@ -24,7 +24,7 @@ const Members: React.FC<MembersProps> = ({ users, onViewProfile, onContact }) =>
     const matchesSearch = 
       u.firstName.toLowerCase().includes(filter.toLowerCase()) ||
       u.lastName.toLowerCase().includes(filter.toLowerCase()) ||
-      u.department.toLowerCase().includes(filter.toLowerCase()) ||
+      (u.department ?? '').toLowerCase().includes(filter.toLowerCase()) ||
       (u.offeredSkills && u.offeredSkills.some(s => s.toLowerCase().includes(filter.toLowerCase()))) ||
       (u.requestedSkills && u.requestedSkills.some(s => s.toLowerCase().includes(filter.toLowerCase())));
     
