@@ -5,7 +5,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
-import { Search, Bell, Menu, X, Clock } from 'lucide-react';
+import { Search, Bell, Menu, X, Clock, LogOut } from 'lucide-react';
 import { Page, User, Notification } from '../types';
 
 interface NavbarProps {
@@ -222,6 +222,13 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, user, notifications, onNav
                     )}
                   </div>
                 </Link>
+                <button
+                  onClick={onLogout}
+                  title="Se déconnecter"
+                  className="p-2 rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all duration-200"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
               ) : (
                 <button 
                   onClick={onLogin}
@@ -260,14 +267,23 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, user, notifications, onNav
           ))}
           <div className="pt-4 mt-4 border-t border-slate-100 space-y-3">
             {user ? (
-              <Link 
-                href="/profile"
-                onClick={() => setIsOpen(false)}
-                className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-100 flex items-center justify-center gap-2"
-              >
-                <Clock className="w-5 h-5" />
-                Mon Profil ({user.credits} crédits)
-              </Link>
+              <>
+                <Link 
+                  href="/profile"
+                  onClick={() => setIsOpen(false)}
+                  className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-100 flex items-center justify-center gap-2"
+                >
+                  <Clock className="w-5 h-5" />
+                  Mon Profil ({user.credits} crédits)
+                </Link>
+                <button
+                  onClick={() => { onLogout(); setIsOpen(false); }}
+                  className="w-full flex items-center justify-center gap-2 border border-red-200 text-red-500 py-3 rounded-xl font-bold hover:bg-red-50 transition"
+                >
+                  <LogOut className="w-5 h-5" />
+                  Se déconnecter
+                </button>
+              </>
             ) : (
               <button 
                 onClick={() => { onLogin(); setIsOpen(false); }}
