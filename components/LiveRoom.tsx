@@ -47,7 +47,7 @@ function ParticipantTile({ sessionId, isLocal }: { sessionId: string; isLocal: b
       {!isVideoOff ? (
         <DailyVideo
           sessionId={sessionId}
-          type={isLocal ? 'local' : 'remote'}
+          type="video"
           className="w-full h-full object-cover"
           style={{ transform: isLocal ? 'scaleX(-1)' : 'none' }}
         />
