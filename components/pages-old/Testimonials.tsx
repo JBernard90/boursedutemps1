@@ -187,7 +187,7 @@ const Testimonials: React.FC<TestimonialsProps> = ({ testimonials, user, onAuthC
             
             {user && (user.uid === t.authorId || user.role === 'admin') && (
               <div className="absolute top-4 right-4 flex gap-2">
-                <button onClick={() => { setEditingPost(t); setNewTitle(t.title); setNewContent(t.content ?? ''); setNewRating(t.rating); if (t.media && t.media.length > 0) { setMediaData(t.media[0].url); setMediaType(t.media[0].type); } setShowAdd(true); }} className="p-2 text-slate-400 hover:text-blue-600 transition bg-white/80 backdrop-blur-sm rounded-full">
+                <button onClick={() => { setEditingPost(t); setNewTitle(t.title ?? ''); setNewContent(t.content ?? ''); setNewRating(t.rating); if (t.media && t.media.length > 0) { setMediaData(t.media[0].url); setMediaType(t.media[0].type); } setShowAdd(true); }} className="p-2 text-slate-400 hover:text-blue-600 transition bg-white/80 backdrop-blur-sm rounded-full">
                   <Edit2 size={16} />
                 </button>
                 <button onClick={() => handleDelete(t.id)} className="p-2 text-slate-400 hover:text-red-600 transition bg-white/80 backdrop-blur-sm rounded-full">

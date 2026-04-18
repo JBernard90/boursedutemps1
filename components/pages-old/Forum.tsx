@@ -179,7 +179,7 @@ const Forum: React.FC<ForumProps> = ({ user, topics }) => {
             
             {user && (user.uid === topic.authorId || user.role === 'admin') && (
               <div className="absolute top-4 right-4 flex gap-2">
-                <button onClick={() => { setEditingPost(topic); setNewTitle(topic.title); setNewMsg(topic.message ?? ''); setExternalLink(topic.externalLink || ''); if (topic.media && topic.media.length > 0) { setMediaData(topic.media[0].url); setMediaType(topic.media[0].type); } setShowAdd(true); }} className="p-2 text-slate-400 hover:text-blue-600 transition bg-white/80 backdrop-blur-sm rounded-full">
+                <button onClick={() => { setEditingPost(topic); setNewTitle(topic.title ?? ''); setNewMsg(topic.message ?? ''); setExternalLink(topic.externalLink || ''); if (topic.media && topic.media.length > 0) { setMediaData(topic.media[0].url); setMediaType(topic.media[0].type); } setShowAdd(true); }} className="p-2 text-slate-400 hover:text-blue-600 transition bg-white/80 backdrop-blur-sm rounded-full">
                   <Edit2 size={16} />
                 </button>
                 <button onClick={() => handleDelete(topic.id)} className="p-2 text-slate-400 hover:text-red-600 transition bg-white/80 backdrop-blur-sm rounded-full">
