@@ -68,9 +68,10 @@ export async function POST(req: Request) {
     });
 
     if (!dailyRes.ok) {
-      const err = await dailyRes.json();
-      console.error('Daily.co error:', err);
-      return NextResponse.json({ error: 'Impossible de créer la room Daily.co' }, { status: 500 });
+      let errDetail = '';
+      try { errDetail = JSON.stringify(await dailyRes.json()); } catch {}
+      console.error('Daily.co error:', dailyRes.status, errDetail);
+      return NextResponse.json({ error: `Daily.co: ${dailyRes.status} - ${errDetail}` }, { status: 500 });
     }
 
     const dailyData = await dailyRes.json();
@@ -95,9 +96,9 @@ export async function POST(req: Request) {
       participantCount: 0,
       startedAt: new Date().toISOString(),
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating live session:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: error?.message || 'Internal Server Error' }, { status: 500 });
   }
 }
 
