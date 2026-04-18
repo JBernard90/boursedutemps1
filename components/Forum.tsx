@@ -3,7 +3,7 @@
 import React, { useState, useRef } from 'react';
 import Image from 'next/image';
 import { User, ForumTopic, MediaItem } from '../types';
-import { Edit2, Trash2, MessageCircle, Heart, Share2, Video } from 'lucide-react';
+import { Edit2, Trash2, MessageCircle, Heart, Share2 } from 'lucide-react';
 import RichTextEditor from './RichTextEditor';
 import LiveSection from './LiveSection';
 
@@ -70,27 +70,12 @@ const Forum: React.FC<ForumProps> = ({ user, topics, onAdd }) => {
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-12">
-      {/* Live Jitsi */}
-      {liveRoomName && (
-        <div className="fixed inset-0 z-[200] bg-slate-900 flex flex-col">
-          <div className="flex justify-between items-center px-6 py-4 bg-slate-800">
-            <span className="text-white font-bold flex items-center gap-2"><span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span> Live en cours</span>
-            <button onClick={() => setLiveRoomName(null)} className="text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl font-bold text-sm transition">Terminer le live</button>
-          </div>
-          <iframe
-            src={`https://8x8.vc/boursedutemps/${liveRoomName}`}
-            allow="camera; microphone; fullscreen; display-capture"
-            className="flex-grow w-full border-0"
-          />
-        </div>
-      )}
+
 
       <div className="flex justify-between items-center mb-10 gap-4 flex-wrap">
         <h1 className="font-heading text-4xl font-bold text-slate-900">Forum des échanges</h1>
         <div className="flex gap-3">
-          <button onClick={startLive} className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-xl font-bold transition shadow-lg shadow-red-100">
-            <Video size={18} /> Live
-          </button>
+
           <button onClick={() => { if (!user) return alert('Connectez-vous pour participer'); setEditingPost(null); setNewTitle(''); setNewMsg(''); setExternalLink(''); setShowAdd(true); }} className="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-slate-800 transition">
             Nouveau Sujet
           </button>

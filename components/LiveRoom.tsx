@@ -180,6 +180,7 @@ function RoomInterior({ session, isHost, localUserName, onLeave, onEnd }: LiveRo
       .then(() => setJoined(true))
       .catch(console.error);
     return () => { daily.leave(); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [daily]);
 
   const handleLeave = useCallback(async () => {
