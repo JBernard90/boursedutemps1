@@ -3,8 +3,8 @@
 
 import React, { useState, useRef } from 'react';
 import Image from 'next/image';
-import { User, ForumTopic, MediaItem } from '../../types';
-import { db, doc, updateDoc, deleteDoc, addDoc, collection } from '../../api';
+import { User, ForumTopic, MediaItem } from '../types';
+import { db, doc, updateDoc, deleteDoc, addDoc, collection } from '../api';
 import RichTextEditor from '../RichTextEditor';
 import { Edit2, Trash2, MessageCircle, Heart, Share2 } from 'lucide-react';
 import LiveSection from '../LiveSection';
