@@ -5,6 +5,7 @@ import React, { useState, useRef } from 'react';
 import Image from 'next/image';
 import { User, ForumTopic, MediaItem } from '../../types';
 import { db, doc, updateDoc, deleteDoc, addDoc, collection } from '../../api';
+import RichTextEditor from '../RichTextEditor';
 import { Edit2, Trash2, MessageCircle, Heart, Share2 } from 'lucide-react';
 
 interface ForumProps {
@@ -139,7 +140,7 @@ const Forum: React.FC<ForumProps> = ({ user, topics }) => {
           <h2 className="font-heading text-xl font-bold mb-6">{editingPost ? 'Modifier le sujet' : 'Lancer une discussion'}</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <input required placeholder="Titre du sujet" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500 transition" value={newTitle} onChange={e => setNewTitle(e.target.value)} />
-            <textarea required placeholder="Votre message..." className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500 transition min-h-[150px]" value={newMsg} onChange={e => setNewMsg(e.target.value)} />
+            <RichTextEditor value={newMsg} onChange={setNewMsg} placeholder="Votre message..." maxLength={6000} />
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <input type="url" placeholder="Lien externe (optionnel)" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500 transition" value={externalLink} onChange={e => setExternalLink(e.target.value)} />

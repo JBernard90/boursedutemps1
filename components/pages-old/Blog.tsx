@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { BlogPost, User, MediaItem, BlogComment } from '../../types';
 import { Edit2, Trash2, MessageCircle, Heart, Share2, ExternalLink } from 'lucide-react';
 import { db, doc, updateDoc, deleteDoc, addDoc, collection } from '../../api';
+import RichTextEditor from '../RichTextEditor';
 
 interface BlogProps {
   blogs: BlogPost[];
@@ -182,7 +183,7 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
           </h2>
           <form onSubmit={handlePost} className="space-y-6">
             <input required placeholder="Titre accrocheur" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500" value={newTitle} onChange={e => setNewTitle(e.target.value)} />
-            <textarea required placeholder="Racontez votre histoire..." className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none min-h-[120px] focus:ring-2 focus:ring-blue-500" value={newContent} onChange={e => setNewContent(e.target.value)} />
+            <RichTextEditor value={newContent} onChange={setNewContent} placeholder="Racontez votre histoire..." maxLength={8000} />
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <select className="px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none" value={newCategory} onChange={e => setNewCategory(e.target.value)}>

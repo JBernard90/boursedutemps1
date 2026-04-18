@@ -5,6 +5,7 @@ import React, { useState, useRef } from 'react';
 import Image from 'next/image';
 import { Testimonial, User, MediaItem } from '../../types';
 import { db, doc, updateDoc, deleteDoc, addDoc, collection } from '../../api';
+import RichTextEditor from '../RichTextEditor';
 import { Edit2, Trash2, MessageCircle, Heart, Share2 } from 'lucide-react';
 
 interface TestimonialsProps {
@@ -142,7 +143,7 @@ const Testimonials: React.FC<TestimonialsProps> = ({ testimonials, user, onAuthC
           <h2 className="font-heading text-2xl font-bold mb-8">{editingPost ? 'Modifier le témoignage' : 'Votre Témoignage'}</h2>
           <form onSubmit={handleSubmit} className="space-y-6">
             <input required placeholder="Titre de votre histoire" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none" value={newTitle} onChange={e => setNewTitle(e.target.value)} />
-            <textarea required placeholder="Détaillez votre expérience..." className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none min-h-[150px]" value={newContent} onChange={e => setNewContent(e.target.value)} />
+            <RichTextEditor value={newContent} onChange={setNewContent} placeholder="Détaillez votre expérience..." maxLength={6000} />
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-center gap-4 px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100">
