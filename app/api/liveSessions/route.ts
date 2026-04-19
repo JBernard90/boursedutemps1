@@ -1,6 +1,32 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/db';
 import { getUserIdFromRequest } from '@/lib/auth';
+import { createClient } from '@supabase/supabase-js';
+
+async function getUidFromRequest(req: Request): Promise<string | null> {
+  // Try local JWT first
+  const localUid = getUserIdFromRequest(req);
+  if (localUid) return localUid;
+  
+  // Try Supabase JWT
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) return null;
+  const token = authHeader.split(' ')[1];
+  
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceKey) return null;
+  
+  try {
+    const admin = createClient(supabaseUrl, serviceKey);
+    const { data: { user }, error } = await admin.auth.getUser(token);
+    if (error || !user) return null;
+    // Find user in our DB by email
+    const { query } = await import('@/db');
+    const result = await query('SELECT uid FROM users WHERE email = $1', [user.email]);
+    return result.rows[0]?.uid || null;
+  } catch { return null; }
+}
 
 const DAILY_API_URL = 'https://api.daily.co/v1';
 
@@ -35,7 +61,7 @@ export async function POST(req: Request) {
   if (!DAILY_API_KEY) {
     return NextResponse.json({ error: "Cle API Daily.co non configuree. Ajoutez DAILY_API_KEY dans les variables Vercel." }, { status: 503 });
   }
-  const uid = getUserIdFromRequest(req);
+  const uid = await getUidFromRequest(req);
   if (!uid) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
 
   const { title, type, hostName, hostAvatar } = await req.json();
@@ -103,7 +129,7 @@ export async function POST(req: Request) {
 // ── DELETE : terminer la session + supprimer la room Daily.co ───────────────
 export async function DELETE(req: Request) {
   const DAILY_API_KEY = process.env.DAILY_API_KEY;
-  const uid = getUserIdFromRequest(req);
+  const uid = await getUidFromRequest(req);
   if (!uid) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
 
   const { id, roomName } = await req.json();
