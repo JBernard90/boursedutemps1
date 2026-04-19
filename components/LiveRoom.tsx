@@ -132,14 +132,6 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
       </div>
 
       <div className="flex-1 relative overflow-hidden">
-        {!joined && (
-          <div className="absolute inset-0 flex items-center justify-center z-10 bg-slate-950">
-            <div className="text-center">
-              <div className="w-12 h-12 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-slate-400 text-sm">Connexion à la salle...</p>
-            </div>
-          </div>
-        )}
         <div ref={containerRef} className="w-full h-full" />
         {showParticipants && (
           <div className="absolute right-0 top-0 h-full w-64 bg-slate-900 border-l border-slate-700 p-4 z-20">
