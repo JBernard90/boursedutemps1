@@ -99,7 +99,7 @@ function Controls({ isHost, onLeave, onEnd, joined }: { isHost: boolean; onLeave
 
   const toggleScreen = useCallback(() => {
     if (isSharingScreen) stopScreenShare();
-    else startScreenShare().catch(console.error);
+    else { try { startScreenShare(); } catch (e) { console.error(e); } }
   }, [isSharingScreen, startScreenShare, stopScreenShare]);
 
   return (
