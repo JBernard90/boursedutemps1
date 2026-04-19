@@ -63,7 +63,8 @@ export async function POST(req: Request) {
   if (!title) return NextResponse.json({ error: 'Titre requis' }, { status: 400 });
 
   const roomName = `bdt-${uid.slice(0, 8)}-${Date.now()}`;
-  const roomUrl = `https://meet.jit.si/${roomName}`;
+  const appId = process.env.JAAS_APP_ID || 'vpaas-magic-cookie-017a1705a9c54e49afac8d78f0522e2a';
+    const roomUrl = `https://8x8.vc/${appId}/${roomName}`;
 
   try {
     const result = await query(
