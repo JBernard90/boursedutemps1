@@ -175,11 +175,14 @@ function RoomInterior({ session, isHost, localUserName, onLeave, onEnd }: LiveRo
   const [showParticipants, setShowParticipants] = useState(false);
 
   useEffect(() => {
-    if (!daily || joined) return;
-    daily.join({ url: session.roomUrl, userName: localUserName })
-      .then(() => setJoined(true))
-      .catch(console.error);
-    return () => { daily.leave(); };
+    if (!daily) return;
+    // DailyProvider with url auto-joins — just listen for join event
+    const handleJoined = () => setJoined(true);
+    daily.on('joined-meeting', handleJoined);
+    return () => {
+      daily.off('joined-meeting', handleJoined);
+      daily.leave().catch(() => {});
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [daily]);
 
@@ -280,7 +283,7 @@ function RoomInterior({ session, isHost, localUserName, onLeave, onEnd }: LiveRo
 // ── Export principal ─────────────────────────────────────────────────────────
 export default function LiveRoom(props: LiveRoomProps) {
   return (
-    <DailyProvider>
+    <DailyProvider url={props.session.roomUrl} userName={props.localUserName}>
       <RoomInterior {...props} />
     </DailyProvider>
   );
