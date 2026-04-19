@@ -55,14 +55,12 @@ export async function POST(req: Request) {
         name: roomName,
         privacy: 'public',
         properties: {
-          max_participants: 100,
           enable_chat: true,
           enable_screenshare: true,
-          enable_recording: 'local',
           start_video_off: false,
           start_audio_off: false,
           lang: 'fr',
-          exp: Math.floor(Date.now() / 1000) + 60 * 60 * 4, // expire dans 4h
+          exp: Math.floor(Date.now() / 1000) + 60 * 60 * 4,
         },
       }),
     });
