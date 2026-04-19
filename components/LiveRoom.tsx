@@ -179,11 +179,13 @@ function RoomInterior({ session, isHost, localUserName, onLeave, onEnd }: LiveRo
   const joined = meetingState === 'joined-meeting';
 
   useEffect(() => {
+    if (!daily) return;
+    daily.join({ url: session.roomUrl, userName: localUserName }).catch(console.error);
     return () => {
       daily?.leave().catch(() => {});
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [daily]);
 
   const handleLeave = useCallback(async () => {
     await daily?.leave();
