@@ -57,7 +57,7 @@ export async function GET() {
 
 // ── POST : créer une room Daily.co + enregistrer en DB ──────────────────────
 export async function POST(req: Request) {
-  const DAILY_API_KEY = '896e3bfef9929747b50825f9a62a94e15fe981ff612f1cc7a8e8fc18a75df334';
+  const DAILY_API_KEY = '5b49d4a6406d81184ea674f718edf0f33439653285e212184fcef2876b1492be';
   const uid = await getUidFromRequest(req);
   console.log('[liveSessions POST] uid:', uid, 'key prefix:', DAILY_API_KEY.slice(0,8));
   if (!uid) return NextResponse.json({ error: 'Non autorisé - uid null' }, { status: 401 });
