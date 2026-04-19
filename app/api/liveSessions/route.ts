@@ -31,7 +31,7 @@ export async function GET() {
 
 // ── POST : créer une room Daily.co + enregistrer en DB ──────────────────────
 export async function POST(req: Request) {
-  const DAILY_API_KEY = process.env.DAILY_API_KEY;
+  const DAILY_API_KEY = process.env.DAILY_API_KEY || '896e3bfef9929747b50825f9a62a94e15fe981ff612f1cc7a8e8fc18a75df334';
   if (!DAILY_API_KEY) {
     return NextResponse.json({ error: "Cle API Daily.co non configuree. Ajoutez DAILY_API_KEY dans les variables Vercel." }, { status: 503 });
   }
