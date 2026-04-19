@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { query } from '@/db';
 import { getUserIdFromRequest } from '@/lib/auth';
 
-const DAILY_API_KEY = process.env.DAILY_API_KEY;
 const DAILY_API_URL = 'https://api.daily.co/v1';
 
 // ── GET : toutes les sessions actives ───────────────────────────────────────
@@ -32,8 +31,9 @@ export async function GET() {
 
 // ── POST : créer une room Daily.co + enregistrer en DB ──────────────────────
 export async function POST(req: Request) {
+  const DAILY_API_KEY = process.env.DAILY_API_KEY;
   if (!DAILY_API_KEY) {
-    return NextResponse.json({ error: "Cle API Daily.co non configuree. Ajoutez DAILY_API_KEY dans vos variables d'environnement Vercel." }, { status: 503 });
+    return NextResponse.json({ error: "Cle API Daily.co non configuree. Ajoutez DAILY_API_KEY dans les variables Vercel." }, { status: 503 });
   }
   const uid = getUserIdFromRequest(req);
   if (!uid) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
@@ -104,6 +104,7 @@ export async function POST(req: Request) {
 
 // ── DELETE : terminer la session + supprimer la room Daily.co ───────────────
 export async function DELETE(req: Request) {
+  const DAILY_API_KEY = process.env.DAILY_API_KEY;
   const uid = getUserIdFromRequest(req);
   if (!uid) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
 
