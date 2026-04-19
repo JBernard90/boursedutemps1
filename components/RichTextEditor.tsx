@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { useEditor, EditorContent, BubbleMenu, FloatingMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -90,10 +90,32 @@ export default function RichTextEditor({ value, onChange, placeholder = 'Écrive
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
   }, [editor]);
 
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
   const addImage = useCallback(() => {
-    if (!editor) return;
-    const url = window.prompt("URL de l'image");
-    if (url) editor.chain().focus().setImage({ src: url }).run();
+    imageInputRef.current?.click();
+  }, []);
+
+  const handleImageFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editor) return;
+    setIsUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!);
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`, { method: 'POST', body: formData });
+      const data = await res.json();
+      if (data.secure_url) {
+        editor.chain().focus().setImage({ src: data.secure_url }).run();
+      }
+    } catch {
+      alert('Erreur upload image. Réessayez.');
+    } finally {
+      setIsUploadingImage(false);
+      if (imageInputRef.current) imageInputRef.current.value = '';
+    }
   }, [editor]);
 
   const insertTable = useCallback(() => {
@@ -238,9 +260,13 @@ export default function RichTextEditor({ value, onChange, placeholder = 'Écrive
         </ToolbarButton>
 
         {/* Image */}
-        <ToolbarButton onClick={addImage} title="Insérer une image">
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <ToolbarButton onClick={addImage} title="Insérer une image" active={isUploadingImage}>
+          {isUploadingImage
+            ? <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" strokeOpacity=".25"/><path d="M12 2a10 10 0 0110 10" strokeLinecap="round"/></svg>
+            : <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          }
         </ToolbarButton>
+        <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageFile} />
 
         {/* Tableau */}
         <ToolbarButton onClick={insertTable} title="Insérer un tableau">
