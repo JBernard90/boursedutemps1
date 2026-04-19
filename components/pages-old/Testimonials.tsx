@@ -25,17 +25,26 @@ const Testimonials: React.FC<TestimonialsProps> = ({ testimonials, user, onAuthC
   const [mediaType, setMediaType] = useState<'image' | 'video'>('image');
   const [activeCommentPost, setActiveCommentPost] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setMediaData(reader.result as string);
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!);
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/auto/upload`, { method: 'POST', body: formData });
+      const data = await res.json();
+      setMediaData(data.secure_url);
       setMediaType(file.type.startsWith('video') ? 'video' : 'image');
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      alert('Erreur upload. Réessayez.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -155,8 +164,8 @@ const Testimonials: React.FC<TestimonialsProps> = ({ testimonials, user, onAuthC
               
               <div className="relative">
                 <input type="file" accept="image/*,video/*" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
-                <button type="button" onClick={() => fileInputRef.current?.click()} className="w-full px-5 py-4 rounded-2xl bg-slate-100 border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-200 transition flex items-center justify-center gap-2 h-full">
-                  {mediaData ? "✅ Fichier prêt" : "📁 Importer Photo/Vidéo"}
+                <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="w-full px-5 py-4 rounded-2xl bg-slate-100 border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-200 transition flex items-center justify-center gap-2 h-full">
+                  {isUploading ? "⏳ Upload en cours..." : mediaData ? "✅ Fichier prêt" : "📁 Importer Photo/Vidéo"}
                 </button>
               </div>
             </div>
