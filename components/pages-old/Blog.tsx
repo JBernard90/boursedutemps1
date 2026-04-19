@@ -259,7 +259,7 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
               </div>
               
               <h2 className="font-heading text-2xl font-bold text-slate-900 mb-4">{blog.title}</h2>
-              <p className="text-slate-600 leading-relaxed mb-6 whitespace-pre-wrap">{blog.content}</p>
+              <div className="text-slate-600 leading-relaxed mb-6 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: blog.content }} />
               
               {blog.media.length > 0 && (
                 <div className="rounded-3xl overflow-hidden mb-6 bg-slate-50 border border-slate-100 relative min-h-[200px]">

@@ -195,7 +195,7 @@ const Forum: React.FC<ForumProps> = ({ user, topics }) => {
               </div>
               <div className="flex-grow">
                 <h3 className="font-heading text-xl font-bold text-slate-800 mb-2 pr-16">{topic.title}</h3>
-                <p className="text-slate-500 text-sm mb-4">{topic.message}</p>
+                <div className="text-slate-500 text-sm mb-4 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: topic.message ?? '' }} />
                 
                 {topic.externalLink && (
                   <a href={topic.externalLink} target="_blank" rel="noopener noreferrer" className="inline-block mb-4 text-blue-600 hover:underline text-sm font-medium">

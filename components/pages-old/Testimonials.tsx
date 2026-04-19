@@ -201,9 +201,7 @@ const Testimonials: React.FC<TestimonialsProps> = ({ testimonials, user, onAuthC
               {'★'.repeat(t.rating)}{'☆'.repeat(5-t.rating)}
             </div>
             <h3 className="font-heading font-bold text-xl text-slate-800 mb-4 pr-10">"{t.title}"</h3>
-            <p className="text-slate-500 italic leading-relaxed mb-8">
-              {t.content}
-            </p>
+            <div className="text-slate-500 italic leading-relaxed mb-8 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: t.content ?? '' }} />
 
             {t.media && t.media.length > 0 && (
               <div className="rounded-3xl overflow-hidden mb-8 bg-slate-50 border border-slate-100 relative min-h-[200px]">
