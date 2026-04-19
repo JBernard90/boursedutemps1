@@ -99,7 +99,7 @@ function Controls({ isHost, onLeave, onEnd, joined }: { isHost: boolean; onLeave
 
   const toggleScreen = useCallback(() => {
     if (isSharingScreen) stopScreenShare();
-    else { try { startScreenShare(); } catch (e) { console.error(e); } }
+    else startScreenShare().catch(console.error);
   }, [isSharingScreen, startScreenShare, stopScreenShare]);
 
   return (
@@ -180,9 +180,10 @@ function RoomInterior({ session, isHost, localUserName, onLeave, onEnd }: LiveRo
 
   useEffect(() => {
     if (!daily) return;
-    daily.join({ url: session.roomUrl, userName: localUserName }).catch(console.error);
+    // Start camera/mic after provider mounts to trigger join
+    daily.startCamera().catch(console.error);
     return () => {
-      daily?.leave().catch(() => {});
+      daily.leave().catch(() => {});
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [daily]);
