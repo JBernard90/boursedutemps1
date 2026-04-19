@@ -132,6 +132,12 @@ export const initDB = async () => {
         EXCEPTION
           WHEN duplicate_column THEN null;
         END;
+        BEGIN
+          ALTER TABLE live_sessions ALTER COLUMN room_url TYPE TEXT;
+        EXCEPTION
+          WHEN undefined_table THEN null;
+          WHEN undefined_column THEN null;
+        END;
       END $$;
 
       CREATE TABLE IF NOT EXISTS services (
@@ -249,7 +255,7 @@ export const initDB = async () => {
       CREATE TABLE IF NOT EXISTS live_sessions (
         id SERIAL PRIMARY KEY,
         room_name VARCHAR(255) UNIQUE NOT NULL,
-        room_url VARCHAR(500) NOT NULL,
+        room_url TEXT NOT NULL,
         title VARCHAR(255) NOT NULL,
         type VARCHAR(50) DEFAULT 'webinaire',
         host_id VARCHAR(255) REFERENCES users(uid),
