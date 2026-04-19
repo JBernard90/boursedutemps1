@@ -28,7 +28,6 @@ async function getUidFromRequest(req: Request): Promise<string | null> {
   } catch { return null; }
 }
 
-const DAILY_API_URL = 'https://api.daily.co/v1';
 
 // ── GET : toutes les sessions actives ───────────────────────────────────────
 export async function GET() {
@@ -55,51 +54,18 @@ export async function GET() {
   }
 }
 
-// ── POST : créer une room Daily.co + enregistrer en DB ──────────────────────
+// ── POST : créer une session Jitsi ──────────────────────────────────────────
 export async function POST(req: Request) {
-  const DAILY_API_KEY = '5b49d4a6406d81184ea674f718edf0f33439653285e212184fcef2876b1492be';
   const uid = await getUidFromRequest(req);
-  console.log('[liveSessions POST] uid:', uid, 'key prefix:', DAILY_API_KEY.slice(0,8));
-  if (!uid) return NextResponse.json({ error: 'Non autorisé - uid null' }, { status: 401 });
+  if (!uid) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
 
   const { title, type, hostName, hostAvatar } = await req.json();
   if (!title) return NextResponse.json({ error: 'Titre requis' }, { status: 400 });
 
   const roomName = `bdt-${uid.slice(0, 8)}-${Date.now()}`;
+  const roomUrl = `https://meet.jit.si/${roomName}`;
 
   try {
-    // 1. Créer la room sur Daily.co
-    const dailyRes = await fetch(`${DAILY_API_URL}/rooms`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${DAILY_API_KEY}`,
-      },
-      body: JSON.stringify({
-        name: roomName,
-        privacy: 'public',
-        properties: {
-          enable_chat: true,
-          enable_screenshare: true,
-          start_video_off: false,
-          start_audio_off: false,
-          lang: 'fr',
-          exp: Math.floor(Date.now() / 1000) + 60 * 60 * 4,
-        },
-      }),
-    });
-
-    if (!dailyRes.ok) {
-      let errDetail = '';
-      try { errDetail = JSON.stringify(await dailyRes.json()); } catch {}
-      console.error('Daily.co error:', dailyRes.status, errDetail);
-      return NextResponse.json({ error: `Daily.co: ${dailyRes.status} - ${errDetail}` }, { status: 500 });
-    }
-
-    const dailyData = await dailyRes.json();
-    const roomUrl = dailyData.url;
-
-    // 2. Enregistrer en DB
     const result = await query(
       `INSERT INTO live_sessions (room_name, room_url, title, type, host_id, host_name, host_avatar)
        VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
@@ -124,7 +90,7 @@ export async function POST(req: Request) {
   }
 }
 
-// ── DELETE : terminer la session + supprimer la room Daily.co ───────────────
+// ── DELETE// ── DELETE : terminer la session + supprimer la room Daily.co ───────────────
 export async function DELETE(req: Request) {
   const DAILY_API_KEY = process.env.DAILY_API_KEY;
   const uid = await getUidFromRequest(req);
@@ -149,13 +115,7 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
     }
 
-    // 1. Supprimer la room sur Daily.co
-    await fetch(`${DAILY_API_URL}/rooms/${roomName}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${DAILY_API_KEY}` },
-    });
-
-    // 2. Supprimer de la DB
+    // Supprimer de la DB
     await query('DELETE FROM live_sessions WHERE id = $1', [id]);
 
     return NextResponse.json({ success: true });
