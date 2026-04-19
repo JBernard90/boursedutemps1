@@ -10,6 +10,7 @@ import {
   useAudioTrack,
   DailyVideo,
   useScreenShare,
+  useMeetingState,
 } from '@daily-co/daily-react';
 import { Mic, MicOff, Video, VideoOff, Monitor, MonitorOff, PhoneOff, Users, MessageSquare, X } from 'lucide-react';
 
@@ -76,7 +77,7 @@ function ParticipantTile({ sessionId, isLocal }: { sessionId: string; isLocal: b
 }
 
 // ── Controls bar ─────────────────────────────────────────────────────────────
-function Controls({ isHost, onLeave, onEnd }: { isHost: boolean; onLeave: () => void; onEnd: () => void }) {
+function Controls({ isHost, onLeave, onEnd, joined }: { isHost: boolean; onLeave: () => void; onEnd: () => void; joined: boolean }) {
   const daily = useDaily();
   const localSessionId = useLocalSessionId();
   const videoTrack = useVideoTrack(localSessionId ?? '');
@@ -98,7 +99,7 @@ function Controls({ isHost, onLeave, onEnd }: { isHost: boolean; onLeave: () => 
 
   const toggleScreen = useCallback(() => {
     if (isSharingScreen) stopScreenShare();
-    else startScreenShare();
+    else startScreenShare().catch(console.error);
   }, [isSharingScreen, startScreenShare, stopScreenShare]);
 
   return (
@@ -131,7 +132,9 @@ function Controls({ isHost, onLeave, onEnd }: { isHost: boolean; onLeave: () => 
       <button
         onClick={toggleScreen}
         title={isSharingScreen ? "Arrêter le partage" : "Partager l'écran"}
+        disabled={!joined}
         className={`flex flex-col items-center gap-1 p-3 rounded-2xl transition-colors ${
+          !joined ? 'bg-slate-800 text-slate-600 cursor-not-allowed' :
           isSharingScreen ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-slate-700 hover:bg-slate-600 text-white'
         }`}
       >
@@ -171,20 +174,16 @@ function RoomInterior({ session, isHost, localUserName, onLeave, onEnd }: LiveRo
   const daily = useDaily();
   const localSessionId = useLocalSessionId();
   const participantIds = useParticipantIds({ filter: 'remote' });
-  const [joined, setJoined] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
+  const meetingState = useMeetingState();
+  const joined = meetingState === 'joined-meeting';
 
   useEffect(() => {
-    if (!daily) return;
-    // DailyProvider with url auto-joins — just listen for join event
-    const handleJoined = () => setJoined(true);
-    daily.on('joined-meeting', handleJoined);
     return () => {
-      daily.off('joined-meeting', handleJoined);
-      daily.leave().catch(() => {});
+      daily?.leave().catch(() => {});
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [daily]);
+  }, []);
 
   const handleLeave = useCallback(async () => {
     await daily?.leave();
@@ -275,7 +274,7 @@ function RoomInterior({ session, isHost, localUserName, onLeave, onEnd }: LiveRo
       )}
 
       {/* Controls */}
-      <Controls isHost={isHost} onLeave={handleLeave} onEnd={handleEnd} />
+      <Controls isHost={isHost} onLeave={handleLeave} onEnd={handleEnd} joined={joined} />
     </div>
   );
 }
