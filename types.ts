@@ -1,38 +1,33 @@
+
+export type Page = 'home' | 'about' | 'services' | 'requests' | 'members' | 'forum' | 'blog' | 'testimonials' | 'profile' | 'moderation' | 'profile-view';
+
 export interface User {
   id: string;
   uid: string;
   firstName: string;
   lastName: string;
   email: string;
-  department?: string;
-  whatsapp?: string;
-  gender?: 'Homme' | 'Femme';
-  country?: string;
+  department: string;
+  whatsapp: string;
+  gender: 'Homme' | 'Femme';
+  country: string;
   bio?: string;
-  offeredSkills?: string[];
-  requestedSkills?: string[];
-  availability?: string;
-  languages?: string[];
-  credits?: number;
-  createdAt?: string;
-  avatar?: string;
+  offeredSkills: string[];
+  requestedSkills: string[];
+  availability: string;
+  languages: string[];
+  hobbies: string[];
+  credits: number;
+  createdAt: string;
+  avatar: string; 
   coverPhoto?: string;
-  role?: 'user' | 'moderator' | 'admin';
-  status?: 'active' | 'deactivated' | 'deleted';
+  role: 'user' | 'moderator' | 'admin';
+  termsAccepted: boolean;
+  isVerifiedEmail: boolean;
+  isVerifiedSMS: boolean;
+  status: 'active' | 'deactivated' | 'deleted';
+  lastActive?: string;
 }
-
-export type Page =
-  | 'home'
-  | 'about'
-  | 'services'
-  | 'requests'
-  | 'members'
-  | 'forum'
-  | 'blog'
-  | 'testimonials'
-  | 'profile'
-  | 'profile-view'
-  | 'moderation';
 
 export interface MediaItem {
   type: 'image' | 'video';
@@ -55,14 +50,14 @@ export interface BlogPost {
   authorAvatar?: string;
   title: string;
   content: string;
-  category?: string;
+  category: string;
   media: MediaItem[];
-  likes: string[];
-  dislikes: string[];
-  shares: number;
-  reposts: number;
-  comments: BlogComment[];
   externalLink?: string;
+  likes: string[]; // User IDs
+  dislikes: string[]; // User IDs
+  reposts: number;
+  shares: number;
+  comments: BlogComment[];
   createdAt: string;
 }
 
@@ -71,36 +66,40 @@ export interface Testimonial {
   authorId: string;
   authorName: string;
   authorAvatar?: string;
-  title?: string;
+  title: string;
   content: string;
   rating: number;
-  media: MediaItem[];
-  likes: string[];
-  votes?: string[];
-  dislikes: string[];
-  shares: number;
-  reposts: number;
-  comments: BlogComment[];
+  media?: MediaItem[];
+  votes: string[]; // User IDs who voted (legacy)
+  likes?: string[]; // User IDs
+  shares?: number;
+  comments?: BlogComment[];
   createdAt: string;
 }
 
 export interface ForumTopic {
   id: string;
-  authorId: string;
+  authorId?: string;
+  title: string;
   authorName: string;
   authorAvatar?: string;
-  title: string;
-  message?: string;
-  content?: string;
-  category?: string;
-  media: MediaItem[];
-  likes: string[];
-  dislikes: string[];
-  shares: number;
-  reposts: number;
-  comments: BlogComment[];
+  message: string;
+  media?: MediaItem[];
   externalLink?: string;
+  likes?: string[]; // User IDs
+  shares?: number;
+  comments?: BlogComment[];
   createdAt: string;
+}
+
+export interface Transaction {
+  id: string;
+  fromId: string;
+  toId: string;
+  amount: number;
+  serviceTitle: string;
+  type: 'service' | 'request';
+  date: string;
 }
 
 export interface Service {
@@ -110,12 +109,11 @@ export interface Service {
   title: string;
   description: string;
   creditCost: number;
-  category?: string;
-  status: 'proposed' | 'accepted' | 'in-progress' | 'completed' | 'cancelled';
+  category: string;
+  createdAt: string;
+  status: 'proposed' | 'accepted' | 'cancelled' | 'in-progress';
   acceptedBy?: string;
   acceptedAt?: string;
-  createdAt: string;
-  updatedAt?: string;
 }
 
 export interface Request {
@@ -125,22 +123,11 @@ export interface Request {
   title: string;
   description: string;
   creditOffer: number;
-  category?: string;
-  status: 'proposed' | 'accepted' | 'in-progress' | 'completed' | 'cancelled';
+  category: string;
+  createdAt: string;
+  status: 'proposed' | 'accepted' | 'cancelled' | 'in-progress';
   fulfilledBy?: string;
   fulfilledAt?: string;
-  createdAt: string;
-  updatedAt?: string;
-}
-
-export interface Transaction {
-  id: string;
-  fromId: string;
-  toId: string;
-  amount: number;
-  serviceTitle?: string;
-  type?: string;
-  date: string;
 }
 
 export interface Connection {
@@ -149,7 +136,7 @@ export interface Connection {
   receiverId: string;
   status: 'sent' | 'accepted' | 'refused' | 'cancelled';
   createdAt: string;
-  updatedAt?: string;
+  updatedAt: string;
 }
 
 export interface ChatMessage {
@@ -157,16 +144,16 @@ export interface ChatMessage {
   senderId: string;
   receiverId: string;
   content: string;
-  timestamp?: string;
-  isRead?: boolean;
+  timestamp: string;
+  isRead: boolean;
 }
 
 export interface Notification {
   id: string;
   userId: string;
-  type: string;
+  type: 'request' | 'offer' | 'message' | 'connection' | 'transaction';
   content: string;
-  fromName?: string;
+  fromName: string;
   isRead: boolean;
   createdAt: string;
 }

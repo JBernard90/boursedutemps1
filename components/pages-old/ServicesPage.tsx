@@ -85,7 +85,7 @@ const ServicesPage: React.FC<ServicesPageProps> = ({ user, services, onUpdate, o
 
   const filtered = services.filter(s => 
     s.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (s.category ?? '').toLowerCase().includes(searchTerm.toLowerCase())
+    s.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -246,7 +246,7 @@ const ServicesPage: React.FC<ServicesPageProps> = ({ user, services, onUpdate, o
                 <div className="flex gap-2">
                   {user && user.uid === s.userId ? (
                     <>
-                      <button onClick={() => { setEditingService(s); setNewTitle(s.title ?? ''); setNewDesc(s.description); setNewCost(s.creditCost); setNewCat(s.category ?? 'Éducation'); setShowAdd(true); }} className="p-2 text-slate-400 hover:text-blue-600 transition">
+                      <button onClick={() => { setEditingService(s); setNewTitle(s.title); setNewDesc(s.description); setNewCost(s.creditCost); setNewCat(s.category); setShowAdd(true); }} className="p-2 text-slate-400 hover:text-blue-600 transition">
                         <Edit2 size={16} />
                       </button>
                       <button onClick={() => handleDelete(s.id)} className="p-2 text-slate-400 hover:text-red-600 transition">

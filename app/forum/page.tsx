@@ -13,7 +13,7 @@ export default function ForumRoute() {
 
   useEffect(() => {
     const unsub = onSnapshot(query(collection(db, 'forumTopics'), orderBy('createdAt', 'desc')), (snapshot) => {
-      setTopics(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as unknown as ForumTopic)));
+      setTopics(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ForumTopic)));
     });
     return () => unsub();
   }, []);

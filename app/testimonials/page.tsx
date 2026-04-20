@@ -13,7 +13,7 @@ export default function TestimonialsRoute() {
 
   useEffect(() => {
     const unsub = onSnapshot(query(collection(db, 'testimonials'), orderBy('createdAt', 'desc')), (snapshot) => {
-      setTestimonials(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as unknown as Testimonial)));
+      setTestimonials(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Testimonial)));
     });
     return () => unsub();
   }, []);

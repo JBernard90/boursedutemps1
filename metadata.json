@@ -1,5 +1,5 @@
 {
   "name": "Bourse du Temps - Université Senghor",
   "description": "La plateforme solidaire exclusive de l'Université Senghor. Échangez vos talents, valorisez votre temps.",
-  "requestFramePermissions": []
+  "requestFramePermissions": ["camera", "microphone"]
 }

@@ -1,53 +1,27 @@
 import pg from 'pg';
 
-let dbUrl = 'postgres://mock:mock@localhost:5432/mock';
-let isMock = true;
+const dbUrl = process.env.DATABASE_URL;
 
-if (process.env.DATABASE_URL) {
-  try {
-    new URL(process.env.DATABASE_URL);
-    dbUrl = process.env.DATABASE_URL;
-    isMock = false;
-    console.log('[DB] DATABASE_URL is set and valid.');
-  } catch (e) {
-    console.error('[DB] Invalid DATABASE_URL format. Falling back to mock URL for build/safety.');
-  }
-} else {
-  console.warn('=========================================================');
-  console.warn('WARNING: DATABASE_URL environment variable is missing.');
-  console.warn('Using a mock URL for build purposes.');
-  console.warn('=========================================================');
+if (!dbUrl) {
+  console.warn('[DB] DATABASE_URL is missing!');
 }
 
 export const pool = new pg.Pool({
   connectionString: dbUrl,
-  ssl: dbUrl.includes('localhost') ? false : {
+  ssl: {
     rejectUnauthorized: false
   },
-  connectionTimeoutMillis: 5000, // Fail fast if DNS/Network is down
+  connectionTimeoutMillis: 5000, // 5 seconds timeout
+  idleTimeoutMillis: 30000,
+  max: 10, // Max clients in pool
 });
 
 let isInitialized = false;
 
-export const query = async (text: string, params?: any[]) => {
-  if (isMock) {
-    console.warn(`[DB] Mock mode active. Returning empty result for query: ${text.substring(0, 50)}...`);
-    return { rows: [], rowCount: 0 };
-  }
-  if (!pool) {
-    throw new Error('Database pool not initialized');
-  }
-  if (!isInitialized && text.toLowerCase().indexOf('create table') === -1 && text.toLowerCase().indexOf('alter table') === -1) {
-    await initDB();
-    isInitialized = true;
-  }
-  return await pool.query(text, params);
-};
-
 export const initDB = async () => {
-  if (!pool || isMock) {
-    return;
-  }
+  if (!pool || isInitialized) return;
+  
+  console.log('[DB] Attempting to connect and initialize tables...');
   try {
     const client = await pool.connect();
     try {
@@ -89,56 +63,6 @@ export const initDB = async () => {
         terms_accepted BOOLEAN DEFAULT true,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
-
-      DO $$ 
-      BEGIN 
-        BEGIN
-          ALTER TABLE users ADD COLUMN gender VARCHAR(50);
-        EXCEPTION
-          WHEN duplicate_column THEN null;
-        END;
-        BEGIN
-          ALTER TABLE users ADD COLUMN country VARCHAR(255);
-        EXCEPTION
-          WHEN duplicate_column THEN null;
-        END;
-        BEGIN
-          ALTER TABLE users ADD COLUMN availability VARCHAR(255);
-        EXCEPTION
-          WHEN duplicate_column THEN null;
-        END;
-        BEGIN
-          ALTER TABLE users ADD COLUMN languages JSONB;
-        EXCEPTION
-          WHEN duplicate_column THEN null;
-        END;
-        BEGIN
-          ALTER TABLE users ADD COLUMN offered_skills JSONB;
-        EXCEPTION
-          WHEN duplicate_column THEN null;
-        END;
-        BEGIN
-          ALTER TABLE users ADD COLUMN requested_skills JSONB;
-        EXCEPTION
-          WHEN duplicate_column THEN null;
-        END;
-        BEGIN
-          ALTER TABLE users ADD COLUMN terms_accepted BOOLEAN DEFAULT true;
-        EXCEPTION
-          WHEN duplicate_column THEN null;
-        END;
-        BEGIN
-          ALTER TABLE messages ADD COLUMN is_read BOOLEAN DEFAULT false;
-        EXCEPTION
-          WHEN duplicate_column THEN null;
-        END;
-        BEGIN
-          ALTER TABLE live_sessions ALTER COLUMN room_url TYPE TEXT;
-        EXCEPTION
-          WHEN undefined_table THEN null;
-          WHEN undefined_column THEN null;
-        END;
-      END $$;
 
       CREATE TABLE IF NOT EXISTS services (
         id SERIAL PRIMARY KEY,
@@ -252,25 +176,11 @@ export const initDB = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
-      CREATE TABLE IF NOT EXISTS live_sessions (
-        id SERIAL PRIMARY KEY,
-        room_name VARCHAR(255) UNIQUE NOT NULL,
-        room_url TEXT NOT NULL,
-        title VARCHAR(255) NOT NULL,
-        type VARCHAR(50) DEFAULT 'webinaire',
-        host_id VARCHAR(255) REFERENCES users(uid),
-        host_name VARCHAR(255),
-        host_avatar VARCHAR(255),
-        participant_count INT DEFAULT 0,
-        started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-
       CREATE TABLE IF NOT EXISTS messages (
         id SERIAL PRIMARY KEY,
         sender_id VARCHAR(255) REFERENCES users(uid),
         receiver_id VARCHAR(255) REFERENCES users(uid),
         content TEXT NOT NULL,
-        is_read BOOLEAN DEFAULT false,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
@@ -280,21 +190,31 @@ export const initDB = async () => {
         subscription JSONB NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
-      DO $$ 
-      BEGIN 
-        BEGIN
-          ALTER TABLE connections DROP COLUMN id;
-          ALTER TABLE connections ADD COLUMN id SERIAL PRIMARY KEY;
-        EXCEPTION
-          WHEN others THEN null;
-        END;
-      END $$;
     `);
       console.log('[DB] Tables initialized successfully');
+      isInitialized = true;
     } finally {
       client.release();
     }
   } catch (err) {
     console.error('[DB] Initialization error:', err);
+    throw err; // Re-throw to inform the caller
   }
+};
+
+export const query = async (text: string, params?: any[]) => {
+  if (!dbUrl) {
+    throw new Error('DATABASE_URL is not defined');
+  }
+  
+  // Skip initialization for system queries if needed, but here we just ensure it runs once
+  if (!isInitialized && !text.toLowerCase().includes('create table')) {
+    try {
+      await initDB();
+    } catch (e) {
+      console.error('[DB] Failed to ensure DB initialization, proceeding with query anyway...');
+    }
+  }
+
+  return pool.query(text, params);
 };

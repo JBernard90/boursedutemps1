@@ -13,7 +13,7 @@ export default function BlogRoute() {
 
   useEffect(() => {
     const unsub = onSnapshot(query(collection(db, 'blogs'), orderBy('createdAt', 'desc')), (snapshot) => {
-      setBlogs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as unknown as BlogPost)));
+      setBlogs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPost)));
     });
     return () => unsub();
   }, []);

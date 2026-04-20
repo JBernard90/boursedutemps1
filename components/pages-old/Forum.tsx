@@ -5,7 +5,6 @@ import React, { useState, useRef } from 'react';
 import Image from 'next/image';
 import { User, ForumTopic, MediaItem } from '../../types';
 import { db, doc, updateDoc, deleteDoc, addDoc, collection } from '../../api';
-import RichTextEditor from '../RichTextEditor';
 import { Edit2, Trash2, MessageCircle, Heart, Share2 } from 'lucide-react';
 
 interface ForumProps {
@@ -26,37 +25,15 @@ const Forum: React.FC<ForumProps> = ({ user, topics }) => {
   const [commentText, setCommentText] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [uploadingMedia, setUploadingMedia] = useState(false);
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploadingMedia(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const token = localStorage.getItem('token') || '';
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setMediaData(data.url);
-        setMediaType(file.type.startsWith('video') ? 'video' : 'image');
-      } else {
-        const reader = new FileReader();
-        reader.onloadend = () => { setMediaData(reader.result as string); setMediaType(file.type.startsWith('video') ? 'video' : 'image'); };
-        reader.readAsDataURL(file);
-      }
-    } catch {
-      const reader = new FileReader();
-      reader.onloadend = () => { setMediaData(reader.result as string); setMediaType(file.type.startsWith('video') ? 'video' : 'image'); };
-      reader.readAsDataURL(file);
-    } finally {
-      setUploadingMedia(false);
-    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setMediaData(reader.result as string);
+      setMediaType(file.type.startsWith('video') ? 'video' : 'image');
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleDelete = async (id: string) => {
@@ -162,7 +139,7 @@ const Forum: React.FC<ForumProps> = ({ user, topics }) => {
           <h2 className="font-heading text-xl font-bold mb-6">{editingPost ? 'Modifier le sujet' : 'Lancer une discussion'}</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <input required placeholder="Titre du sujet" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500 transition" value={newTitle} onChange={e => setNewTitle(e.target.value)} />
-            <RichTextEditor value={newMsg} onChange={setNewMsg} placeholder="Votre message..." maxLength={6000} />
+            <textarea required placeholder="Votre message..." className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500 transition min-h-[150px]" value={newMsg} onChange={e => setNewMsg(e.target.value)} />
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <input type="url" placeholder="Lien externe (optionnel)" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500 transition" value={externalLink} onChange={e => setExternalLink(e.target.value)} />
@@ -202,7 +179,7 @@ const Forum: React.FC<ForumProps> = ({ user, topics }) => {
             
             {user && (user.uid === topic.authorId || user.role === 'admin') && (
               <div className="absolute top-4 right-4 flex gap-2">
-                <button onClick={() => { setEditingPost(topic); setNewTitle(topic.title ?? ''); setNewMsg(topic.message ?? ''); setExternalLink(topic.externalLink || ''); if (topic.media && topic.media.length > 0) { setMediaData(topic.media[0].url); setMediaType(topic.media[0].type); } setShowAdd(true); }} className="p-2 text-slate-400 hover:text-blue-600 transition bg-white/80 backdrop-blur-sm rounded-full">
+                <button onClick={() => { setEditingPost(topic); setNewTitle(topic.title); setNewMsg(topic.message); setExternalLink(topic.externalLink || ''); if (topic.media && topic.media.length > 0) { setMediaData(topic.media[0].url); setMediaType(topic.media[0].type); } setShowAdd(true); }} className="p-2 text-slate-400 hover:text-blue-600 transition bg-white/80 backdrop-blur-sm rounded-full">
                   <Edit2 size={16} />
                 </button>
                 <button onClick={() => handleDelete(topic.id)} className="p-2 text-slate-400 hover:text-red-600 transition bg-white/80 backdrop-blur-sm rounded-full">

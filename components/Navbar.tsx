@@ -209,11 +209,11 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, user, notifications, onNav
                   <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center overflow-hidden border border-blue-400 shadow-sm group-hover:scale-105 transition-transform relative">
                     {user.avatar ? (
                       <Image 
-                        src={user.avatar ?? ''} 
+                        src={user.avatar} 
                         alt="User avatar" 
                         fill 
                         className="object-cover" 
-                        unoptimized={(user.avatar ?? '').startsWith('data:')}
+                        unoptimized={user.avatar.startsWith('data:')}
                         sizes="28px"
                         quality={80}
                       />

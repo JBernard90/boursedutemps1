@@ -10,6 +10,15 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+export async function sendEmail({ to, subject, html }: { to: string; subject: string; html: string }) {
+  await transporter.sendMail({
+    from: `"Bourse du Temps" <${process.env.EMAIL_USER}>`,
+    to,
+    subject,
+    html,
+  });
+}
+
 export async function sendOtpEmail(email: string, code: string) {
   await transporter.sendMail({
     from: `"Bourse du Temps" <${process.env.EMAIL_USER}>`,
@@ -24,22 +33,6 @@ export async function sendOtpEmail(email: string, code: string) {
         </div>
         <p>Ce code est valable pendant <strong>10 minutes</strong>.</p>
         <p style="color: #6b7280; font-size: 12px;">Si vous n'avez pas demandé ce code, ignorez cet email.</p>
-      </div>
-    `,
-  });
-}
-
-export async function sendContactConfirmationEmail(name: string, email: string) {
-  await transporter.sendMail({
-    from: `"Bourse du Temps" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: 'Message reçu - Bourse du Temps',
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #2563eb;">Bourse du Temps</h2>
-        <p>Bonjour ${name},</p>
-        <p>Nous avons bien reçu votre message et nous vous répondrons dans les plus brefs délais.</p>
-        <p style="color: #6b7280; font-size: 12px;">Cet email a été envoyé automatiquement, merci de ne pas y répondre.</p>
       </div>
     `,
   });
