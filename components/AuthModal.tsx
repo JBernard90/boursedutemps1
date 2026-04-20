@@ -32,6 +32,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
   const [availability, setAvailability] = useState('');
   const [languages, setLanguages] = useState('');
   const [avatar, setAvatar] = useState('');
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
   const ALLOWED_DOMAIN = '@etu-usenghor.org';
@@ -171,12 +172,35 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
     setTermsAccepted(true);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (!file) return;
+    setUploadingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const token = localStorage.getItem('token') || '';
+      const res = await fetch('/api/upload', {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAvatar(data.url);
+      } else {
+        // Fallback to base64 if upload fails
+        const reader = new FileReader();
+        reader.onloadend = () => setAvatar(reader.result as string);
+        reader.readAsDataURL(file);
+      }
+    } catch {
+      // Fallback to base64
       const reader = new FileReader();
       reader.onloadend = () => setAvatar(reader.result as string);
       reader.readAsDataURL(file);
+    } finally {
+      setUploadingAvatar(false);
     }
   };
 

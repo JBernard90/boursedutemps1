@@ -51,7 +51,8 @@
     "@tiptap/extension-placeholder": "^2.4.0",
     "@tiptap/extension-character-count": "^2.4.0",
     "@daily-co/daily-react": "^0.22.0",
-    "@daily-co/daily-js": "^0.70.0"
+    "@daily-co/daily-js": "^0.70.0",
+    "cloudinary": "^2.5.1"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

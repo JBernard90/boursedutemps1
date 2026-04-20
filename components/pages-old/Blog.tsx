@@ -7,7 +7,6 @@ import { BlogPost, User, MediaItem, BlogComment } from '../../types';
 import { Edit2, Trash2, MessageCircle, Heart, Share2, ExternalLink } from 'lucide-react';
 import { db, doc, updateDoc, deleteDoc, addDoc, collection } from '../../api';
 import RichTextEditor from '../RichTextEditor';
-import ShareMenu from '../ShareMenu';
 
 interface BlogProps {
   blogs: BlogPost[];
@@ -29,8 +28,6 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
   const [commentText, setCommentText] = useState('');
   const [displayLimit, setDisplayLimit] = useState(5);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [expandedPosts, setExpandedPosts] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const observerTarget = useRef<HTMLDivElement>(null);
 
@@ -56,22 +53,36 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
     return () => observer.disconnect();
   }, [blogs.length, displayLimit, isLoadingMore]);
 
+  const [uploadingMedia, setUploadingMedia] = useState(false);
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setIsUploading(true);
+    setUploadingMedia(true);
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('upload_preset', process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!);
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/auto/upload`, { method: 'POST', body: formData });
+      const token = localStorage.getItem('token') || '';
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
       const data = await res.json();
-      setMediaData(data.secure_url);
-      setMediaType(file.type.startsWith('video') ? 'video' : 'image');
-    } catch (err) {
-      alert('Erreur upload. Réessayez.');
+      if (res.ok) {
+        setMediaData(data.url);
+        setMediaType(file.type.startsWith('video') ? 'video' : 'image');
+      } else {
+        const reader = new FileReader();
+        reader.onloadend = () => { setMediaData(reader.result as string); setMediaType(file.type.startsWith('video') ? 'video' : 'image'); };
+        reader.readAsDataURL(file);
+      }
+    } catch {
+      const reader = new FileReader();
+      reader.onloadend = () => { setMediaData(reader.result as string); setMediaType(file.type.startsWith('video') ? 'video' : 'image'); };
+      reader.readAsDataURL(file);
     } finally {
-      setIsUploading(false);
+      setUploadingMedia(false);
     }
   };
 
@@ -129,14 +140,23 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
     await updateDoc(doc(db, 'blogs', blog.id), { likes: newLikes });
   };
 
-  const getShareUrl = (blog: BlogPost) => `${typeof window !== 'undefined' ? window.location.origin : ''}/blog#post-${blog.id}`;
-
-  const handleShareCount = async (blog: BlogPost) => {
-    await updateDoc(doc(db, 'blogs', blog.id), { shares: (blog.shares || 0) + 1 });
-  };
-
-  const toggleExpand = (id: string) => {
-    setExpandedPosts(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const handleShare = async (blog: BlogPost) => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: blog.title,
+          text: blog.content,
+          url: window.location.href,
+        });
+        await updateDoc(doc(db, 'blogs', blog.id), { shares: (blog.shares || 0) + 1 });
+      } catch (err) {
+        console.error("Erreur de partage:", err);
+      }
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      alert("Lien copié dans le presse-papier !");
+      await updateDoc(doc(db, 'blogs', blog.id), { shares: (blog.shares || 0) + 1 });
+    }
   };
 
   const handleComment = async (blog: BlogPost) => {
@@ -205,10 +225,9 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
                 <button 
                   type="button" 
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading}
                   className="w-full px-5 py-4 rounded-2xl bg-slate-100 border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-200 transition flex items-center justify-center gap-2"
                 >
-                  {isUploading ? "⏳ Upload en cours..." : mediaData ? "✅ Fichier prêt" : "📁 Importer Photo/Vidéo"}
+                  {mediaData ? "✅ Fichier prêt" : "📁 Importer Photo/Vidéo"}
                 </button>
               </div>
             </div>
@@ -238,7 +257,7 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
 
       <div className="space-y-10">
         {blogs.slice(0, displayLimit).map(blog => (
-          <article key={blog.id} id={`post-${blog.id}`} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition scroll-mt-24">
+          <article key={blog.id} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition">
             <div className="p-8">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-12 h-12 rounded-full bg-slate-100 overflow-hidden border-2 border-white shadow-sm relative">
@@ -261,14 +280,7 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
               </div>
               
               <h2 className="font-heading text-2xl font-bold text-slate-900 mb-4">{blog.title}</h2>
-              <div className={`text-slate-600 leading-relaxed mb-2 prose prose-sm max-w-none ${!expandedPosts.has(blog.id) ? 'line-clamp-4' : ''}`}
-                dangerouslySetInnerHTML={{ __html: blog.content }} />
-              {blog.content && blog.content.length > 400 && (
-                <button onClick={() => toggleExpand(blog.id)}
-                  className="text-blue-600 text-sm font-semibold hover:underline mb-4 mt-1">
-                  {expandedPosts.has(blog.id) ? '↑ Réduire' : '↓ Lire plus'}
-                </button>
-              )}
+              <p className="text-slate-600 leading-relaxed mb-6 whitespace-pre-wrap">{blog.content}</p>
               
               {blog.media.length > 0 && (
                 <div className="rounded-3xl overflow-hidden mb-6 bg-slate-50 border border-slate-100 relative min-h-[200px]">
@@ -296,13 +308,10 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
                   <MessageCircle size={20} />
                   <span>{blog.comments.length}</span>
                 </button>
-                <ShareMenu
-                  url={getShareUrl(blog)}
-                  title={blog.title}
-                  text={blog.content?.replace(/<[^>]+>/g, '').substring(0, 200)}
-                  count={blog.shares || 0}
-                  onShare={() => handleShareCount(blog)}
-                />
+                <button onClick={() => handleShare(blog)} className="flex items-center gap-2 text-slate-400 hover:text-green-600 font-bold transition ml-auto">
+                  <Share2 size={20} />
+                  <span>{blog.shares || 0}</span>
+                </button>
               </div>
 
               {activeCommentPost === blog.id && (

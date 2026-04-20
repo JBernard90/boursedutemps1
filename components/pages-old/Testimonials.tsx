@@ -7,7 +7,6 @@ import { Testimonial, User, MediaItem } from '../../types';
 import { db, doc, updateDoc, deleteDoc, addDoc, collection } from '../../api';
 import RichTextEditor from '../RichTextEditor';
 import { Edit2, Trash2, MessageCircle, Heart, Share2 } from 'lucide-react';
-import ShareMenu from '../ShareMenu';
 
 interface TestimonialsProps {
   testimonials: Testimonial[];
@@ -26,30 +25,38 @@ const Testimonials: React.FC<TestimonialsProps> = ({ testimonials, user, onAuthC
   const [mediaType, setMediaType] = useState<'image' | 'video'>('image');
   const [activeCommentPost, setActiveCommentPost] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
-  const [isUploading, setIsUploading] = useState(false);
-  const [expandedPosts, setExpandedPosts] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const getShareUrl = (t: Testimonial) => `${typeof window !== 'undefined' ? window.location.origin : ''}/testimonials#post-${t.id}`;
-  const handleShareCount = async (t: Testimonial) => { await updateDoc(doc(db, 'testimonials', t.id), { shares: (t.shares || 0) + 1 }); };
-  const toggleExpand = (id: string) => { setExpandedPosts(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }); };
+  const [uploadingMedia, setUploadingMedia] = useState(false);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setIsUploading(true);
+    setUploadingMedia(true);
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('upload_preset', process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!);
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/auto/upload`, { method: 'POST', body: formData });
+      const token = localStorage.getItem('token') || '';
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
       const data = await res.json();
-      setMediaData(data.secure_url);
-      setMediaType(file.type.startsWith('video') ? 'video' : 'image');
-    } catch (err) {
-      alert('Erreur upload. Réessayez.');
+      if (res.ok) {
+        setMediaData(data.url);
+        setMediaType(file.type.startsWith('video') ? 'video' : 'image');
+      } else {
+        const reader = new FileReader();
+        reader.onloadend = () => { setMediaData(reader.result as string); setMediaType(file.type.startsWith('video') ? 'video' : 'image'); };
+        reader.readAsDataURL(file);
+      }
+    } catch {
+      const reader = new FileReader();
+      reader.onloadend = () => { setMediaData(reader.result as string); setMediaType(file.type.startsWith('video') ? 'video' : 'image'); };
+      reader.readAsDataURL(file);
     } finally {
-      setIsUploading(false);
+      setUploadingMedia(false);
     }
   };
 
@@ -170,8 +177,8 @@ const Testimonials: React.FC<TestimonialsProps> = ({ testimonials, user, onAuthC
               
               <div className="relative">
                 <input type="file" accept="image/*,video/*" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
-                <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="w-full px-5 py-4 rounded-2xl bg-slate-100 border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-200 transition flex items-center justify-center gap-2 h-full">
-                  {isUploading ? "⏳ Upload en cours..." : mediaData ? "✅ Fichier prêt" : "📁 Importer Photo/Vidéo"}
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="w-full px-5 py-4 rounded-2xl bg-slate-100 border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-200 transition flex items-center justify-center gap-2 h-full">
+                  {mediaData ? "✅ Fichier prêt" : "📁 Importer Photo/Vidéo"}
                 </button>
               </div>
             </div>
@@ -199,7 +206,7 @@ const Testimonials: React.FC<TestimonialsProps> = ({ testimonials, user, onAuthC
 
       <div className="columns-1 md:columns-2 gap-8 space-y-8">
         {testimonials.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map(t => (
-          <div key={t.id} id={`post-${t.id}`} className="break-inside-avoid bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm group hover:shadow-xl transition-all relative overflow-hidden scroll-mt-24">
+          <div key={t.id} className="break-inside-avoid bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm group hover:shadow-xl transition-all relative overflow-hidden">
             
             {user && (user.uid === t.authorId || user.role === 'admin') && (
               <div className="absolute top-4 right-4 flex gap-2">
@@ -216,12 +223,9 @@ const Testimonials: React.FC<TestimonialsProps> = ({ testimonials, user, onAuthC
               {'★'.repeat(t.rating)}{'☆'.repeat(5-t.rating)}
             </div>
             <h3 className="font-heading font-bold text-xl text-slate-800 mb-4 pr-10">"{t.title}"</h3>
-            <div className={`text-slate-500 italic leading-relaxed mb-4 prose prose-sm max-w-none ${!expandedPosts.has(t.id) ? 'line-clamp-4' : ''}`} dangerouslySetInnerHTML={{ __html: t.content ?? '' }} />
-            {t.content && t.content.length > 400 && (
-              <button onClick={() => toggleExpand(t.id)} className="text-blue-600 text-xs font-semibold hover:underline mb-6">
-                {expandedPosts.has(t.id) ? '↑ Réduire' : '↓ Lire plus'}
-              </button>
-            )}
+            <p className="text-slate-500 italic leading-relaxed mb-8">
+              {t.content}
+            </p>
 
             {t.media && t.media.length > 0 && (
               <div className="rounded-3xl overflow-hidden mb-8 bg-slate-50 border border-slate-100 relative min-h-[200px]">
@@ -249,13 +253,10 @@ const Testimonials: React.FC<TestimonialsProps> = ({ testimonials, user, onAuthC
                 <MessageCircle size={18} />
                 <span className="text-xs">{(t.comments || []).length}</span>
               </button>
-              <ShareMenu
-                url={getShareUrl(t)}
-                title={t.title ?? ''}
-                text={t.content?.replace(/<[^>]+>/g, '').substring(0, 200)}
-                count={t.shares || 0}
-                onShare={() => handleShareCount(t)}
-              />
+              <button onClick={() => handleShare(t)} className="flex items-center gap-2 text-slate-400 hover:text-green-600 font-bold transition ml-auto">
+                <Share2 size={18} />
+                <span className="text-xs">{t.shares || 0}</span>
+              </button>
             </div>
 
             {activeCommentPost === t.id && (
