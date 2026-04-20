@@ -370,11 +370,6 @@ ${session.roomUrl}
                 </div>
               </div>
 
-              {/* Info Daily.co */}
-              <div className="bg-blue-50 rounded-2xl p-3 text-xs text-blue-700">
-                <strong>Daily.co</strong> — Vidéo HD, partage d'écran, jusqu'à 100 participants. La salle sera créée automatiquement et expirера après 4h.
-              </div>
-
               <button
                 type="submit"
                 disabled={loading || !title}
