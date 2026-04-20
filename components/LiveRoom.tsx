@@ -28,6 +28,8 @@ interface LiveRoomProps {
   onEnd: () => void;
 }
 
+const APP_ID = process.env.NEXT_PUBLIC_JAAS_APP_ID || 'vpaas-magic-cookie-017a1705a9c54e49afac8d78f0522e2a';
+
 export default function LiveRoom({ session, localUserName, isHost, onLeave, onEnd }: LiveRoomProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const apiRef = useRef<any>(null);
@@ -39,15 +41,17 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
   const [participantCount, setParticipantCount] = useState(1);
   const [showParticipants, setShowParticipants] = useState(false);
   const [participants, setParticipants] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  const initJitsi = useCallback(() => {
+  const initJitsi = useCallback((jwt: string) => {
     if (!containerRef.current || !window.JitsiMeetExternalAPI) return;
 
-    const api = new window.JitsiMeetExternalAPI("meet.jit.si", {
-      roomName: session.roomName,
+    const api = new window.JitsiMeetExternalAPI('8x8.vc', {
+      roomName: `${APP_ID}/${session.roomName}`,
+      jwt,
       parentNode: containerRef.current,
-      width: "100%",
-      height: "100%",
+      width: '100%',
+      height: '100%',
       userInfo: { displayName: localUserName },
       configOverwrite: {
         startWithAudioMuted: false,
@@ -74,45 +78,67 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
     });
 
     apiRef.current = api;
-    api.on("videoConferenceJoined", () => setJoined(true));
-    api.on("participantJoined", () => {
+    api.on('videoConferenceJoined', () => setJoined(true));
+    api.on('participantJoined', () => {
       setParticipantCount(c => c + 1);
-      setParticipants(api.getParticipantsInfo().map((p: any) => p.displayName || "Participant"));
+      setParticipants(api.getParticipantsInfo().map((p: any) => p.displayName || 'Participant'));
     });
-    api.on("participantLeft", () => {
+    api.on('participantLeft', () => {
       setParticipantCount(c => Math.max(1, c - 1));
-      setParticipants(api.getParticipantsInfo().map((p: any) => p.displayName || "Participant"));
+      setParticipants(api.getParticipantsInfo().map((p: any) => p.displayName || 'Participant'));
     });
-    api.on("audioMuteStatusChanged", ({ muted }: { muted: boolean }) => setAudioOn(!muted));
-    api.on("videoMuteStatusChanged", ({ muted }: { muted: boolean }) => setVideoOn(!muted));
-    api.on("screenSharingStatusChanged", ({ on }: { on: boolean }) => setSharingScreen(on));
-    api.on("videoConferenceLeft", () => onLeave());
+    api.on('audioMuteStatusChanged', ({ muted }: { muted: boolean }) => setAudioOn(!muted));
+    api.on('videoMuteStatusChanged', ({ muted }: { muted: boolean }) => setVideoOn(!muted));
+    api.on('screenSharingStatusChanged', ({ on }: { on: boolean }) => setSharingScreen(on));
+    api.on('videoConferenceLeft', () => onLeave());
   }, [session.roomName, localUserName, onLeave]);
 
   useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://meet.jit.si/external_api.js";
-    script.async = true;
-    script.onload = () => initJitsi();
-    document.head.appendChild(script);
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
+    // 1. Fetch JWT from our API
+    fetch('/api/jaasToken', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        roomName: session.roomName,
+        userName: localUserName,
+        isModerator: isHost,
+      }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.token) throw new Error(data.error || 'Token JaaS manquant');
+
+        // 2. Load JaaS SDK
+        const script = document.createElement('script');
+        script.src = 'https://8x8.vc/external_api.js';
+        script.async = true;
+        script.onload = () => initJitsi(data.token);
+        document.head.appendChild(script);
+      })
+      .catch(err => {
+        console.error('JaaS error:', err);
+        setError(err.message);
+      });
+
     return () => {
       apiRef.current?.dispose();
-      if (document.head.contains(script)) document.head.removeChild(script);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const toggleAudio = () => apiRef.current?.executeCommand("toggleAudio");
-  const toggleVideo = () => apiRef.current?.executeCommand("toggleVideo");
-  const toggleScreen = () => apiRef.current?.executeCommand("toggleShareScreen");
+  const toggleAudio = () => apiRef.current?.executeCommand('toggleAudio');
+  const toggleVideo = () => apiRef.current?.executeCommand('toggleVideo');
+  const toggleScreen = () => apiRef.current?.executeCommand('toggleShareScreen');
 
   const handleLeave = useCallback(() => {
-    apiRef.current?.executeCommand("hangup");
+    apiRef.current?.executeCommand('hangup');
     onLeave();
   }, [onLeave]);
 
   const handleEnd = useCallback(() => {
-    apiRef.current?.executeCommand("hangup");
+    apiRef.current?.executeCommand('hangup');
     onEnd();
   }, [onEnd]);
 
@@ -128,12 +154,22 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
           <button onClick={() => setShowParticipants(v => !v)} className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors text-xs">
             <Users size={14} /><span>{participantCount}</span>
           </button>
-          {!joined && <span className="text-slate-500 text-xs animate-pulse">Connexion...</span>}
+          {!joined && !error && <span className="text-slate-500 text-xs animate-pulse">Connexion...</span>}
         </div>
       </div>
 
       <div className="flex-1 relative overflow-hidden">
-        <div ref={containerRef} className="w-full h-full" />
+        {error ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center p-8">
+              <p className="text-red-400 font-semibold mb-2">Erreur de connexion</p>
+              <p className="text-slate-400 text-sm">{error}</p>
+            </div>
+          </div>
+        ) : (
+          <div ref={containerRef} className="w-full h-full" />
+        )}
+
         {showParticipants && (
           <div className="absolute right-0 top-0 h-full w-64 bg-slate-900 border-l border-slate-700 p-4 z-20">
             <div className="flex items-center justify-between mb-4">
@@ -157,15 +193,15 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
       </div>
 
       <div className="flex items-center justify-center gap-3 py-4 px-6 bg-slate-900 border-t border-slate-700">
-        <button onClick={toggleAudio} className={`flex flex-col items-center gap-1 p-3 rounded-2xl transition-colors ${audioOn ? "bg-slate-700 hover:bg-slate-600 text-white" : "bg-red-600 hover:bg-red-700 text-white"}`}>
+        <button onClick={toggleAudio} className={`flex flex-col items-center gap-1 p-3 rounded-2xl transition-colors ${audioOn ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-red-600 hover:bg-red-700 text-white'}`}>
           {audioOn ? <Mic size={20} /> : <MicOff size={20} />}
-          <span className="text-[9px] font-medium">{audioOn ? "Micro" : "Muet"}</span>
+          <span className="text-[9px] font-medium">{audioOn ? 'Micro' : 'Muet'}</span>
         </button>
-        <button onClick={toggleVideo} className={`flex flex-col items-center gap-1 p-3 rounded-2xl transition-colors ${videoOn ? "bg-slate-700 hover:bg-slate-600 text-white" : "bg-red-600 hover:bg-red-700 text-white"}`}>
+        <button onClick={toggleVideo} className={`flex flex-col items-center gap-1 p-3 rounded-2xl transition-colors ${videoOn ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-red-600 hover:bg-red-700 text-white'}`}>
           {videoOn ? <Video size={20} /> : <VideoOff size={20} />}
-          <span className="text-[9px] font-medium">{videoOn ? "Caméra" : "Arrêtée"}</span>
+          <span className="text-[9px] font-medium">{videoOn ? 'Caméra' : 'Arrêtée'}</span>
         </button>
-        <button onClick={toggleScreen} disabled={!joined} className={`flex flex-col items-center gap-1 p-3 rounded-2xl transition-colors ${!joined ? "bg-slate-800 text-slate-600 cursor-not-allowed" : sharingScreen ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-slate-700 hover:bg-slate-600 text-white"}`}>
+        <button onClick={toggleScreen} disabled={!joined} className={`flex flex-col items-center gap-1 p-3 rounded-2xl transition-colors ${!joined ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : sharingScreen ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}>
           {sharingScreen ? <MonitorOff size={20} /> : <Monitor size={20} />}
           <span className="text-[9px] font-medium">Écran</span>
         </button>
