@@ -134,22 +134,24 @@ export default function ContactFormModal({ onClose }: ContactFormModalProps) {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-700">WhatsApp</label>
+                    <label className="text-sm font-bold text-slate-700">WhatsApp *</label>
                     <input
+                      required
                       name="whatsapp"
                       value={formData.whatsapp}
                       onChange={handleChange}
-                      placeholder="+... (facultatif)"
+                      placeholder="+509..."
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-700">Organisation</label>
+                    <label className="text-sm font-bold text-slate-700">Organisation *</label>
                     <input
+                      required
                       name="organization"
                       value={formData.organization}
                       onChange={handleChange}
-                      placeholder="Partenaire (facultatif)"
+                      placeholder="Votre organisation"
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all"
                     />
                   </div>

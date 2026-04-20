@@ -220,13 +220,14 @@ export default function AppWrapper() {
     const buyer = users.find(u => u.uid === buyerId);
     const provider = users.find(u => u.uid === providerId);
 
-    if (!buyer || buyer.credits < negotiatedAmount) {
+    if (!buyer || (buyer.credits ?? 0) < negotiatedAmount) {
       alert("Erreur : Crédits insuffisants.");
       return;
     }
-
     try {
-      await updateDoc(doc(db, 'users', buyerId), { credits: buyer.credits - negotiatedAmount });
+  await updateDoc(doc(db, 'users', buyerId), { 
+  credits: (buyer.credits ?? 0) - negotiatedAmount 
+});
       await updateDoc(doc(db, 'users', providerId), { credits: (provider?.credits || 0) + negotiatedAmount });
 
       await addDoc(collection(db, 'transactions'), {

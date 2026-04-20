@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, Notification } from "@/types";
 import { supabase } from "@/lib/supabaseClient";
-import { onSnapshot, collection, db, query, where, orderBy } from "@/api";
+
 import { registerServiceWorker, subscribeUserToPush } from "@/lib/push";
 
 interface UserContextType {
@@ -54,32 +54,37 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // 🔵 Notifications Firestore Listener
+  // 🔵 Notifications polling
   useEffect(() => {
-    if (user) {
-      const unsub = onSnapshot(
-        query(
-          collection(db, "notifications"),
-          where("userId", "==", user.uid),
-          orderBy("createdAt", "desc")
-        ),
-        (snapshot) => {
-          setNotifications(
-            snapshot.docs.map(
-              (doc) => ({ id: doc.id, ...doc.data() } as Notification)
-            )
-          );
-        }
-      );
-
-      registerServiceWorker().then(() => {
-        subscribeUserToPush();
-      });
-
-      return () => unsub();
-    } else {
+    if (!user) {
       setNotifications([]);
+      return;
     }
+
+    const fetchNotifications = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        const res = await fetch("/api/notifications", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setNotifications(data as Notification[]);
+        }
+      } catch (e) {
+        console.error("Error fetching notifications:", e);
+      }
+    };
+
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 10000);
+
+    registerServiceWorker().then(() => {
+      subscribeUserToPush();
+    });
+
+    return () => clearInterval(interval);
   }, [user]);
 
   // 🔴 LOGOUT — VERSION SUPABASE

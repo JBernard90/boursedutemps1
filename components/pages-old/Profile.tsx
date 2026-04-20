@@ -100,13 +100,13 @@ const Profile: React.FC<ProfileProps> = ({
         <div className="h-48 bg-slate-900 p-8 flex items-end justify-between relative group">
           {isEditing ? (
             editedUser.coverPhoto ? (
-              <Image src={editedUser.coverPhoto} fill className="absolute inset-0 object-cover opacity-80" alt="Cover" unoptimized={editedUser.coverPhoto.startsWith('data:')} />
+              <Image src={editedUser.coverPhoto ?? ''} fill className="absolute inset-0 object-cover opacity-80" alt="Cover" unoptimized={(editedUser.coverPhoto ?? '').startsWith('data:')} />
             ) : (
               <div className="absolute inset-0 bg-gradient-to-r from-blue-900 to-indigo-900 opacity-80"></div>
             )
           ) : (
             user.coverPhoto ? (
-              <Image src={user.coverPhoto} fill className="absolute inset-0 object-cover opacity-80" alt="Cover" unoptimized={user.coverPhoto.startsWith('data:')} />
+              <Image src={user.coverPhoto ?? ''} fill className="absolute inset-0 object-cover opacity-80" alt="Cover" unoptimized={(user.coverPhoto ?? '').startsWith('data:')} />
             ) : (
               <div className="absolute inset-0 bg-gradient-to-r from-blue-900 to-indigo-900 opacity-80"></div>
             )
@@ -127,11 +127,11 @@ const Profile: React.FC<ProfileProps> = ({
               <div className="w-full h-full rounded-2xl bg-slate-100 flex items-center justify-center overflow-hidden relative">
                 {user.avatar ? (
                   <Image 
-                    src={user.avatar} 
+                    src={user.avatar ?? ''} 
                     alt="Avatar" 
                     fill 
                     className="object-cover" 
-                    unoptimized={user.avatar.startsWith('data:')} 
+                    unoptimized={(user.avatar ?? '').startsWith('data:')} 
                     sizes="128px"
                     priority
                   />
@@ -262,7 +262,7 @@ const Profile: React.FC<ProfileProps> = ({
                       <section>
                         <h3 className="font-heading text-lg font-bold text-slate-800 mb-4">Je propose</h3>
                         <div className="flex flex-wrap gap-2">
-                          {user.offeredSkills?.length > 0 ? user.offeredSkills.map((s, i) => (
+                          {(user.offeredSkills?.length ?? 0) > 0 ? user.offeredSkills!.map((s, i) => (
                             <span key={i} className="bg-green-50 text-green-600 px-4 py-1.5 rounded-xl text-xs font-bold border border-green-100">{s}</span>
                           )) : <span className="text-slate-400 text-sm italic">Aucune compétence listée</span>}
                         </div>
@@ -270,7 +270,7 @@ const Profile: React.FC<ProfileProps> = ({
                       <section>
                         <h3 className="font-heading text-lg font-bold text-slate-800 mb-4">Je recherche</h3>
                         <div className="flex flex-wrap gap-2">
-                          {user.requestedSkills?.length > 0 ? user.requestedSkills.map((s, i) => (
+                          {(user.requestedSkills?.length ?? 0) > 0 ? user.requestedSkills!.map((s, i) => (
                             <span key={i} className="bg-orange-50 text-orange-600 px-4 py-1.5 rounded-xl text-xs font-bold border border-orange-100">{s}</span>
                           )) : <span className="text-slate-400 text-sm italic">Aucune demande listée</span>}
                         </div>
@@ -443,11 +443,11 @@ const Profile: React.FC<ProfileProps> = ({
                           <div className="flex items-center gap-3">
                             <div className="relative w-10 h-10">
                               <Image 
-                                src={sender.avatar} 
+                                src={sender.avatar ?? ''} 
                                 alt="Avatar" 
                                 fill 
                                 className="rounded-full object-cover" 
-                                unoptimized={sender.avatar.startsWith('data:')} 
+                                unoptimized={(sender.avatar ?? '').startsWith('data:')} 
                                 sizes="40px"
                               />
                             </div>
@@ -477,11 +477,11 @@ const Profile: React.FC<ProfileProps> = ({
                         <div key={conn.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
                           <div className="relative w-10 h-10">
                             <Image 
-                              src={partner.avatar} 
+                              src={partner.avatar ?? ''} 
                               alt="Avatar" 
                               fill 
                               className="rounded-full object-cover" 
-                              unoptimized={partner.avatar.startsWith('data:')} 
+                              unoptimized={(partner.avatar ?? '').startsWith('data:')} 
                               sizes="40px"
                             />
                           </div>
@@ -512,11 +512,11 @@ const Profile: React.FC<ProfileProps> = ({
                       >
                         <div className="relative w-10 h-10">
                           <Image 
-                            src={partner.avatar} 
+                            src={partner.avatar ?? ''} 
                             alt="Avatar" 
                             fill 
                             className="rounded-full object-cover" 
-                            unoptimized={partner.avatar.startsWith('data:')} 
+                            unoptimized={(partner.avatar ?? '').startsWith('data:')} 
                             sizes="40px"
                           />
                         </div>

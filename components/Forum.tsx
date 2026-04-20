@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useRef } from 'react';
@@ -6,6 +7,7 @@ import { User, ForumTopic, MediaItem } from '../types';
 import { db, doc, updateDoc, deleteDoc, addDoc, collection } from '../api';
 import RichTextEditor from './RichTextEditor';
 import { Edit2, Trash2, MessageCircle, Heart, Share2 } from 'lucide-react';
+import ShareMenu from './ShareMenu';
 import LiveSection from './LiveSection';
 
 interface ForumProps {
@@ -24,7 +26,12 @@ const Forum: React.FC<ForumProps> = ({ user, topics }) => {
   const [externalLink, setExternalLink] = useState('');
   const [activeCommentPost, setActiveCommentPost] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
+  const [expandedPosts, setExpandedPosts] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const getShareUrl = (t: ForumTopic) => `${typeof window !== 'undefined' ? window.location.origin : ''}/forum#post-${t.id}`;
+  const handleShareCount = async (t: ForumTopic) => { await updateDoc(doc(db, 'forumTopics', t.id), { shares: (t.shares || 0) + 1 }); };
+  const toggleExpand = (id: string) => { setExpandedPosts(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }); };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -157,7 +164,7 @@ const Forum: React.FC<ForumProps> = ({ user, topics }) => {
               <div className="rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 p-2">
                 {mediaType === 'image' ? (
                   <div className="relative w-full h-40">
-                    <img src={mediaData} className="w-full h-full object-cover rounded-xl" alt="Preview" />
+                    <Image src={mediaData} fill className="object-cover rounded-xl" alt="Preview" unoptimized={mediaData.startsWith('data:')} />
                   </div>
                 ) : (
                   <video src={mediaData} className="w-full h-40 object-cover rounded-xl" />
@@ -178,7 +185,7 @@ const Forum: React.FC<ForumProps> = ({ user, topics }) => {
 
       <div className="space-y-6">
         {topics.length > 0 ? topics.map(topic => (
-          <div key={topic.id} className="bg-white p-8 rounded-[2rem] border border-slate-100 hover:border-blue-200 transition group relative">
+          <div key={topic.id} id={`post-${topic.id}`} className="bg-white p-8 rounded-[2rem] border border-slate-100 hover:border-blue-200 transition group relative scroll-mt-24">
             
             {user && (user.uid === topic.authorId || user.role === 'admin') && (
               <div className="absolute top-4 right-4 flex gap-2">
@@ -197,7 +204,12 @@ const Forum: React.FC<ForumProps> = ({ user, topics }) => {
               </div>
               <div className="flex-grow">
                 <h3 className="font-heading text-xl font-bold text-slate-800 mb-2 pr-16">{topic.title}</h3>
-                <p className="text-slate-500 text-sm mb-4">{topic.message}</p>
+                <div className={`text-slate-500 text-sm mb-1 prose prose-sm max-w-none ${!expandedPosts.has(topic.id) ? 'line-clamp-3' : ''}`} dangerouslySetInnerHTML={{ __html: topic.message ?? '' }} />
+                {topic.message && topic.message.length > 300 && (
+                  <button onClick={() => toggleExpand(topic.id)} className="text-blue-600 text-xs font-semibold hover:underline mb-3">
+                    {expandedPosts.has(topic.id) ? '↑ Réduire' : '↓ Lire plus'}
+                  </button>
+                )}
                 
                 {topic.externalLink && (
                   <a href={topic.externalLink} target="_blank" rel="noopener noreferrer" className="inline-block mb-4 text-blue-600 hover:underline text-sm font-medium">
@@ -229,10 +241,13 @@ const Forum: React.FC<ForumProps> = ({ user, topics }) => {
                     <MessageCircle size={18} />
                     <span className="text-xs">{(topic.comments || []).length}</span>
                   </button>
-                  <button onClick={() => handleShare(topic)} className="flex items-center gap-2 text-slate-400 hover:text-green-600 font-bold transition ml-auto">
-                    <Share2 size={18} />
-                    <span className="text-xs">{topic.shares || 0}</span>
-                  </button>
+                  <ShareMenu
+                    url={getShareUrl(topic)}
+                    title={topic.title ?? ''}
+                    text={topic.message?.replace(/<[^>]+>/g, '').substring(0, 200)}
+                    count={topic.shares || 0}
+                    onShare={() => handleShareCount(topic)}
+                  />
                 </div>
 
                 {activeCommentPost === topic.id && (

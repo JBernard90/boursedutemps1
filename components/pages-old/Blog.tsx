@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { BlogPost, User, MediaItem, BlogComment } from '../../types';
 import { Edit2, Trash2, MessageCircle, Heart, Share2, ExternalLink } from 'lucide-react';
 import { db, doc, updateDoc, deleteDoc, addDoc, collection } from '../../api';
+import RichTextEditor from '../RichTextEditor';
 
 interface BlogProps {
   blogs: BlogPost[];
@@ -52,16 +53,37 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
     return () => observer.disconnect();
   }, [blogs.length, displayLimit, isLoadingMore]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [uploadingMedia, setUploadingMedia] = useState(false);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setMediaData(reader.result as string);
-      setMediaType(file.type.startsWith('video') ? 'video' : 'image');
-    };
-    reader.readAsDataURL(file);
+    setUploadingMedia(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const token = localStorage.getItem('token') || '';
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMediaData(data.url);
+        setMediaType(file.type.startsWith('video') ? 'video' : 'image');
+      } else {
+        const reader = new FileReader();
+        reader.onloadend = () => { setMediaData(reader.result as string); setMediaType(file.type.startsWith('video') ? 'video' : 'image'); };
+        reader.readAsDataURL(file);
+      }
+    } catch {
+      const reader = new FileReader();
+      reader.onloadend = () => { setMediaData(reader.result as string); setMediaType(file.type.startsWith('video') ? 'video' : 'image'); };
+      reader.readAsDataURL(file);
+    } finally {
+      setUploadingMedia(false);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -182,7 +204,7 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
           </h2>
           <form onSubmit={handlePost} className="space-y-6">
             <input required placeholder="Titre accrocheur" className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500" value={newTitle} onChange={e => setNewTitle(e.target.value)} />
-            <textarea required placeholder="Racontez votre histoire..." className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none min-h-[120px] focus:ring-2 focus:ring-blue-500" value={newContent} onChange={e => setNewContent(e.target.value)} />
+            <RichTextEditor value={newContent} onChange={setNewContent} placeholder="Racontez votre histoire..." maxLength={8000} />
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <select className="px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 outline-none" value={newCategory} onChange={e => setNewCategory(e.target.value)}>
@@ -247,7 +269,7 @@ const Blog: React.FC<BlogProps> = ({ blogs, user, onUpdate, onAuthClick }) => {
                 </div>
                 {user && (user.uid === blog.authorId || user.role === 'admin') && (
                   <div className="flex gap-2">
-                    <button onClick={() => { setEditingPost(blog); setNewTitle(blog.title); setNewContent(blog.content); setNewCategory(blog.category); if (blog.media.length > 0) { setMediaData(blog.media[0].url); setMediaType(blog.media[0].type); } setShowAdd(true); }} className="p-2 text-slate-400 hover:text-blue-600 transition">
+                    <button onClick={() => { setEditingPost(blog); setNewTitle(blog.title ?? ''); setNewContent(blog.content ?? ''); setNewCategory(blog.category ?? ''); if (blog.media.length > 0) { setMediaData(blog.media[0].url); setMediaType(blog.media[0].type); } setShowAdd(true); }} className="p-2 text-slate-400 hover:text-blue-600 transition">
                       <Edit2 size={18} />
                     </button>
                     <button onClick={() => handleDelete(blog.id)} className="p-2 text-slate-400 hover:text-red-600 transition">

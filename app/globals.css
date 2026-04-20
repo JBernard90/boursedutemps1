@@ -1,7 +1,5 @@
 @import "tailwindcss";
 
-/* Force rebuild: 2026-04-19 03:10:00 */
-
 @theme {
   --font-sans: var(--font-sans);
   --font-heading: var(--font-heading);

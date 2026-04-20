@@ -175,7 +175,15 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-3">
                 <span className="text-blue-400">📞</span>
-                <span className="text-slate-400 text-sm">+509 32 27 4422</span>
+                <a
+                  href="https://wa.me/50932274422"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-slate-400 hover:text-green-400 text-sm transition-colors flex items-center gap-1"
+                >
+                  +509 32 27 4422
+                  <span className="text-[10px] bg-green-600 text-white px-1.5 py-0.5 rounded-full font-bold">WhatsApp</span>
+                </a>
               </li>
             </ul>
           </div>

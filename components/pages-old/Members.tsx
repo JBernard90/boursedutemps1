@@ -24,7 +24,7 @@ const Members: React.FC<MembersProps> = ({ users, onViewProfile, onContact }) =>
     const matchesSearch = 
       u.firstName.toLowerCase().includes(filter.toLowerCase()) ||
       u.lastName.toLowerCase().includes(filter.toLowerCase()) ||
-      u.department.toLowerCase().includes(filter.toLowerCase()) ||
+      (u.department ?? '').toLowerCase().includes(filter.toLowerCase()) ||
       (u.offeredSkills && u.offeredSkills.some(s => s.toLowerCase().includes(filter.toLowerCase()))) ||
       (u.requestedSkills && u.requestedSkills.some(s => s.toLowerCase().includes(filter.toLowerCase())));
     
@@ -103,11 +103,11 @@ const Members: React.FC<MembersProps> = ({ users, onViewProfile, onContact }) =>
             <div className="w-24 h-24 rounded-full overflow-hidden mx-auto mb-4 border-4 border-slate-50 group-hover:border-blue-100 transition relative">
               {u.avatar ? (
                 <Image 
-                  src={u.avatar} 
+                  src={u.avatar ?? ''} 
                   alt={`${u.firstName}`} 
                   fill 
                   className="object-cover" 
-                  unoptimized={u.avatar.startsWith('data:')} 
+                  unoptimized={(u.avatar ?? '').startsWith('data:')} 
                   sizes="96px"
                   quality={80}
                 />
