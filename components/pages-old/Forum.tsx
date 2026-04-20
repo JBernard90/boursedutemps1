@@ -27,6 +27,7 @@ const Forum: React.FC<ForumProps> = ({ user, topics }) => {
   const [activeCommentPost, setActiveCommentPost] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
   const [expandedPosts, setExpandedPosts] = useState<Set<string>>(new Set());
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const getShareUrl = (t: ForumTopic) => `${typeof window !== 'undefined' ? window.location.origin : ''}/forum#post-${t.id}`;
