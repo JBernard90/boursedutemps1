@@ -7,6 +7,7 @@ import { Testimonial, User, MediaItem } from '../../types';
 import { db, doc, updateDoc, deleteDoc, addDoc, collection } from '../../api';
 import RichTextEditor from '../RichTextEditor';
 import { Edit2, Trash2, MessageCircle, Heart, Share2 } from 'lucide-react';
+import ShareMenu from '../ShareMenu';
 
 interface TestimonialsProps {
   testimonials: Testimonial[];
@@ -26,7 +27,12 @@ const Testimonials: React.FC<TestimonialsProps> = ({ testimonials, user, onAuthC
   const [activeCommentPost, setActiveCommentPost] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [expandedPosts, setExpandedPosts] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const getShareUrl = (t: Testimonial) => `${typeof window !== 'undefined' ? window.location.origin : ''}/testimonials#post-${t.id}`;
+  const handleShareCount = async (t: Testimonial) => { await updateDoc(doc(db, 'testimonials', t.id), { shares: (t.shares || 0) + 1 }); };
+  const toggleExpand = (id: string) => { setExpandedPosts(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }); };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -193,7 +199,7 @@ const Testimonials: React.FC<TestimonialsProps> = ({ testimonials, user, onAuthC
 
       <div className="columns-1 md:columns-2 gap-8 space-y-8">
         {testimonials.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map(t => (
-          <div key={t.id} className="break-inside-avoid bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm group hover:shadow-xl transition-all relative overflow-hidden">
+          <div key={t.id} id={`post-${t.id}`} className="break-inside-avoid bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm group hover:shadow-xl transition-all relative overflow-hidden scroll-mt-24">
             
             {user && (user.uid === t.authorId || user.role === 'admin') && (
               <div className="absolute top-4 right-4 flex gap-2">
@@ -210,7 +216,12 @@ const Testimonials: React.FC<TestimonialsProps> = ({ testimonials, user, onAuthC
               {'★'.repeat(t.rating)}{'☆'.repeat(5-t.rating)}
             </div>
             <h3 className="font-heading font-bold text-xl text-slate-800 mb-4 pr-10">"{t.title}"</h3>
-            <div className="text-slate-500 italic leading-relaxed mb-8 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: t.content ?? '' }} />
+            <div className={`text-slate-500 italic leading-relaxed mb-4 prose prose-sm max-w-none ${!expandedPosts.has(t.id) ? 'line-clamp-4' : ''}`} dangerouslySetInnerHTML={{ __html: t.content ?? '' }} />
+            {t.content && t.content.length > 400 && (
+              <button onClick={() => toggleExpand(t.id)} className="text-blue-600 text-xs font-semibold hover:underline mb-6">
+                {expandedPosts.has(t.id) ? '↑ Réduire' : '↓ Lire plus'}
+              </button>
+            )}
 
             {t.media && t.media.length > 0 && (
               <div className="rounded-3xl overflow-hidden mb-8 bg-slate-50 border border-slate-100 relative min-h-[200px]">
@@ -238,10 +249,13 @@ const Testimonials: React.FC<TestimonialsProps> = ({ testimonials, user, onAuthC
                 <MessageCircle size={18} />
                 <span className="text-xs">{(t.comments || []).length}</span>
               </button>
-              <button onClick={() => handleShare(t)} className="flex items-center gap-2 text-slate-400 hover:text-green-600 font-bold transition ml-auto">
-                <Share2 size={18} />
-                <span className="text-xs">{t.shares || 0}</span>
-              </button>
+              <ShareMenu
+                url={getShareUrl(t)}
+                title={t.title ?? ''}
+                text={t.content?.replace(/<[^>]+>/g, '').substring(0, 200)}
+                count={t.shares || 0}
+                onShare={() => handleShareCount(t)}
+              />
             </div>
 
             {activeCommentPost === t.id && (
