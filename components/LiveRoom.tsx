@@ -39,44 +39,12 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
   const [participantCount, setParticipantCount] = useState(1);
   const [showParticipants, setShowParticipants] = useState(false);
   const [participants, setParticipants] = useState<string[]>([]);
-  const [jaasToken, setJaasToken] = useState<string | null>(null);
 
-  useEffect(() => {
-    // 1. Fetch JaaS token first
-    const token = localStorage.getItem('token');
-    fetch('/api/jaasToken', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ roomName: session.roomName }),
-    })
-      .then(r => r.json())
-      .then(data => {
-        if (data.token) setJaasToken(data.token);
-        else console.error('JaaS token error:', data.error);
-      })
-      .catch(console.error);
-  }, [session.roomName]);
-
-  useEffect(() => {
-    if (!jaasToken) return;
-    // 2. Load Jitsi SDK once token is ready
-    const script = document.createElement("script");
-    script.src = "https://8x8.vc/external_api.js";
-    script.async = true;
-    script.onload = () => initJitsi(jaasToken!);
-    document.head.appendChild(script);
-    return () => {
-      apiRef.current?.dispose();
-      if (document.head.contains(script)) document.head.removeChild(script);
-    };
-  }, [jaasToken]);
-
-  const initJitsi = useCallback((token: string) => {
+  const initJitsi = useCallback(() => {
     if (!containerRef.current || !window.JitsiMeetExternalAPI) return;
 
-    const api = new window.JitsiMeetExternalAPI("8x8.vc", {
-      roomName: `${process.env.NEXT_PUBLIC_JAAS_APP_ID || 'vpaas-magic-cookie-017a1705a9c54e49afac8d78f0522e2a'}/${session.roomName}`,
-      jwt: token,
+    const api = new window.JitsiMeetExternalAPI("meet.jit.si", {
+      roomName: session.roomName,
       parentNode: containerRef.current,
       width: "100%",
       height: "100%",
@@ -121,6 +89,19 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
     api.on("videoConferenceLeft", () => onLeave());
   }, [session.roomName, localUserName, onLeave]);
 
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://meet.jit.si/external_api.js";
+    script.async = true;
+    script.onload = () => initJitsi();
+    document.head.appendChild(script);
+    return () => {
+      apiRef.current?.dispose();
+      if (document.head.contains(script)) document.head.removeChild(script);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const toggleAudio = () => apiRef.current?.executeCommand("toggleAudio");
   const toggleVideo = () => apiRef.current?.executeCommand("toggleVideo");
   const toggleScreen = () => apiRef.current?.executeCommand("toggleShareScreen");
@@ -152,14 +133,6 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
       </div>
 
       <div className="flex-1 relative overflow-hidden">
-        {!joined && (
-          <div className="absolute inset-0 flex items-center justify-center z-10 bg-slate-950">
-            <div className="text-center">
-              <div className="w-12 h-12 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-slate-400 text-sm">Connexion à la salle...</p>
-            </div>
-          </div>
-        )}
         <div ref={containerRef} className="w-full h-full" />
         {showParticipants && (
           <div className="absolute right-0 top-0 h-full w-64 bg-slate-900 border-l border-slate-700 p-4 z-20">
