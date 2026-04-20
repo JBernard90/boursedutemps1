@@ -17,19 +17,7 @@ export async function POST(req: Request) {
     if (supabaseUrl && serviceRoleKey) {
       const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-      // Créer la table si elle n'existe pas
-      await supabase.rpc('exec_sql', {
-        sql: `CREATE TABLE IF NOT EXISTS contact_requests (
-          id SERIAL PRIMARY KEY,
-          full_name TEXT,
-          email TEXT NOT NULL,
-          whatsapp TEXT,
-          organization TEXT,
-          subject TEXT,
-          message TEXT NOT NULL,
-          created_at TIMESTAMPTZ DEFAULT NOW()
-        );`
-      }).catch(() => {}); // ignore si rpc non dispo
+      try { await supabase.rpc('exec_sql', { sql: `CREATE TABLE IF NOT EXISTS contact_requests (id SERIAL PRIMARY KEY, full_name TEXT, email TEXT NOT NULL, whatsapp TEXT, organization TEXT, subject TEXT, message TEXT NOT NULL, created_at TIMESTAMPTZ DEFAULT NOW());` }); } catch (_) {}
 
       const { error } = await supabase
         .from('contact_requests')
@@ -57,4 +45,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Erreur interne serveur.' }, { status: 500 });
   }
 }
-
