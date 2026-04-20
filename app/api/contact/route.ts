@@ -16,27 +16,20 @@ export async function POST(req: Request) {
 
     if (supabaseUrl && serviceRoleKey) {
       const supabase = createClient(supabaseUrl, serviceRoleKey);
-
-      try { await supabase.rpc('exec_sql', { sql: `CREATE TABLE IF NOT EXISTS contact_requests (id SERIAL PRIMARY KEY, full_name TEXT, email TEXT NOT NULL, whatsapp TEXT, organization TEXT, subject TEXT, message TEXT NOT NULL, created_at TIMESTAMPTZ DEFAULT NOW());` }); } catch (_) {}
-
       const { error } = await supabase
         .from('contact_requests')
         .insert({ full_name: name, email, whatsapp: whatsapp || null, organization: organization || null, subject: subject || '', message });
 
-      if (error) {
-        console.error('Supabase insert error:', error.message, error.details);
-        // Ne pas bloquer si la table n'existe pas encore — on continue quand même
-        if (!error.message.includes('does not exist')) {
-          return NextResponse.json({ error: 'Erreur lors de la sauvegarde du message.' }, { status: 500 });
-        }
+      if (error && !error.message.includes('does not exist')) {
+        console.error('Supabase error:', error.message);
+        return NextResponse.json({ error: 'Erreur lors de la sauvegarde du message.' }, { status: 500 });
       }
     }
 
-    // Envoyer email de confirmation
     try {
       await sendContactConfirmationEmail(name, email);
     } catch (emailErr) {
-      console.error('Email error (non-blocking):', emailErr);
+      console.error('Email error:', emailErr);
     }
 
     return NextResponse.json({ success: true, message: 'Message envoyé avec succès.' }, { status: 200 });
