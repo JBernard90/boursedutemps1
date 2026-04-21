@@ -93,9 +93,9 @@ export const deleteDoc = async (path: string) => {
 
 export const onSnapshot = (q: any, callback: (snapshot: any) => void, errorCallback?: (error: any) => void) => {
   let isCancelled = false;
-  
+
   const fetchSnapshot = async () => {
-    if (isCancelled) return;
+    if (isCancelled || document.hidden) return;
     try {
       const snapshot = await getDocs(q);
       if (!isCancelled) callback(snapshot);
@@ -107,11 +107,15 @@ export const onSnapshot = (q: any, callback: (snapshot: any) => void, errorCallb
 
   if (typeof window !== 'undefined') {
     fetchSnapshot();
-    const interval = setInterval(fetchSnapshot, 5000); // Poll every 5 seconds
+    // Réduit de 5s à 120s + pause quand onglet caché
+    const interval = setInterval(fetchSnapshot, 120000);
+    const onVisibility = () => { if (!document.hidden) fetchSnapshot(); };
+    document.addEventListener('visibilitychange', onVisibility);
 
     return () => {
       isCancelled = true;
       clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibility);
     };
   }
   return () => { isCancelled = true; };
