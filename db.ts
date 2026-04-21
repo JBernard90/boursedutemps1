@@ -252,6 +252,17 @@ export const initDB = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
+      CREATE TABLE IF NOT EXISTS contact_requests (
+        id SERIAL PRIMARY KEY,
+        full_name VARCHAR(255),
+        email VARCHAR(255) NOT NULL,
+        whatsapp VARCHAR(50),
+        organization VARCHAR(255),
+        subject VARCHAR(255),
+        message TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
       CREATE TABLE IF NOT EXISTS live_sessions (
         id SERIAL PRIMARY KEY,
         room_name VARCHAR(255) UNIQUE NOT NULL,
