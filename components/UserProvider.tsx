@@ -78,7 +78,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     };
 
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 10000);
+    const interval = setInterval(() => {
+      if (!document.hidden) fetchNotifications();
+    }, 60000);
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) fetchNotifications();
+    });
 
     registerServiceWorker().then(() => {
       subscribeUserToPush();
