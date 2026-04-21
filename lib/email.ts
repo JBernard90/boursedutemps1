@@ -38,7 +38,6 @@ export async function sendContactConfirmationEmail(name: string, email: string, 
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px; background: #f8fafc; border-radius: 12px;">
         <div style="text-align: center; margin-bottom: 24px;">
           <h1 style="color: #2563eb; font-size: 24px; margin: 0;">Bourse du Temps</h1>
-          <p style="color: #6b7280; margin: 4px 0 0;">Université Senghor</p>
         </div>
         <div style="background: white; padding: 24px; border-radius: 8px; border: 1px solid #e2e8f0;">
           <p style="color: #1e293b; font-size: 16px;">Bonjour <strong>${name}</strong>,</p>
