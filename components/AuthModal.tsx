@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { User } from '../types';
+import { supabase } from '../lib/supabaseClient';
+import { uploadToCloudinary } from '../lib/useCloudinaryUpload';
 
 interface AuthModalProps {
   mode: 'login' | 'signup';
@@ -35,28 +37,26 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
   const ALLOWED_DOMAIN = '@etu-usenghor.org';
 
   // ─────────────────────────────────────────────────────────────
-  // 1) Envoi OTP (login + signup)
+  // 1) Envoi OTP via Supabase (login + signup)
   // ─────────────────────────────────────────────────────────────
   const handleSendCode = async () => {
     if (!email.endsWith(ALLOWED_DOMAIN)) {
       alert(`Seules les adresses se terminant par ${ALLOWED_DOMAIN} sont autorisées.`);
       return;
     }
+    if (!supabase) { alert('Erreur de configuration Supabase.'); return; }
 
     setLoading(true);
     try {
-      const res = await fetch('/api/verify/init', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: mode === 'signup' },
       });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Erreur lors de l'envoi du code");
-
+      if (error) throw new Error(error.message);
       setStep(2);
       alert('Code envoyé ! Vérifiez votre email.');
     } catch (e: any) {
@@ -67,31 +67,32 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
   };
 
   // ─────────────────────────────────────────────────────────────
-  // 2) Vérification OTP (login + signup)
+  // 2) Vérification OTP via Supabase (login + signup)
   // ─────────────────────────────────────────────────────────────
   const verifyCode = async () => {
+    if (!supabase) { alert('Erreur de configuration Supabase.'); return; }
     setLoading(true);
     try {
-      const res = await fetch('/api/verify/check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, emailCode }),
+      const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token: emailCode,
+        type: 'email',
       });
+      if (error) throw new Error(error.message);
+      if (!data.session) throw new Error('Session introuvable.');
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Code incorrect.');
+      const accessToken = data.session.access_token;
+      localStorage.setItem('token', accessToken);
+      setIsEmailVerified(true);
 
       if (mode === 'login') {
-        // LOGIN → appel /api/login avec le mot de passe + l'OTP déjà vérifié
-        const loginRes = await fetch('/api/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, emailCode }),
+        // Récupérer le profil utilisateur
+        const userRes = await fetch('/api/auth/me', {
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
-        const loginData = await loginRes.json();
-        if (!loginRes.ok) throw new Error(loginData.error || 'Erreur de connexion.');
-        localStorage.setItem('token', loginData.token);
-        onAuth(loginData.user);
+        if (!userRes.ok) throw new Error('Utilisateur introuvable.');
+        const userData = await userRes.json();
+        onAuth(userData);
         onClose();
         return;
       }
@@ -118,15 +119,18 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
       return;
     }
 
+    if (!isEmailVerified) { alert('Vérifiez votre email en premier.'); return; }
     setLoading(true);
     try {
+      const token = localStorage.getItem('token') || '';
       const res = await fetch('/api/profil', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           email,
-          emailCode,
-          password,
           firstName,
           lastName,
           department,
@@ -177,25 +181,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onAuth, onSwitch }
     if (!file) return;
     setUploadingAvatar(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const token = localStorage.getItem('token') || '';
-      const res = await fetch('/api/upload', {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setAvatar(data.url);
+      const result = await uploadToCloudinary(file, 'boursedutemps/avatars');
+      if (result.secure_url) {
+        setAvatar(result.secure_url);
       } else {
-        // Fallback to base64 if upload fails
-        const reader = new FileReader();
-        reader.onloadend = () => setAvatar(reader.result as string);
-        reader.readAsDataURL(file);
+        throw new Error(result.error?.message || 'Upload échoué');
       }
     } catch {
-      // Fallback to base64
+      // Fallback to base64 if Cloudinary fails
       const reader = new FileReader();
       reader.onloadend = () => setAvatar(reader.result as string);
       reader.readAsDataURL(file);

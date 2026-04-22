@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { Testimonial, User, MediaItem } from '../../types';
 import { db, doc, updateDoc, deleteDoc, addDoc, collection } from '../../api';
 import RichTextEditor from '../RichTextEditor';
+import { uploadToCloudinary } from '../../lib/useCloudinaryUpload';
 import { Edit2, Trash2, MessageCircle, Heart, Share2 } from 'lucide-react';
 
 interface TestimonialsProps {
@@ -34,22 +35,12 @@ const Testimonials: React.FC<TestimonialsProps> = ({ testimonials, user, onAuthC
     if (!file) return;
     setUploadingMedia(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const token = localStorage.getItem('token') || '';
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setMediaData(data.url);
+      const result = await uploadToCloudinary(file, 'boursedutemps/media');
+      if (result.secure_url) {
+        setMediaData(result.secure_url);
         setMediaType(file.type.startsWith('video') ? 'video' : 'image');
       } else {
-        const reader = new FileReader();
-        reader.onloadend = () => { setMediaData(reader.result as string); setMediaType(file.type.startsWith('video') ? 'video' : 'image'); };
-        reader.readAsDataURL(file);
+        throw new Error('Upload échoué');
       }
     } catch {
       const reader = new FileReader();
