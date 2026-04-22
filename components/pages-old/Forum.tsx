@@ -45,7 +45,7 @@ const Forum: React.FC<ForumProps> = ({ user, topics, onAdd }) => {
     } else {
       const res = await fetch('/api/forumTopics', { method: 'POST', headers: authHeader, body: JSON.stringify({ ...postData, likes: [], shares: 0, comments: [], createdAt: new Date().toISOString() }) });
       const data = await res.json();
-      onAdd({ ...postData, id: data.id, likes: [], shares: 0, comments: [], createdAt: new Date().toISOString() } as ForumTopic);
+      onAdd({ ...postData, id: data.id, likes: [], dislikes: [], shares: 0, reposts: 0, comments: [], createdAt: new Date().toISOString() } as ForumTopic);
     }
     setShowAdd(false); setEditingPost(null); setNewTitle(''); setNewMsg(''); setExternalLink('');
   };
