@@ -4,21 +4,32 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   Mic, MicOff, Video, VideoOff, Monitor, MonitorOff, PhoneOff, Users, X,
   MessageCircle, Hand, PenTool, CircleStop, Settings, Lock, Unlock,
-  BarChart3, LayoutGrid, ImagePlus, MoreVertical, ChevronUp, MonitorSpeaker, Camera
+  BarChart3, LayoutGrid, ImagePlus, MoreVertical
 } from 'lucide-react';
 
 declare global {
   interface Window { JitsiMeetExternalAPI: any; }
 }
 
-interface LiveSession { /* ... identique ... */
-  id: number; roomName: string; roomUrl: string; title: string; type: string;
-  hostId: string; hostName: string; hostAvatar?: string; participantCount: number; startedAt: string;
+interface LiveSession {
+  id: number;
+  roomName: string;
+  roomUrl: string;
+  title: string;
+  type: string;
+  hostId: string;
+  hostName: string;
+  hostAvatar?: string;
+  participantCount: number;
+  startedAt: string;
 }
 
 interface LiveRoomProps {
-  session: LiveSession; localUserName: string; isHost: boolean;
-  onLeave: () => void; onEnd: () => void;
+  session: LiveSession;
+  localUserName: string;
+  isHost: boolean;
+  onLeave: () => void;
+  onEnd: () => void;
 }
 
 export default function LiveRoom({ session, localUserName, isHost, onLeave, onEnd }: LiveRoomProps) {
@@ -45,8 +56,59 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
   const [audioInputs, setAudioInputs] = useState<MediaDeviceInfo[]>([]);
   const [videoInputs, setVideoInputs] = useState<MediaDeviceInfo[]>([]);
 
-  // 1. Initialisation de Jitsi et des événements
+  // 1. Initialisation de Jitsi et des événements (CORRIGÉ : initJitsi intégré au useEffect)
   useEffect(() => {
+    const initJitsi = () => {
+      if (!containerRef.current || !window.JitsiMeetExternalAPI) return;
+
+      const api = new window.JitsiMeetExternalAPI("meet.jit.si", {
+        roomName: session.roomName,
+        parentNode: containerRef.current,
+        width: "100%",
+        height: "100%",
+        userInfo: { displayName: localUserName },
+        configOverwrite: {
+          startWithAudioMuted: false,
+          startWithVideoMuted: false,
+          disableDeepLinking: true,
+          prejoinPageEnabled: false,
+          enableWelcomePage: false,
+          toolbarButtons: [],
+          disableInviteFunctions: true,
+          doNotStoreRoom: true,
+          enableLocalRecording: true,
+        },
+        interfaceConfigOverwrite: {
+          SHOW_JITSI_WATERMARK: false,
+          SHOW_WATERMARK_FOR_GUESTS: false,
+          SHOW_BRAND_WATERMARK: false,
+          SHOW_POWERED_BY: false,
+          DISPLAY_WELCOME_FOOTER: false,
+          TOOLBAR_BUTTONS: [],
+          SETTINGS_SECTIONS: ['devices', 'language', 'moderator'],
+          HIDE_INVITE_MORE_HEADER: true,
+          MOBILE_APP_PROMO: false,
+        },
+      });
+
+      apiRef.current = api;
+
+      api.on("videoConferenceJoined", () => setJoined(true));
+      api.on("participantJoined", () => {
+        setParticipantCount(api.getParticipantsInfo().length);
+      });
+      api.on("participantLeft", () => {
+        setParticipantCount(api.getParticipantsInfo().length);
+      });
+      api.on("audioMuteStatusChanged", ({ muted }: { muted: boolean }) => setAudioOn(!muted));
+      api.on("videoMuteStatusChanged", ({ muted }: { muted: boolean }) => setVideoOn(!muted));
+      api.on("screenSharingStatusChanged", ({ on }: { on: boolean }) => setSharingScreen(on));
+      api.on("raiseHandUpdated", ({ handRaised }: { handRaised: boolean }) => setIsHandRaised(handRaised));
+      api.on("recordingStatusChanged", ({ status }: { status: string }) => setIsRecording(status === 'on'));
+      api.on("tileViewChanged", ({ enabled }: { enabled: boolean }) => setIsTileView(enabled));
+      api.on("videoConferenceLeft", () => onLeave());
+    };
+
     const script = document.createElement("script");
     script.src = "https://meet.jit.si/external_api.js";
     script.async = true;
@@ -63,49 +125,6 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
       apiRef.current?.dispose();
       if (document.head.contains(script)) document.head.removeChild(script);
     };
-  }, []);
-
-  const initJitsi = useCallback(() => {
-    if (!containerRef.current || !window.JitsiMeetExternalAPI) return;
-
-    const api = new window.JitsiMeetExternalAPI("meet.jit.si", {
-      roomName: session.roomName,
-      parentNode: containerRef.current,
-      width: "100%",
-      height: "100%",
-      userInfo: { displayName: localUserName },
-      configOverwrite: {
-        startWithAudioMuted: false, startWithVideoMuted: false,
-        disableDeepLinking: true, prejoinPageEnabled: false, enableWelcomePage: false,
-        toolbarButtons: [], disableInviteFunctions: true, doNotStoreRoom: true,
-        enableLocalRecording: true, // Nécessaire pour l'enregistrement local
-      },
-      interfaceConfigOverwrite: {
-        SHOW_JITSI_WATERMARK: false, SHOW_WATERMARK_FOR_GUESTS: false,
-        SHOW_BRAND_WATERMARK: false, SHOW_POWERED_BY: false,
-        DISPLAY_WELCOME_FOOTER: false, TOOLBAR_BUTTONS: [],
-        SETTINGS_SECTIONS: [ 'devices', 'language', 'moderator' ], // Limite les sections de paramètres
-        HIDE_INVITE_MORE_HEADER: true, MOBILE_APP_PROMO: false,
-      },
-    });
-
-    apiRef.current = api;
-
-    // Écoute des événements Jitsi
-    api.on("videoConferenceJoined", () => setJoined(true));
-    api.on("participantJoined", () => {
-      setParticipantCount(api.getParticipantsInfo().length);
-    });
-    api.on("participantLeft", () => {
-      setParticipantCount(api.getParticipantsInfo().length);
-    });
-    api.on("audioMuteStatusChanged", ({ muted }: { muted: boolean }) => setAudioOn(!muted));
-    api.on("videoMuteStatusChanged", ({ muted }: { muted: boolean }) => setVideoOn(!muted));
-    api.on("screenSharingStatusChanged", ({ on }: { on: boolean }) => setSharingScreen(on));
-    api.on("raiseHandUpdated", ({ handRaised }: { handRaised: boolean }) => setIsHandRaised(handRaised));
-    api.on("recordingStatusChanged", ({ status }: { status: string }) => setIsRecording(status === 'on'));
-    api.on("tileViewChanged", ({ enabled }: { enabled: boolean }) => setIsTileView(enabled));
-    api.on("videoConferenceLeft", () => onLeave());
   }, [session.roomName, localUserName, onLeave]);
 
   // 2. Fonctions de commandes (Mapping avec l'API Jitsi)
@@ -129,7 +148,6 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
 
   const openVirtualBackground = () => {
     setShowMoreMenu(false);
-    // Jitsi n'a pas de commande directe pour le BG, on ouvre les paramètres à la bonne section
     apiRef.current?.executeCommand("toggleSettings", { section: 'virtual-background' });
   };
 
@@ -141,7 +159,7 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
         await apiRef.current?.executeCommand("stopRecording", { mode: 'local' });
       }
     } catch (error) {
-      console.error("Erreur d'enregistrement (nécessite souvent des permissions ou un service externe) :", error);
+      console.error("Erreur d'enregistrement :", error);
       alert("L'enregistrement a échoué. Vérifiez les autorisations du navigateur.");
     }
   };
@@ -152,15 +170,22 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
     setShowDeviceMenu(false);
   };
 
-  const handleLeave = useCallback(() => { apiRef.current?.executeCommand("hangup"); onLeave(); }, [onLeave]);
-  const handleEnd = useCallback(() => { apiRef.current?.executeCommand("hangup"); onEnd(); }, [onEnd]);
+  const handleLeave = useCallback(() => {
+    apiRef.current?.executeCommand("hangup");
+    onLeave();
+  }, [onLeave]);
 
-  // 3. Composants d'interface réutilisables
+  const handleEnd = useCallback(() => {
+    apiRef.current?.executeCommand("hangup");
+    onEnd();
+  }, [onEnd]);
+
+  // 3. Composant bouton réutilisable
   const ActionButton = ({ icon, label, active, activeClass = "bg-blue-600", onClick, disabled = false, danger = false }: any) => (
     <button
       onClick={onClick}
       disabled={disabled || !joined}
-      className={`relative flex flex-col items-center gap-1 p-2.5 rounded-2xl transition-all duration-200 group
+      className={`relative flex flex-col items-center gap-1 p-2.5 rounded-2xl transition-all duration-200
         ${disabled || !joined ? "bg-slate-800/50 text-slate-600 cursor-not-allowed" : 
           danger ? "bg-red-600 hover:bg-red-700 text-white" : 
           active ? `${activeClass} text-white shadow-lg` : "bg-slate-700/80 hover:bg-slate-600 text-white"}
@@ -168,7 +193,6 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
     >
       {icon}
       <span className="text-[9px] font-medium opacity-80">{label}</span>
-      {/* Tooltip au survol (optionnel) */}
     </button>
   );
 
@@ -213,7 +237,8 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
               <span className="text-sm font-semibold text-slate-700 flex items-center gap-2"><PenTool size={16} /> Tableau blanc collaboratif</span>
               <button onClick={() => setShowWhiteboard(false)} className="p-1 hover:bg-slate-300 rounded-lg transition-colors"><X size={18} className="text-slate-600" /></button>
             </div>
-            <iframe src="https://excalidraw.com" className="w-full flex-1" allowTransparency backgroundColor="white" />
+            {/* CORRIGÉ : backgroundColor="white" supprimé et remplacé par bg-white dans className */}
+            <iframe src="https://excalidraw.com" className="w-full flex-1 bg-white" />
           </div>
         )}
       </div>
@@ -244,52 +269,4 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
         {/* Menu "Plus" (Pop-up) */}
         {showMoreMenu && (
           <div className="absolute bottom-full mb-2 right-4 w-64 bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl p-3 z-50 grid grid-cols-3 gap-2">
-            <ActionButton icon={<LayoutGrid size={18} />} label="Mosaïque" active={isTileView} onClick={() => { toggleTileView(); setShowMoreMenu(false); }} />
-            <ActionButton icon={<ImagePlus size={18} />} label="Arrière-plan" onClick={openVirtualBackground} />
-            <ActionButton icon={<BarChart3 size={18} />} label="Statistiques" onClick={() => { toggleStats(); setShowMoreMenu(false); }} />
-            {isHost && <ActionButton icon={isLocked ? <Unlock size={18} /> : <Lock size={18} />} label="Sécurité" active={isLocked} activeClass="bg-yellow-600" onClick={() => { toggleRoomLock(); setShowMoreMenu(false); }} />}
-            <ActionButton icon={<Settings size={18} />} label="Paramètres" onClick={() => openSettings()} />
-          </div>
-        )}
-
-        {/* Barre d'outils principale */}
-        <div className="flex items-center justify-between">
-          
-          {/* Groupe Gauche : Contrôles Médias */}
-          <div className="flex items-center gap-2">
-            <ActionButton icon={audioOn ? <Mic size={20} /> : <MicOff size={20} />} label={audioOn ? "Micro" : "Muet"} active={!audioOn} activeClass="bg-red-600" onClick={toggleAudio} />
-            
-            {/* Bouton Caméra avec menu contextuel long-press/clic droit simulé par un dropdown à part */}
-            <div className="relative">
-              <ActionButton icon={videoOn ? <Video size={20} /> : <VideoOff size={20} />} label={videoOn ? "Caméra" : "Arrêtée"} active={!videoOn} activeClass="bg-red-600" onClick={toggleVideo} onContextMenu={(e) => { e.preventDefault(); setShowDeviceMenu(!showDeviceMenu); }} />
-              <button onClick={() => setShowDeviceMenu(!showDeviceMenu)} className="absolute -top-1 -right-1 w-3 h-3 bg-slate-500 rounded-full hover:bg-blue-500 transition-colors border border-slate-900" title="Choisir le périphérique" />
-            </div>
-
-            <ActionButton icon={sharingScreen ? <MonitorOff size={20} /> : <Monitor size={20} />} label="Écran" active={sharingScreen} onClick={toggleScreen} />
-          </div>
-
-          {/* Groupe Centre : Interactions */}
-          <div className="flex items-center gap-2 bg-slate-800/50 px-3 py-1.5 rounded-2xl">
-            <ActionButton icon={<MessageCircle size={20} />} label="Chat" onClick={toggleChat} />
-            <ActionButton icon={<Hand size={20} />} label="Main" active={isHandRaised} activeClass="bg-yellow-500 text-black" onClick={toggleHand} />
-            <ActionButton icon={<PenTool size={20} />} label="Tableau" active={showWhiteboard} onClick={() => setShowWhiteboard(!showWhiteboard)} />
-            <ActionButton icon={<CircleStop size={20} />} label="Enregistrer" active={isRecording} activeClass="bg-red-600 animate-pulse" onClick={handleRecording} />
-          </div>
-
-          {/* Groupe Droite : Plus et Sortie */}
-          <div className="flex items-center gap-2">
-            <ActionButton icon={<MoreVertical size={20} />} label="Plus" active={showMoreMenu} onClick={() => { setShowMoreMenu(!showMoreMenu); setShowDeviceMenu(false); }} />
-            
-            <div className="w-px h-10 bg-slate-700 mx-1" />
-            
-            {isHost ? (
-              <ActionButton icon={<PhoneOff size={20} />} label="Terminer pour tous" danger onClick={handleEnd} />
-            ) : (
-              <ActionButton icon={<PhoneOff size={20} />} label="Quitter" danger onClick={handleLeave} />
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+            <
