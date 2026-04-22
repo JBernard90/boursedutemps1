@@ -36,14 +36,12 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
   const containerRef = useRef<HTMLDivElement>(null);
   const apiRef = useRef<any>(null);
 
-  // États de base
   const [joined, setJoined] = useState(false);
   const [audioOn, setAudioOn] = useState(true);
   const [videoOn, setVideoOn] = useState(true);
   const [sharingScreen, setSharingScreen] = useState(false);
   const [participantCount, setParticipantCount] = useState(1);
 
-  // Nouveaux états (Fonctionnalités avancées)
   const [isHandRaised, setIsHandRaised] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
@@ -51,12 +49,10 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
   const [showWhiteboard, setShowWhiteboard] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   
-  // États pour les périphériques
   const [showDeviceMenu, setShowDeviceMenu] = useState(false);
   const [audioInputs, setAudioInputs] = useState<MediaDeviceInfo[]>([]);
   const [videoInputs, setVideoInputs] = useState<MediaDeviceInfo[]>([]);
 
-  // 1. Initialisation de Jitsi et des événements (CORRIGÉ : initJitsi intégré au useEffect)
   useEffect(() => {
     const initJitsi = () => {
       if (!containerRef.current || !window.JitsiMeetExternalAPI) return;
@@ -100,12 +96,12 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
       api.on("participantLeft", () => {
         setParticipantCount(api.getParticipantsInfo().length);
       });
-      api.on("audioMuteStatusChanged", ({ muted }: { muted: boolean }) => setAudioOn(!muted));
-      api.on("videoMuteStatusChanged", ({ muted }: { muted: boolean }) => setVideoOn(!muted));
-      api.on("screenSharingStatusChanged", ({ on }: { on: boolean }) => setSharingScreen(on));
-      api.on("raiseHandUpdated", ({ handRaised }: { handRaised: boolean }) => setIsHandRaised(handRaised));
-      api.on("recordingStatusChanged", ({ status }: { status: string }) => setIsRecording(status === 'on'));
-      api.on("tileViewChanged", ({ enabled }: { enabled: boolean }) => setIsTileView(enabled));
+      api.on("audioMuteStatusChanged", (e: any) => setAudioOn(!e.muted));
+      api.on("videoMuteStatusChanged", (e: any) => setVideoOn(!e.muted));
+      api.on("screenSharingStatusChanged", (e: any) => setSharingScreen(e.on));
+      api.on("raiseHandUpdated", (e: any) => setIsHandRaised(e.handRaised));
+      api.on("recordingStatusChanged", (e: any) => setIsRecording(e.status === 'on'));
+      api.on("tileViewChanged", (e: any) => setIsTileView(e.enabled));
       api.on("videoConferenceLeft", () => onLeave());
     };
 
@@ -115,7 +111,6 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
     script.onload = () => initJitsi();
     document.head.appendChild(script);
 
-    // Récupération des périphériques au montage
     navigator.mediaDevices.enumerateDevices().then(devices => {
       setAudioInputs(devices.filter(d => d.kind === 'audioinput'));
       setVideoInputs(devices.filter(d => d.kind === 'videoinput'));
@@ -127,7 +122,6 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
     };
   }, [session.roomName, localUserName, onLeave]);
 
-  // 2. Fonctions de commandes (Mapping avec l'API Jitsi)
   const toggleAudio = () => apiRef.current?.executeCommand("toggleAudio");
   const toggleVideo = () => apiRef.current?.executeCommand("toggleVideo");
   const toggleScreen = () => apiRef.current?.executeCommand("toggleShareScreen");
@@ -135,12 +129,13 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
   const toggleParticipants = () => apiRef.current?.executeCommand("toggleParticipants");
   const toggleHand = () => apiRef.current?.executeCommand("toggleRaiseHand");
   const toggleTileView = () => apiRef.current?.executeCommand("toggleTileView");
+  const toggleStats = () => apiRef.current?.executeCommand("toggleStats");
+  
   const toggleRoomLock = () => {
     apiRef.current?.executeCommand("toggleRoomLock");
     setIsLocked(!isLocked);
   };
-  const toggleStats = () => apiRef.current?.executeCommand("toggleStats");
-  
+
   const openSettings = (section?: string) => {
     setShowMoreMenu(false);
     apiRef.current?.executeCommand("toggleSettings", section ? { section } : undefined);
@@ -160,7 +155,6 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
       }
     } catch (error) {
       console.error("Erreur d'enregistrement :", error);
-      alert("L'enregistrement a échoué. Vérifiez les autorisations du navigateur.");
     }
   };
 
@@ -180,27 +174,31 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
     onEnd();
   }, [onEnd]);
 
-  // 3. Composant bouton réutilisable
-  const ActionButton = ({ icon, label, active, activeClass = "bg-blue-600", onClick, disabled = false, danger = false }: any) => (
-    <button
-      onClick={onClick}
-      disabled={disabled || !joined}
-      className={`relative flex flex-col items-center gap-1 p-2.5 rounded-2xl transition-all duration-200
-        ${disabled || !joined ? "bg-slate-800/50 text-slate-600 cursor-not-allowed" : 
-          danger ? "bg-red-600 hover:bg-red-700 text-white" : 
-          active ? `${activeClass} text-white shadow-lg` : "bg-slate-700/80 hover:bg-slate-600 text-white"}
-      `}
-    >
-      {icon}
-      <span className="text-[9px] font-medium opacity-80">{label}</span>
-    </button>
-  );
+  const ActionButton = ({ icon, label, active, activeClass, onClick, disabled, danger }: any) => {
+    const isDisabled = disabled || !joined;
+    let classes = "relative flex flex-col items-center gap-1 p-2.5 rounded-2xl transition-all duration-200 ";
+    
+    if (isDisabled) {
+      classes += "bg-slate-800/50 text-slate-600 cursor-not-allowed";
+    } else if (danger) {
+      classes += "bg-red-600 hover:bg-red-700 text-white";
+    } else if (active) {
+      classes += `${activeClass || "bg-blue-600"} text-white shadow-lg`;
+    } else {
+      classes += "bg-slate-700/80 hover:bg-slate-600 text-white";
+    }
 
-  // 4. Rendu JSX
+    return (
+      <button onClick={onClick} disabled={isDisabled} className={classes}>
+        {icon}
+        <span className="text-[9px] font-medium opacity-80">{label}</span>
+      </button>
+    );
+  };
+
   return (
     <div className="flex flex-col h-full bg-slate-950 rounded-[2rem] overflow-hidden border border-slate-800 shadow-2xl">
       
-      {/* HEADER */}
       <div className="flex items-center justify-between px-6 py-3 bg-slate-900/80 backdrop-blur-sm border-b border-slate-800">
         <div className="flex items-center gap-3">
           <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shadow-lg shadow-red-500/50" />
@@ -217,7 +215,6 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
         </div>
       </div>
 
-      {/* MAIN CONTENT AREA */}
       <div className="flex-1 relative overflow-hidden bg-black">
         <div ref={containerRef} className="w-full h-full" />
         
@@ -230,23 +227,19 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
           </div>
         )}
 
-        {/* TABLEAU BLANC (Excalidraw Overlay) */}
         {showWhiteboard && (
           <div className="absolute inset-4 z-30 bg-white rounded-2xl shadow-2xl overflow-hidden border-4 border-blue-500 flex flex-col">
             <div className="flex items-center justify-between p-2 bg-slate-100 border-b">
               <span className="text-sm font-semibold text-slate-700 flex items-center gap-2"><PenTool size={16} /> Tableau blanc collaboratif</span>
               <button onClick={() => setShowWhiteboard(false)} className="p-1 hover:bg-slate-300 rounded-lg transition-colors"><X size={18} className="text-slate-600" /></button>
             </div>
-            {/* CORRIGÉ : backgroundColor="white" supprimé et remplacé par bg-white dans className */}
             <iframe src="https://excalidraw.com" className="w-full flex-1 bg-white" />
           </div>
         )}
       </div>
 
-      {/* FOOTER TOOLBAR */}
       <div className="relative bg-slate-900/90 backdrop-blur-md border-t border-slate-800 px-4 py-3">
         
-        {/* Menu Périphériques (Pop-up au-dessus de la barre) */}
         {showDeviceMenu && (
           <div className="absolute bottom-full mb-2 left-4 w-72 bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl p-4 z-50">
             <h4 className="text-xs font-bold text-slate-400 mb-2 uppercase">Microphones</h4>
@@ -266,7 +259,49 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
           </div>
         )}
 
-        {/* Menu "Plus" (Pop-up) */}
         {showMoreMenu && (
           <div className="absolute bottom-full mb-2 right-4 w-64 bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl p-3 z-50 grid grid-cols-3 gap-2">
-            <
+            <ActionButton icon={<LayoutGrid size={18} />} label="Mosaïque" active={isTileView} onClick={() => { toggleTileView(); setShowMoreMenu(false); }} />
+            <ActionButton icon={<ImagePlus size={18} />} label="Arrière-plan" onClick={openVirtualBackground} />
+            <ActionButton icon={<BarChart3 size={18} />} label="Statistiques" onClick={() => { toggleStats(); setShowMoreMenu(false); }} />
+            {isHost && <ActionButton icon={isLocked ? <Unlock size={18} /> : <Lock size={18} />} label="Sécurité" active={isLocked} activeClass="bg-yellow-600" onClick={() => { toggleRoomLock(); setShowMoreMenu(false); }} />}
+            <ActionButton icon={<Settings size={18} />} label="Paramètres" onClick={() => openSettings()} />
+          </div>
+        )}
+
+        <div className="flex items-center justify-between">
+          
+          <div className="flex items-center gap-2">
+            <ActionButton icon={audioOn ? <Mic size={20} /> : <MicOff size={20} />} label={audioOn ? "Micro" : "Muet"} active={!audioOn} activeClass="bg-red-600" onClick={toggleAudio} />
+            
+            <div className="relative">
+              <ActionButton icon={videoOn ? <Video size={20} /> : <VideoOff size={20} />} label={videoOn ? "Caméra" : "Arrêtée"} active={!videoOn} activeClass="bg-red-600" onClick={toggleVideo} />
+              <button onClick={() => setShowDeviceMenu(!showDeviceMenu)} className="absolute -top-1 -right-1 w-3 h-3 bg-slate-500 rounded-full hover:bg-blue-500 transition-colors border border-slate-900" title="Choisir le périphérique" />
+            </div>
+
+            <ActionButton icon={sharingScreen ? <MonitorOff size={20} /> : <Monitor size={20} />} label="Écran" active={sharingScreen} onClick={toggleScreen} />
+          </div>
+
+          <div className="flex items-center gap-2 bg-slate-800/50 px-3 py-1.5 rounded-2xl">
+            <ActionButton icon={<MessageCircle size={20} />} label="Chat" onClick={toggleChat} />
+            <ActionButton icon={<Hand size={20} />} label="Main" active={isHandRaised} activeClass="bg-yellow-500 text-black" onClick={toggleHand} />
+            <ActionButton icon={<PenTool size={20} />} label="Tableau" active={showWhiteboard} onClick={() => setShowWhiteboard(!showWhiteboard)} />
+            <ActionButton icon={<CircleStop size={20} />} label="Enregistrer" active={isRecording} activeClass="bg-red-600 animate-pulse" onClick={handleRecording} />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <ActionButton icon={<MoreVertical size={20} />} label="Plus" active={showMoreMenu} onClick={() => { setShowMoreMenu(!showMoreMenu); setShowDeviceMenu(false); }} />
+            
+            <div className="w-px h-10 bg-slate-700 mx-1" />
+            
+            {isHost ? (
+              <ActionButton icon={<PhoneOff size={20} />} label="Terminer" danger onClick={handleEnd} />
+            ) : (
+              <ActionButton icon={<PhoneOff size={20} />} label="Quitter" danger onClick={handleLeave} />
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
