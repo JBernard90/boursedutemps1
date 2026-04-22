@@ -62,7 +62,6 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
   const [fullscreen, setFullscreen] = useState(false);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
 
-  // Timer
   useEffect(() => {
     if (!joined) return;
     const interval = setInterval(() => {
@@ -91,7 +90,6 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
         doNotStoreRoom: true,
         defaultLocalDisplayName: localUserName,
         hideDisplayName: false,
-        // Activer toutes les fonctionnalités
         enableClosePage: false,
         disablePolls: false,
         whiteboard: { enabled: true },
@@ -176,61 +174,42 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
   return (
     <div className={`flex flex-col bg-slate-950 overflow-hidden transition-all duration-300 ${fullscreen ? 'fixed inset-0 z-[100] rounded-none' : 'h-full rounded-[2rem]'}`}>
 
-      {/* ── Header ── */}
       <div className="flex items-center justify-between px-5 py-3 bg-gradient-to-r from-slate-900 to-slate-800 border-b border-slate-700/50">
         <div className="flex items-center gap-3 min-w-0">
-          {/* Live badge */}
           <div className="flex items-center gap-1.5 bg-red-600 px-2.5 py-1 rounded-full flex-shrink-0">
             <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
             <span className="text-white text-[10px] font-bold uppercase tracking-wider">Live</span>
           </div>
-
-          {/* Type badge */}
           <span className={`${typeInfo.color} text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0`}>
             {typeInfo.emoji} {typeInfo.label}
           </span>
-
-          {/* Title */}
           <span className="text-white text-sm font-semibold truncate">{session.title}</span>
         </div>
 
         <div className="flex items-center gap-3 flex-shrink-0">
-          {/* Duration */}
           {joined && (
             <div className="flex items-center gap-1.5 bg-slate-800 px-2.5 py-1 rounded-full">
               <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
               <span className="text-slate-300 text-xs font-mono font-medium">{duration}</span>
             </div>
           )}
-
-          {/* Participants */}
           <button
             onClick={() => setShowParticipants(v => !v)}
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full transition-colors text-xs font-medium ${showParticipants ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
           >
-            <Users size={12} />
-            <span>{participantCount}</span>
+            <Users size={12} /><span>{participantCount}</span>
           </button>
-
-          {/* Fullscreen */}
           <button
             onClick={() => setFullscreen(v => !v)}
             className="p-1.5 rounded-full bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
-            title={fullscreen ? 'Quitter le plein écran' : 'Plein écran'}
           >
             {fullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
           </button>
-
-          {!joined && !error && (
-            <span className="text-slate-500 text-xs animate-pulse">Connexion...</span>
-          )}
+          {!joined && !error && <span className="text-slate-500 text-xs animate-pulse">Connexion...</span>}
         </div>
       </div>
 
-      {/* ── Main area ── */}
       <div className="flex flex-1 overflow-hidden relative">
-
-        {/* Video container */}
         <div className="flex-1 relative bg-slate-950">
           {error ? (
             <div className="flex items-center justify-center h-full">
@@ -257,7 +236,6 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
           <div ref={containerRef} className={`w-full h-full ${!joined ? 'opacity-0 absolute inset-0' : ''}`} />
         </div>
 
-        {/* Participants panel */}
         {showParticipants && (
           <div className="w-64 bg-slate-900 border-l border-slate-700/50 flex flex-col">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/50">
@@ -267,7 +245,6 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-3 space-y-2">
-              {/* Local user */}
               <div className="flex items-center gap-3 p-2 rounded-xl bg-slate-800/50">
                 <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                   {localUserName[0]?.toUpperCase()}
@@ -278,8 +255,6 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
                 </div>
                 {isHost && <span className="ml-auto text-yellow-400 text-[10px] font-bold bg-yellow-400/10 px-1.5 py-0.5 rounded-full">HOST</span>}
               </div>
-
-              {/* Remote participants */}
               {participants.map((p, i) => (
                 <div key={p.id || i} className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-800/50 transition-colors">
                   <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
@@ -288,7 +263,6 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
                   <p className="text-slate-300 text-xs truncate">{p.name}</p>
                 </div>
               ))}
-
               {participantCount === 1 && (
                 <div className="text-center py-8">
                   <p className="text-slate-500 text-xs">En attente de participants...</p>
@@ -299,61 +273,41 @@ export default function LiveRoom({ session, localUserName, isHost, onLeave, onEn
         )}
       </div>
 
-      {/* ── Controls ── */}
       <div className="px-6 py-4 bg-gradient-to-r from-slate-900 to-slate-800 border-t border-slate-700/50">
         <div className="flex items-center justify-center gap-3">
-
-          {/* Micro */}
-          <button onClick={toggleAudio} title={audioOn ? 'Couper le micro' : 'Activer le micro'}
+          <button onClick={toggleAudio}
             className={`flex flex-col items-center gap-1 px-4 py-2.5 rounded-2xl transition-all duration-200 ${audioOn ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-900/50'}`}>
             {audioOn ? <Mic size={20} /> : <MicOff size={20} />}
             <span className="text-[9px] font-semibold">{audioOn ? 'Micro' : 'Muet'}</span>
           </button>
-
-          {/* Caméra */}
-          <button onClick={toggleVideo} title={videoOn ? 'Désactiver la caméra' : 'Activer la caméra'}
+          <button onClick={toggleVideo}
             className={`flex flex-col items-center gap-1 px-4 py-2.5 rounded-2xl transition-all duration-200 ${videoOn ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-900/50'}`}>
             {videoOn ? <Video size={20} /> : <VideoOff size={20} />}
             <span className="text-[9px] font-semibold">{videoOn ? 'Caméra' : 'Arrêtée'}</span>
           </button>
-
-          {/* Partage écran */}
-          <button onClick={toggleScreen} disabled={!joined} title={sharingScreen ? "Arrêter le partage" : "Partager l'écran"}
-            className={`flex flex-col items-center gap-1 px-4 py-2.5 rounded-2xl transition-all duration-200 ${
-              !joined ? 'bg-slate-800 text-slate-600 cursor-not-allowed' :
-              sharingScreen ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/50' :
-              'bg-slate-700 hover:bg-slate-600 text-white'}`}>
+          <button onClick={toggleScreen} disabled={!joined}
+            className={`flex flex-col items-center gap-1 px-4 py-2.5 rounded-2xl transition-all duration-200 ${!joined ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : sharingScreen ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/50' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}>
             {sharingScreen ? <MonitorOff size={20} /> : <Monitor size={20} />}
             <span className="text-[9px] font-semibold">Écran</span>
           </button>
-
-          {/* Séparateur */}
           <div className="w-px h-10 bg-slate-700 mx-2" />
-
-          {/* Quitter / Terminer */}
           {isHost ? (
             showEndConfirm ? (
               <div className="flex items-center gap-2">
                 <span className="text-slate-300 text-xs font-medium">Terminer pour tous ?</span>
-                <button onClick={handleEnd} className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl transition-colors">
-                  Oui
-                </button>
-                <button onClick={() => setShowEndConfirm(false)} className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold rounded-xl transition-colors">
-                  Non
-                </button>
+                <button onClick={handleEnd} className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl transition-colors">Oui</button>
+                <button onClick={() => setShowEndConfirm(false)} className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold rounded-xl transition-colors">Non</button>
               </div>
             ) : (
               <button onClick={() => setShowEndConfirm(true)}
                 className="flex flex-col items-center gap-1 px-4 py-2.5 rounded-2xl bg-red-600 hover:bg-red-500 text-white transition-all duration-200 shadow-lg shadow-red-900/50">
-                <PhoneOff size={20} />
-                <span className="text-[9px] font-semibold">Terminer</span>
+                <PhoneOff size={20} /><span className="text-[9px] font-semibold">Terminer</span>
               </button>
             )
           ) : (
             <button onClick={handleLeave}
               className="flex flex-col items-center gap-1 px-4 py-2.5 rounded-2xl bg-red-600 hover:bg-red-500 text-white transition-all duration-200 shadow-lg shadow-red-900/50">
-              <PhoneOff size={20} />
-              <span className="text-[9px] font-semibold">Quitter</span>
+              <PhoneOff size={20} /><span className="text-[9px] font-semibold">Quitter</span>
             </button>
           )}
         </div>
