@@ -51,8 +51,9 @@ export default function LiveSection({ user }: LiveSectionProps) {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const authHeader = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
 
-  // Polling toutes les 10s pour voir les sessions actives
+  // Polling toutes les 60s, pause quand l'onglet est caché
   const fetchSessions = useCallback(async () => {
+    if (document.hidden) return;
     try {
       const res = await fetch('/api/liveSessions');
       if (res.ok) setSessions(await res.json());
@@ -61,8 +62,13 @@ export default function LiveSection({ user }: LiveSectionProps) {
 
   useEffect(() => {
     fetchSessions();
-    const interval = setInterval(fetchSessions, 10000);
-    return () => clearInterval(interval);
+    const interval = setInterval(fetchSessions, 60000);
+    const onVisibility = () => { if (!document.hidden) fetchSessions(); };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [fetchSessions]);
 
   const handleCopyLink = (session: LiveSession) => {
